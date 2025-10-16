@@ -1,0 +1,122 @@
+name: 🧪 Test
+description: 테스트 추가/개선(단위·슬라이스·통합·E2E·성능·보안)
+title: "[TEST] "
+labels: ["test"]
+type: "Test"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🧪 테스트 가이드
+        - 재현 가능성(고정 seed/시간/랜덤), **플레이키(Flaky) 최소화**에 주의
+        - CI 매트릭스/커버리지 목표/관측 연계 명시
+        - 대상, 종류, 성공 기준 명시
+        - 다른 타입의 이슈/Task 진행 중인 경우 해당 이슈에서 진행
+        - 이 이슈는 테스트 전용으로, 사후적 관점으로 테스트가 부족한 부분을 보강하는 경우에만 사용
+        - 코드 변경이나 기능 추가가 수반되면 해당 이슈를 생성/보완해 테스트를 병행하고 이 이슈는 닫기
+        - (유의)이후 문서화/이슈 전략 변경시 해당 이슈가 다른 Task들의 히위 Test Task의 역할을 할 수 있음
+
+  - type: input
+    id: parent_task
+    attributes:
+      label: ↗️ 상위 Task (선택)
+      placeholder: "#42"
+
+  # 1) 대상과 범위
+  - type: textarea
+    id: target
+    attributes:
+      label: 🎯 테스트 대상/범위
+      description: 기능, 모듈, API, 경로, 시나리오 등
+      placeholder: |
+        예) BE: /v1/users/login (성공/실패/락아웃)
+            FE: ReviewList 컴포넌트(페이지네이션/로딩/에러)
+    validations:
+      required: true
+
+  # 2) 전략/종류
+  - type: checkboxes
+    id: kinds
+    attributes:
+      label: 🧰 종류
+      options:
+        - label: Unit
+        - label: Slice/Repository/Service (Spring/Data 등)
+        - label: Integration (API/Contract)
+        - label: E2E (Playwright/Cypress/Appium 등)
+        - label: Performance/Load/Stress
+        - label: Security (AuthZ/AuthN, 인젝션, 취약점 재현)
+        - label: Mutation Testing(선택)
+  - type: textarea
+    id: strategy
+    attributes:
+      label: 🧠 전략/설계
+      placeholder: |
+        - Given/When/Then 시나리오, 데이터 픽스처(고정 seed)
+        - 외부 의존 모킹/테스트더블, TestContainers
+        - 비결정성 제거(시간/랜덤 고정), 리트라이 정책
+
+  # 3) 커버리지 목표 & 수용 기준(AC)
+  - type: textarea
+    id: coverage
+    attributes:
+      label: 🎯 커버리지 목표
+      placeholder: |
+        - 라인/브랜치 커버리지 목표(예: > 70%), 변경 라인 diff 커버리지 > 90%
+        - 핵심 경로/엣지 케이스 포함
+  - type: textarea
+    id: ac
+    attributes:
+      label: ✅ 수용 기준(AC)
+      placeholder: |
+        - [ ] 주요 성공/실패/엣지 케이스 자동화
+        - [ ] 회귀 테스트 케이스 추가(이슈 재발 방지)
+        - [ ] CI에서 안정적으로 통과(플레이키 없음)
+    validations:
+      required: true
+
+  # 4) CI/환경/관측
+  - type: textarea
+    id: ci_matrix
+    attributes:
+      label: 🔧 CI 매트릭스/환경
+      placeholder: |
+        - Node 22/Java 21/macOS-latest/ubuntu-latest 등 조합
+        - DB: Postgres 16 (Testcontainers), Redis(Upstash mock)
+        - 병렬/샤딩 전략, 캐시 활용
+  - type: textarea
+    id: observability
+    attributes:
+      label: 📈 실행 시간/플레이키/관측
+      placeholder: |
+        - 테스트 러닝타임 예산, 타임아웃, 재시도
+        - 실패 패턴 캡처(로그/스크린샷/비디오) 및 업로드
+
+
+  # Footer
+  # 1) 일정/우선순위
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 🚦 우선순위
+      options: [P0-urgent, P1-high, P2-med, P3-low]
+
+  # 2) Subtasks
+  - type: textarea
+    id: subtasks
+    attributes:
+      label: 🧩 Subtasks (체크리스트 → 이슈 전환 권장)
+      placeholder: |
+        - [ ] 단위 테스트 보강(성공/실패/경계)
+        - [ ] API 계약 테스트 추가
+        - [ ] E2E 시나리오: 로그인→리뷰 작성→삭제
+        - [ ] 성능 기준치 측정 및 알람 설정
+      description: Convert to issue로 개별 이슈 생성 후 이 항목에 #번호 연결
+
+  # 3) 참고
+  - type: textarea
+    id: refs
+    attributes:
+      label: 🔗 참고/연관 이슈·PR·문서
+      placeholder: |
+        - #123, #456 / 테스트 전략 문서 / CI 워크플로 링크

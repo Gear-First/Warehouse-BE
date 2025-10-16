@@ -1,0 +1,135 @@
+name: ✨ Feature
+description: 새로운 기능 추가 또는 유의미한 개선
+title: "[FEAT] "
+labels: ["feat"]
+type: "Feature"
+body:
+  - type: markdown
+    id: guide
+    attributes:
+      value: |
+          ## ✨ Feature 이슈 가이드
+          - **사용자 스토리 + 수용 기준(AC)** 중심으로 작성
+          - 영향도(UX, API, 데이터 모델 등) 명시, 우선순위·도메인·마일스톤 지정
+          - 체크리스트를 **Subtasks**를 이슈로 변환해 **양방향 연결** 유지
+
+  - type: input
+    id: parent_task
+    attributes:
+      label: ↗️ 상위 Task (선택)
+      description: 상위 Task 이슈 번호(#42 형식)
+      placeholder: "#42"
+
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 🧩 배경·문제 정의
+      description: 추가 기능의 필요성/이유/가치
+      placeholder: |
+        - 문제 / 기회 / 목표 등 정의
+        - 이유 (비즈니스 / 사용자 관점)
+    validations:
+      required: true
+
+  - type: textarea
+    id: user_story
+    attributes:
+      label: 👤 사용자 스토리
+      description: 추가하고자 하는 기능의 사용자 관점에서의 설명
+      placeholder: |
+        - As a <role>, I want <capability> so that <benefit>.
+        - 시나리오 예: GIVEN/WHEN/THEN ...
+
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 💡 제안(설계 요약) & 대안
+      description: 채택된 설계, 배제한 대안, 근거, 트레이드오프
+      placeholder: |
+        - 채택: ...
+        - 대안: ...
+        - 근거: ...
+        - 트레이드오프: ...
+
+
+  - type: textarea
+    id: ux
+    attributes:
+      label: 🌐 영향도(UX/데이터/API/접근성)
+      description: UX/화면 설계, API/데이터 영향, 접근성 고려사항
+      placeholder: |
+        - 와이어프레임/디자인 링크
+        - a11y: 키보드 내비게이션, 대비, ARIA 등
+        - API 신규/변경(엔드포인트·스키마·에러코드)
+        - DB/캐시/마이그레이션
+        - 성능·보안·비용 영향
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: ✅ 수용 기준(AC)
+      description: 테스트 가능한 구체적 기준
+      placeholder: |
+        - [ ] GIVEN/WHEN/THEN 형태로 테스트 가능한 문장
+        - [ ] p95 응답 < 300ms (if BE)
+
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 🚦 우선순위
+      options: [P0-urgent, P1-high, P2-med, P3-low]
+    validations: { required: true }
+
+  - type: dropdown
+    id: size
+    attributes:
+      label: Size
+      options: [ "S", "M", "L" ]
+    validations: { required: true }
+
+
+  - type: checkboxes
+    id: dor
+    attributes:
+      label: ✅ DoR(Ready)
+      options:
+        - label: 배경/목표 명확
+          required: true
+        - label: 수용 기준(AC) 명확
+          required: true
+        - label: 영향도(UX/데이터/API) 파악
+        - label: 의존/리스크 식별
+        - label: 우선순위/마일스톤 지정
+
+
+  - type: checkboxes
+    id: dod
+    attributes:
+      label: 🧾 완료 정의(DoD)
+      options:
+        - label: 테스트 통과 및 커버리지 기준 충족
+        - label: 문서/ADR/CHANGELOG 반영
+        - label: Projects 상태/마일스톤 갱신
+        - label: 라벨/연결(Closes/Fixes) 정리
+        - label: 관측(로그/모니터링/알람) 확인
+
+  - type: textarea
+    id: subtasks
+    attributes:
+      label: 🧩 Subtasks & TODO (체크리스트 → 이슈 전환 권장)
+      placeholder: |
+        - [ ] FE: 컴포넌트/상태관리
+        - [ ] BE: API/스키마
+        - [ ] TEST: 단위/통합/E2E
+        - [ ] DOCS: 사용자/개발 문서
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 📚 참고 자료
+      placeholder: |
+        - RFC 7231 Hypertext Transfer Protocol
+        - Spring Boot Docs: ...

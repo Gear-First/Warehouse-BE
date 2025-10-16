@@ -1,0 +1,77 @@
+name: 🧾 Idea
+description: Task/마일스톤과 무관한 일반 이슈 (아이디어·경량 개선·간단 요청 등)
+title: "[IDEA] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🧾 Idea 이슈 가이드
+        - 빠르게 제안/토론하고 싶은 아이디어, 경량 개선, 가벼운 요청에 사용하세요.
+        - 필요 시 다른 템플릿(Feature/Bug/Refactor/Chore 등)으로 승격 가능.
+
+  # 0) 상위 Task 연결 (선택)
+  - type: input
+    id: parent_task
+    attributes:
+      label: ↗️ 상위 Task (선택)
+      placeholder: "#42"
+
+  # 1) 요약 & 설명
+  - type: input
+    id: summary
+    attributes:
+      label: 🔎 요약(한 줄)
+      placeholder: 예) 버튼 hover 색상 제안
+  - type: textarea
+    id: idea
+    attributes:
+      label: 📄 상세 설명
+      placeholder: |
+        - 배경/문제: ...
+        - 제안/개선: ...
+        - 기대효과: ...
+        - 아이디어/요청사항: ...
+
+  # Footer
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 🚦 Priority
+      options: [P0-urgent, P1-high, P2-med, P3-low]
+
+  - type: dropdown
+    id: size
+    attributes:
+      label: 📏 Size
+      options: [S, M, L]
+
+  - type: checkboxes
+    id: dod
+    attributes:
+      label: 🧾 DoD
+      options:
+        - label: 합의 및 다음 단계 결정
+
+  - type: textarea
+    id: deliverables
+    attributes:
+      label: 📦 산출물
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 📚 참고 자료
+
+  - type: textarea
+    id: subtasks
+    attributes:
+      label: 📋 Subtasks
+      description: 해당 의견에 대한 후속 의견, 작업, 이슈 등
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        - 이슈의 내용과 적정성에 따라 이슈 라벨이나 템플릿이 변경될 수 있습니다.
+        - Discussion, Task 등으로 이동하거나 연계될 수 있습니다.

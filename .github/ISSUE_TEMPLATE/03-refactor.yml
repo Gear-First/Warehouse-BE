@@ -1,0 +1,89 @@
+name: ♻️ Refactor
+description: 구조/성능/품질 개선
+title: "[REFACTOR] "
+labels: ["refactor"]
+type: Refactor
+body:
+  # Header
+  - type: markdown
+    attributes:
+      value: |
+        ## ♻️ Refactor 가이드
+        - 코드 품질/구조/성능 개선
+        - 목적과 개선 지표 명확히 작성
+
+  - type: input
+    id: related
+    attributes:
+      label: ↗️ 상위 이슈
+      placeholder: "#42"
+
+  - type: textarea
+    id: links
+    attributes:
+      label: 🔗 관련 링크
+      placeholder: 성능 리포트, 분석 자료
+
+  # Body
+  - type: dropdown
+    id: goal
+    attributes:
+      label: 🎯 목적
+      options: [성능, 가독성, 구조, 의존성 정리, 테스트 보강]
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: 🗺 범위
+      placeholder: repo/파일/모듈/레이어
+
+  - type: textarea
+    id: improvements
+    attributes:
+      label: 📈 개선 포인트
+      placeholder: 복잡도↓, 중복↓, 성능↑ 등
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 🚦 Priority
+      options: [P0-urgent, P1-high, P2-med, P3-low]
+
+  - type: dropdown
+    id: size
+    attributes:
+      label: 📏 Size
+      options: [S, M, L]
+
+  - type: checkboxes
+    id: dor
+    attributes:
+      label: ✅ DoR
+      options:
+        - label: 목적/범위 명확
+        - label: 영향/리스크 파악
+
+  - type: checkboxes
+    id: dod
+    attributes:
+      label: 🧾 DoD
+      options:
+        - label: 개선 지표 달성
+        - label: 테스트/Docs 반영
+        - label: 상태/마일스톤 갱신
+
+  - type: textarea
+    id: deliverables
+    attributes:
+      label: 📦 산출물
+      placeholder: 코드 변경 PR, 벤치마크 결과
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 📚 참고 자료
+
+  - type: textarea
+    id: subtasks
+    attributes:
+      label: 📋 Subtasks

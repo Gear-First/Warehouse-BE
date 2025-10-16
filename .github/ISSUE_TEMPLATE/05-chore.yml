@@ -1,0 +1,92 @@
+name: 🔧 Chore
+description: 기능과 무관한 잡무성 작업 (설정·빌드·CI/CD·의존성·환경 등)
+title: "[CHORE] "
+labels: ["chore"]
+type: "Chore"
+body:
+  # Header
+  - type: markdown
+    attributes:
+      value: |
+        ## 🔧 Chore 가이드
+        - 코드 기능 변화 없이 프로젝트 유지/운영/환경 관련 작업
+        - ex) 빌드 스크립트 수정, CI/CD 구성, 의존성 업데이트, 인프라 설정
+  - type: input
+    id: related
+    attributes:
+      label: ↗️ Parent Task (선택)
+      placeholder: "#42"
+
+  # Body
+  # 0) 변경 영역
+  - type: dropdown
+    id: area
+    attributes:
+      label: 변경 영역
+      options: [빌드, CI-CD, 보안, 비용, 무영향]
+
+  # 1) 작업 요약
+  - type: input
+    id: summary
+    attributes:
+      label: 🔎 요약(한 줄)
+      placeholder: 예) GitHub Actions 캐시 전략 개선
+
+  # 2) 작업 상세
+  - type: textarea
+    id: details
+    attributes:
+      label: 📄 상세 설명
+      placeholder: |
+        - 현재 문제/배경: ...
+        - 제안된 변경/작업: ...
+        - 기대 효과: ...
+    validations:
+      required: true
+
+  # 3) 영향 범위
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: ⚠️ 영향/리스크
+      options:
+        - label: 빌드/배포 파이프라인
+        - label: 보안/권한
+        - label: 비용/리소스
+        - label: 협업 워크플로
+
+  # Footer
+  # 2) 우선순위
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 🚦 우선순위
+      options: [P0-urgent, P1-high, P2-med, P3-low]
+
+  # 3) 수용 기준(AC)
+  - type: textarea
+    id: ac
+    attributes:
+      label: ✅ 수용 기준(AC)
+      placeholder: |
+        - [ ] 빌드 시간 30% 단축
+        - [ ] 보안 정책/CI 룰 충족
+        - [ ] 기존 기능 동작에 영향 없음
+
+  # 4) Subtasks
+  - type: textarea
+    id: subtasks
+    attributes:
+      label: 🧩 Subtasks (체크리스트 → 이슈 전환 권장)
+      placeholder: |
+        - [ ] 의존성 버전 bump #
+        - [ ] CI 캐시 정책 수정 #
+        - [ ] 배포 알람 채널 추가 #
+
+  # 5) 참고
+  - type: textarea
+    id: refs
+    attributes:
+      label: 🔗 참고 자료
+      placeholder: |
+        - 관련 PR/커밋/문서 링크

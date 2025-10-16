@@ -1,0 +1,197 @@
+name: 🐛 Bug
+description: 버그 리포트 및 긴급 수정
+title: "[BUG] "
+labels: [ "bug" ]
+type: "Bug"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🐛 Bug 리포트 가이드
+        - **현상·원인·영향**을 명확히 하고, 재현 단계와 기대 결과를 구체적으로 작성
+        - 우선순위·영향도를 고려해 Severity를 설정하고, 관련 로그/스크린샷을 첨부
+        - 긴급 수정(핫픽스) 필요 시 Subtasks에 명시
+        - **원인 특정이 가능한 경우**: Fix 이슈 생성 권장
+        - **근본 원인이 구조적 문제인 경우**: 임시 수정 후 별도 Refactor 이슈 생성 고려
+
+  # 0) 상위 연결(선택)
+  - type: input
+    id: parent_task
+    attributes:
+      label: ↗️ 상위 Task (선택)
+      description: 상위 Task 이슈 번호(#42 형식)
+      placeholder: "#42"
+
+  # 1) 현상·환경
+  - type: textarea
+    id: symptom
+    attributes:
+      label: 🔍 현상·증상
+      description: 증상(실제 동작, 상태)과 기대(동작, 상태)의 차이점
+      placeholder: |
+        예) 로그인 후 대시보드 진입 시 빈 화면만 표시되고 데이터가 로드되지 않음
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 🌐 환경 정보
+      description: OS, 브라우저, 디바이스, 버전 등
+      placeholder: |
+        - OS: macOS 14.5 / Windows 11
+        - Browser: Chrome 118.0.5993.88 / Safari 17.0
+        - Mobile: iPhone 15 iOS 17.0.3
+        - App version: v1.2.3
+        - Environment: production / staging
+
+  # 2) 재현 단계
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 🔄 재현 단계
+      description: 1, 2, 3... 순서로 명확하게 작성
+      placeholder: |
+        1. 메인 페이지에서 "로그인" 버튼 클릭
+        2. 이메일/비밀번호 입력 후 "로그인" 제출
+        3. 대시보드 URL로 리다이렉트됨
+        4. 3초 후 빈 화면 표시, 스피너만 계속 회전
+    validations:
+      required: true
+
+  # 3) 기대 결과 vs 실제 결과
+  - type: textarea
+    id: expected
+    attributes:
+      label: ✅ 기대 결과
+      placeholder: 대시보드 진입 후 사용자 정보, 최근 활동, 통계 위젯이 2초 내 표시되어야 함
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: ❌ 실제 결과
+      placeholder: 빈 화면 + 로딩 스피너만 무한 표시, 네트워크 탭에서 API 호출 실패 확인
+    validations:
+      required: true
+
+  # 4) 로그·스크린샷·추가 정보
+  - type: textarea
+    id: logs
+    attributes:
+      label: 📋 로그·에러 메시지
+      placeholder: |
+        - 브라우저 개발자 도구 Console 로그
+        - 서버 로그 (에러 코드, 스택 트레이스)
+        - 네트워크 요청/응답 정보
+  - type: textarea
+    id: attachments
+    attributes:
+      label: 📎 스크린샷·영상·파일
+      placeholder: |
+        - 스크린샷 또는 화면 녹화 링크
+        - HAR 파일, 디버그 정보
+
+  # 5) 심각도·영향도
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 🚨 심각도(Severity)
+      description: 비즈니스/사용자 영향도 기준
+      options:
+        - Critical - 서비스 중단/보안 이슈
+        - High - 주요 기능 사용 불가
+        - Medium - 일부 기능 제한
+        - Low - 사소한 불편/UI 이슈
+    validations:
+      required: true
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: 📊 영향 범위
+      options:
+        - label: 모든 사용자 영향
+        - label: 특정 환경/브라우저만 영향
+        - label: 데이터 손실/정합성 이슈
+        - label: 성능 저하
+        - label: 보안/권한 문제
+  # 6) 임시 회피책
+  - type: textarea
+    id: workaround
+    attributes:
+      label: 🛠️ 임시 회피책
+      placeholder: |
+        - 페이지 새로고침하면 일시적으로 해결됨
+        - 다른 브라우저 사용 시 정상 동작
+
+  # 7) 근본 원인 & 후속 조치
+  - type: textarea
+    id: suspected_cause
+    attributes:
+      label: 🕵️ 의심 원인·관련 변경사항
+      placeholder: |
+        - 최근 인증 로직 변경 (#123 PR)
+        - 캐시 정책 수정 후 발생
+        - 특정 API 응답 지연
+  - type: checkboxes
+    id: follow_up_actions
+    attributes:
+      label: 🔄 후속 조치 (선택)
+      description: 근본 원인이 구조적 문제인 경우 체크
+      options:
+        - label: 🔧 구조적 개선을 위한 별도 Refactor 이슈 필요
+        - label: 📚 관련 문서/가이드 업데이트 필요
+        - label: 🧪 테스트 커버리지 보강 필요
+        - label: 📊 모니터링/알람 개선 필요
+
+  # Footer
+  # 1) 마일스톤 / 우선순위 / 규모
+
+  - type: input
+    id: milestone
+    attributes:
+      label: 🗓️ 마일스톤/스프린트 (선택)
+      placeholder: 2025-09 Sprint 1
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 🚦 우선순위
+      options: [ P0-urgent, P1-high, P2-med, P3-low ]
+    validations:
+      required: true
+  - type: dropdown
+    id: size
+    attributes:
+      label: 📏 Size
+      options: [ S, M, L ]
+
+  # 2) 수용 기준(AC)
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: ✅ 수용 기준(AC)
+      placeholder: |
+        - [ ] 재현 단계 실행 시 기대 결과대로 동작
+        - [ ] 다양한 환경(OS/브라우저)에서 정상 동작 확인
+        - [ ] 성능 회귀 없음 (p95 < 기존 기준)
+        - [ ] 관련 테스트 케이스 추가/수정
+
+  # 3) Subtasks
+  - type: textarea
+    id: subtasks
+    attributes:
+      label: 🧩 Subtasks (체크리스트 → 이슈 전환 권장)
+      placeholder: |
+        - [ ] 버그 재현 및 원인 분석 #
+        - [ ] 긴급 수정 (핫픽스) #
+        - [ ] 테스트 케이스 추가 #
+        - [ ] 🔧 [선택] 구조적 개선을 위한 Refactor 이슈 생성 #
+
+  # 4) 참고
+  - type: textarea
+    id: refs
+    attributes:
+      label: 🔗 참고/연관 이슈·PR·문서
+      placeholder: |
+        - 관련 이슈: #123, #456
+        - 참고 PR: #789
+        - 문서/가이드: ...

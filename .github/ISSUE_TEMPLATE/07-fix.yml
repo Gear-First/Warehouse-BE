@@ -1,0 +1,73 @@
+name: 🔥 Fix
+description: 긴급 수정/핫픽스
+title: "[FIX] "
+labels: ["fix"]
+type: "Fix"
+body:
+  # Header
+  - type: markdown
+    attributes:
+      value: |
+        ## 🔥 Fix 가이드
+        - 긴급한 버그 수정
+        - 원인 Bug 이슈 연결
+
+  - type: input
+    id: bug
+    attributes:
+      label: 🐛 원인 Bug
+      placeholder: "#123"
+
+  - type: textarea
+    id: links
+    attributes:
+      label: 🔗 관련 링크
+
+  # Body
+  - type: textarea
+    id: change
+    attributes:
+      label: 🛠 수정 내용
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: 🌐 영향 범위
+      placeholder: 회귀 가능 영역, 모듈/서비스
+
+  # Footer
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 🚦 Priority
+      options: [P0-urgent, P1-high, P2-med, P3-low]
+
+  - type: dropdown
+    id: size
+    attributes:
+      label: 📏 Size
+      options: [S, M, L]
+
+  - type: checkboxes
+    id: dod
+    attributes:
+      label: 🧾 DoD
+      options:
+        - label: 수정 PR 머지 및 테스트 통과
+        - label: 회귀 테스트 보강
+        - label: 상태/마일스톤 갱신
+
+  - type: textarea
+    id: deliverables
+    attributes:
+      label: 📦 산출물
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 📚 참고 자료
+
+  - type: textarea
+    id: subtasks
+    attributes:
+      label: 📋 Subtasks
