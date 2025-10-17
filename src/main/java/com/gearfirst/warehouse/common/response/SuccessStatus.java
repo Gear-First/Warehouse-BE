@@ -10,7 +10,7 @@ import org.springframework.http.HttpStatus;
 public enum SuccessStatus {
     /** 200 SUCCESS */
     SEND_HEALTH_SUCCESS(HttpStatus.OK,"서버 상태 OK"),
-
+    SEND_RECEIVING_NOTE_SUMMARY_SUCCESS(HttpStatus.OK, "입고요청서 요약 조회 성공"),
     /** 201 CREATED */
 
     /** 202 ACCEPTED */
