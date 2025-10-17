@@ -35,6 +35,7 @@ public class ReceivingController {
         return ApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_DETAIL_SUCCESS, ReceivingMockStore.getNoteDetail(noteId));
     }
 
+    @Operation(summary = "입고 항목 업데이트", description = "입고 내역서의 특정 항목에 대해 검사 수량, 입고 수량, 상태를 업데이트합니다.")
     @PatchMapping("/{noteId}/lines/{lineId}")
     public ResponseEntity<ReceivingNoteDetailResponse> updateLine(
             @PathVariable Long noteId,
