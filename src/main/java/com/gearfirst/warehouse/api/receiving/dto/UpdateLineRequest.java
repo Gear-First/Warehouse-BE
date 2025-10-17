@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record UpdateLineRequest(
         @NotNull @Min(0) Integer inspectedQty,
-        @NotNull @Min(0) Integer issueQty,
+        @NotNull @Min(0) Integer orderedQty,
         @NotNull String status // IN_PROGRESS | DONE_OK | DONE_ISSUE
 ) {
 }
