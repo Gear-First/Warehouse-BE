@@ -43,6 +43,13 @@ public class ApiResponse<T> {
                 .message(message)
                 .build();
     }
+    public static ApiResponse<Void> fail(ErrorStatus status) {
+        return ApiResponse.<Void>builder()
+                .status(status.getStatusCode())
+                .success(false)
+                .message(status.getMessage())
+                .build();
+    }
 
     /** FAIL ONLY */
     public static ApiResponse<Void> fail_only(ErrorStatus status) {

@@ -13,6 +13,7 @@ public enum SuccessStatus {
     SEND_RECEIVING_NOTE_LIST_SUCCESS(HttpStatus.OK, "입고요청서 목록 조회 성공"),
     SEND_RECEIVING_NOTE_DETAIL_SUCCESS(HttpStatus.OK, "입고요청서 상세 조회 성공"),
     SED_RECEIVING_COMPLETE_SUCCESS(HttpStatus.OK, "입고 완료 처리 성공"),
+    SEND_RECEIVING_NOTE_LINE_UPDATE_SUCCESS(HttpStatus.OK, "입고요청서 항목 수정 성공"),
     /** 201 CREATED */
 
     /** 202 ACCEPTED */
@@ -20,8 +21,6 @@ public enum SuccessStatus {
     /** 204 NO_CONTENT */
 
     /** 205 RESET_CONTENT */
-
-    /** 206 PARTIAL_CONTENT */
 
     ;
 

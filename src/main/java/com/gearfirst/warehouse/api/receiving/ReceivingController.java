@@ -1,9 +1,12 @@
 package com.gearfirst.warehouse.api.receiving;
 
+import com.gearfirst.warehouse.api.receiving.dto.ReceivingCompleteResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteDetailResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteSummaryResponse;
 import com.gearfirst.warehouse.api.receiving.dto.UpdateLineRequest;
+import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.common.response.ApiResponse;
+import com.gearfirst.warehouse.common.response.ErrorStatus;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -37,17 +40,23 @@ public class ReceivingController {
 
     @Operation(summary = "입고 항목 업데이트", description = "입고 내역서의 특정 항목에 대해 검사 수량, 입고 수량, 상태를 업데이트합니다.")
     @PatchMapping("/{noteId}/lines/{lineId}")
-    public ResponseEntity<ReceivingNoteDetailResponse> updateLine(
+    public ResponseEntity<ApiResponse<ReceivingNoteDetailResponse>> updateLine(
             @PathVariable Long noteId,
             @PathVariable Long lineId,
             @RequestBody @Valid UpdateLineRequest req
     ) {
         // 검증: 입고 수량이 검사 수량보다 클 수 없음
         if (req.orderedQty() > req.inspectedQty()) {
-            return ResponseEntity.unprocessableEntity().build(); // 422(간략 처리)
+            throw new BadRequestException(ErrorStatus.RECEIVING_ORDERED_QTY_EXCEEDS_INSPECTED_QTY);
         }
         var updated = ReceivingMockStore.updateNoteLine(noteId, lineId, req.inspectedQty(), req.orderedQty(), req.status());
-        return ResponseEntity.ok(updated);
+        return ApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_LINE_UPDATE_SUCCESS,updated);
+    }
+
+    @PostMapping("/{noteId}:complete")
+    public ResponseEntity<ReceivingCompleteResponse> complete(@PathVariable Long noteId) {
+        var resp = ReceivingMockStore.complete(noteId);
+        return ResponseEntity.ok(resp);
     }
 
 }
