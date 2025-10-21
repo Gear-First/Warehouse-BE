@@ -14,8 +14,8 @@ env:
   GKE_REGION: asia-northeast1
   ARTIFACT_REGISTRY: asia-northeast1-docker.pkg.dev
   REPO_NAME: gearfirst-docker-repo
-  SERVICE_NAME: receipt-service
-  DEPLOYMENT_NAME: receipt-service-deployment
+  SERVICE_NAME: warehouse-service
+  DEPLOYMENT_NAME: warehouse-service-deployment
 
 # 실제 수행할 작업(Job) 정의
 jobs:
