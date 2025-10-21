@@ -1,7 +1,7 @@
 # Receiving Inspection Policy (MVP)
 
 - Status: Accepted(Updated)
-- Date: 2025-10-20(수정일, 구현 반영 전)
+- Date: 2025-10-21(수정일, 구현 반영 전)
 - Deciders: 현희찬
 
 ## 불변식
@@ -11,8 +11,8 @@
 
 ## 상태
 
-- Note: NOT_STARTED → IN_PROGRESS → ACCEPTED | RETURNED
-- Line: NOT_STARTED → IN_PROGRESS → DONE_OK | DONE_ISSUE (=> RETURNED)
+- Note: PENDING → IN_PROGRESS → ACCEPTED | RETURNED
+- Line: PENDING → IN_PROGRESS → DONE_OK | DONE_ISSUE (=> RETURNED)
 - DONE_ISSUE의 경우 해당 라인에 한해 전부 RETURNED 처리
 
 ## 적용 수량

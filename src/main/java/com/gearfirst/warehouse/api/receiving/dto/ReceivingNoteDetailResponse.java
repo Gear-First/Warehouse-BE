@@ -9,6 +9,6 @@ public record ReceivingNoteDetailResponse(
         int totalQty,
         String status,       // PENDING | IN_PROGRESS | DONE_OK | DONE_ISSUE
         String completedAt,   // ISO8601 string or null
-        List<ReceivingNoteLineDto> lines
+        List<ReceivingNoteLineResponse> lines
 ) {
 }
