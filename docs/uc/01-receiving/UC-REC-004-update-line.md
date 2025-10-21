@@ -1,8 +1,11 @@
 # UC-REC-004 입고 라인 검수 상태/수량 업데이트
 
-- Status: Accepted
-- Date: 2025-10-20(작성일)
-- Deciders: 현희찬
+> **Status: `Updated`**   (Draft|In-Progress|Updated|Aligned|Deprecated)  
+> **Date:** `25-10-20`  
+> **Deciders:** `현희찬`
+
+> **Non-Authoritative!!**: `Aligned`이 아닌 UC 문서는 참고용  
+> 충돌 시 Policy/CRC/Standards/코드/테스트가 우선, 본 문서는 그에 맞춰 갱신됨
 
 ## Policy
 

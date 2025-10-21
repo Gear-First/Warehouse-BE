@@ -1,8 +1,11 @@
 # UC-SHP-003 출고 납품서 상세 조회
 
-- Status: Accepted
-- Date: 2025-10-20(작성일)
-- Deciders: 현희찬
+> **Status: `Updated`**   (Draft|In-Progress|Updated|Aligned|Deprecated)  
+> **Date:** `25-10-20`  
+> **Deciders:** `현희찬`
+
+> **Non-Authoritative!!**: `Aligned`이 아닌 UC 문서는 참고용  
+> 충돌 시 Policy/CRC/Standards/코드/테스트가 우선, 본 문서는 그에 맞춰 갱신됨
 
 ## Intent
 
@@ -23,3 +26,4 @@
       "status": "READY|DELAYED|DONE_ISSUE|IN_PROGRESS|PENDING" }
   ]
 }
+```

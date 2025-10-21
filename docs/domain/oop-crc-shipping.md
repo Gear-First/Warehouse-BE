@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2025-10-21
-- Deciders: BE 팀
+- Deciders: 현희찬
 
 > 본 문서는 객체의 **역할·책임·협력**만 기술함
 > 재고 조회/차감, 지연 처리 등 I/O 오케스트레이션은 **Service/Repository** 책임
