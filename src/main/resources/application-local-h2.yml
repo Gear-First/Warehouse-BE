@@ -1,0 +1,47 @@
+spring:
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  datasource:
+    url: jdbc:h2:mem:warehouse;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false # logback으로 확인하므로 SQL 쿼리 출력 비활성화 (중복 출력 방지)
+    properties:
+      hibernate:
+        format_sql: true # SQL 쿼리 포맷팅 활성화
+        use_sql_comments: true # SQL 쿼리에 주석 추가 활성화
+        jdbc:
+          lob:
+            non_contextual_creation: true # LOB 생성시 컨텍스트 비활성화 (H2 호환성 문제 해결)
+
+
+# SQL 쿼리 및 트랜잭션 로그를 TRACE 레벨로 설정하여 자세한 로그 출력
+# 개발 환경에서만 사용 (운영 및 배포시 비활성화 또는 레벨을 조정해 프로필 분리 필요)
+logging:
+  level:
+    org:
+    springframework:
+      web: INFO
+      beans: INFO
+      context: INFO
+      core: INFO
+      jdbc: INFO
+      transaction: INFO
+      orm: INFO
+    hibernate:
+      SQL: DEBUG
+      type: DEBUG
+      orm.jdbc.bind: trace
+#      orm.jdbc.extract: debug # 결과 추출 흐름 확인시에만 잠시 켜기
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"

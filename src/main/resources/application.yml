@@ -1,0 +1,4 @@
+# 어플리케이션 설정 진입점
+spring:
+  profiles:
+    active: local-h2 # 현재 활성화된 프로파일 설정 (local-h2, local-mysql, dev, prod 등)
