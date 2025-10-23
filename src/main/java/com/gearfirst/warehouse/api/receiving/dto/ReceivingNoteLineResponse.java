@@ -1,8 +1,8 @@
 package com.gearfirst.warehouse.api.receiving.dto;
 
-public record ReceivingNoteLineDto(
+public record ReceivingNoteLineResponse(
         Long lineId,
-        ReceivingProductDto product,
+        ReceivingProductResponse product,
         int orderedQty,
         int inspectedQty,
         int issueQty,
