@@ -12,7 +12,7 @@
 - **Note:** `PENDING => IN_PROGRESS => COMPLETED | DELAYED`
     - DELAYED = 정책상 “노트 전체 취소” 의미
     - DELAYED 노트 재시작 관련 정책 추가 필요 (TODO)
-- **Line:** `PENDING => IN_PROGRESS => READY | SHORTAGE | ISSUE()`
+- **Line:** `PENDING => IN_PROGRESS => READY | SHORTAGE |`
 
 ## ShippingNote (Aggregate Root)
 
