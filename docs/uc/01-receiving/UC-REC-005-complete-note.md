@@ -52,3 +52,24 @@
   "rejectedCount": 1
 }
 ```
+
+
+## Errors
+
+- 404: noteId 미존재
+- 409: 완료 불가 상태(ACCEPTED/REJECTED 외 상태 포함)
+  - Payload(예시):
+```json
+{
+  "status": 409,
+  "success": false,
+  "message": "입고 완료 불가: 진행 중 라인 존재",
+  "data": {
+    "noteId": 301,
+    "noteStatus": "IN_PROGRESS",
+    "problematicLines": [
+      { "lineId": 7, "part": { "code": "P-1003", "name": "에어필터" }, "orderedQty": 50, "inspectedQty": 48, "status": "IN_PROGRESS", "reason": "미검수 라인 존재" }
+    ]
+  }
+}
+```

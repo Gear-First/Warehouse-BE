@@ -30,10 +30,26 @@
   When 조회하면,
   Then 빈 배열을 반환
 
-## I/O (Sketch)
+## Filters
+- date: YYYY-MM-DD (기본: 오늘)
+- warehouseId: 창고 식별자(멀티 창고 적용)
+- page: 기본 0
+- size: 기본 20
 
-- GET `/v1/shipping/notDone?date=YYYY-MM-DD`
-- Response `[ { noteId, customerName, itemKinds, totalQty, status } ]`
+## I/O (페이지네이션 스케치)
+
+- GET `/v1/shipping/notDone?date=YYYY-MM-DD&warehouseId=WH1&page=0&size=20`
+- Response
+```
+{
+  "items": [
+    { "noteId": 501, "shippingNo": "OUT/WH1/20251024/001", "branchName": "강남대리점", "itemKinds": 3, "totalQty": 90, "status": "PENDING" }
+  ],
+  "page": 0,
+  "size": 20,
+  "total": 0
+}
+```
 
 ## Errors
 
@@ -41,8 +57,8 @@
 
 ## Notes
 
-- 선택적 필터 사전 고지: `dateFrom`, `dateTo`, `keyword`, `status[]` (현 단계 미구현)
-- 멀티 창고(warehouseId) 필터는 향후 도입 가능성만 문서화, 현 단계 미도입
+- 선택적 필터 사전 고지: `dateFrom`, `dateTo`, `keyword`, `status[]` (현재 미구현)
+- 멀티 창고: warehouseId 필터를 본 UC에 적용(문서 기준)
 
 ## References
 - Policy: [shipping-fulfillment.md](../../policy/shipping-fulfillment.md)

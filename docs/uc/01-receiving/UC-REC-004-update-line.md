@@ -29,13 +29,13 @@
 
 - Given hasIssue=false,
   When 업데이트하면,
-  Then 라인 상태는 `ACCEPTED`가
+  Then 라인 상태는 `ACCEPTED`가 된다
 - Given hasIssue=true,
   When 업데이트하면,
-  Then 라인 상태는 `REJECTED`가 되며 증가 수량은 0으로 간주
+  Then 라인 상태는 `REJECTED`가 되며 증가 수량은 0으로 간주된다
 - Given 라인이 ACCEPTED/REJECTED,
   When 다시 업데이트하면,
-  Then 409가 반환
+  Then 409가 반환된다
 
 ## I/O
 

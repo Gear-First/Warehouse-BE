@@ -18,7 +18,7 @@
 
 ```json
 {
-  "noteId": 501, "customerName": "...", "status": "IN_PROGRESS",
+  "noteId": 501, "shippingNo": "OUT/WH1/20251024/003", "customerName": "...", "status": "IN_PROGRESS",
   "itemKinds": 3, "totalQty": 90,
   "requestedAt": "2025-10-24T08:00:00Z",  
   "expectedShipDate": "2025-10-25",      

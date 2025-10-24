@@ -48,9 +48,9 @@
 
 ```
 
-## ControllerExceptionAdvice 정리
+## GlobalExceptionHandler 정리
 
-- [ControllerExceptionAdvice.java](../../src/main/java/com/gearfirst/warehouse/common/exception/ControllerExceptionAdvice.java)
+- [GlobalExceptionHandler.java](../../src/main/java/com/gearfirst/warehouse/common/exception/GlobalExceptionHandler.java)
     - 모든 컨트롤러 예외를 전역 처리하는 @ControllerAdvice
     - BaseException 파생형은 해당 예외에 맞는 HTTP 상태 코드로 응답
     - 그 외 예외는 500 Internal Server Error로 응답
@@ -71,3 +71,45 @@
 - 향후 필요 시 추가 파생형 생성 가능
 
 ## 
+
+## PageEnvelope (List Response Standard)
+
+- 모든 목록 응답은 페이징 래퍼를 권장한다.
+- 스키마
+
+```json
+{
+  "items": [ /* 도메인별 아이템 배열 */ ],
+  "page": 0,
+  "size": 20,
+  "total": 123
+}
+```
+
+- 사용: ApiResponse<PageEnvelope<T>> 형태로 컨트롤러에서 래핑 (현 단계 일부 UC 문서에만 적용; 구현은 후속 PR에서 진행)
+- 기본값 권장: page=0, size=20 (size 범위 1..100)
+
+## 409 Conflict 상세 페이로드 가이드 (문서 설계)
+
+- 에러 응답에도 선택적으로 `data`를 포함해, 실패 사유를 구체적으로 제시할 수 있다(호환 유지: 기존 필드는 그대로 유지, data는 선택 항목).
+- 공통 틀(예시):
+
+```json
+{
+  "status": 409,
+  "success": false,
+  "message": "도메인별 메시지",
+  "data": {
+    "noteId": 0,
+    "noteStatus": "...",
+    "problematicLines": [
+      { "lineId": 0, "status": "...", "reason": "..." }
+    ]
+  }
+}
+```
+
+- Shipping 완료 실패(UC-SHP-005): `problematicLines[].status = SHORTAGE`, `reason = onHand<ordered`
+- Receiving 완료 실패(UC-REC-005): `problematicLines[]`는 `ACCEPTED/REJECTED` 외 상태(예: IN_PROGRESS)를 포함하는 라인 스냅샷
+
+> 구현 주의: 컨트롤러/핸들러에서 409 반환 시 `data`는 선택. 본 표준은 문서 단계이며, 실제 코드는 후속 PR에서 반영한다.

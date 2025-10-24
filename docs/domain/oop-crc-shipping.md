@@ -23,7 +23,7 @@
 ### 책임
 
 - **라인 갱신 관문:** 첫 갱신 시 `PENDING => IN_PROGRESS` 변경 보장
-- **취소 변경:** 라인 갱신 결과가 `SHORTAGE` 또는 `ISSUE`이면 **즉시 `Note=DELAYED`**로 변경하며 이후 변경/완료를 거부
+- **지연 전이:** 라인 갱신 결과가 `SHORTAGE`이면 **즉시 `Note=DELAYED`**로 변경하며 이후 변경/완료를 거부
 - **완료 가능 판단:** 전 라인이 `READY`이고 Note가 `DELAYED`가 아닐 때만 `canComplete=true`
 - **완료 집계:**
     - `complete()` 호출
@@ -48,10 +48,9 @@
 ### 책임
 
 - **유효성:** `orderedQty > 0`, `inspectedQty ≥ 0`; 완료 상태 재수정 금지
-- **진행 반영/변경:** `applyProgress(inspectedQty, onHand, issue?)`
+- **진행 반영/변경:** `applyProgress(inspectedQty, onHand)`
     - `onHand < orderedQty` => `SHORTAGE`
-    - `issue != null` => `ISSUE`
-    - 위 두 조건이 아니고 진행 완료 => `READY`
+    - 그 외 진행 완료 => `READY`
 - **완료 판정:** `isDone()`는 `READY | SHORTAGE` 중 하나일 때 true
 
 ### 협력
