@@ -1,7 +1,7 @@
 # OOP CRC – Shipping (MVP, Defensive Cancel Policy)
 
 - Status: Accepted
-- Date: 2025-10-21
+- Date: 2025-10-24
 - Deciders: 현희찬
 
 > 본 문서는 객체의 **역할·책임·협력**만 기술함
@@ -9,10 +9,10 @@
 
 ## 공통 상태(요약)
 
-- **Note:** `PENDING => IN_PROGRESS => COMPLETED | DELAYED`
-    - DELAYED = 정책상 “노트 전체 취소” 의미
-    - DELAYED 노트 재시작 관련 정책 추가 필요 (TODO)
-- **Line:** `PENDING => IN_PROGRESS => READY | SHORTAGE |`
+- **Note:** `PENDING → IN_PROGRESS → COMPLETED | DELAYED`
+    - DELAYED = 정책상 “지급 지연(노트 완료 불가)” 의미
+    - DELAYED 노트 재시작 관련 정책은 후속 PR에서 정의(TODO)
+- **Line:** `PENDING → IN_PROGRESS → READY | SHORTAGE`
 
 ## ShippingNote (Aggregate Root)
 
