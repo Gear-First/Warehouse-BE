@@ -1,7 +1,7 @@
 # UC-SHP-002 오늘 완료 출고 목록 조회
 
 > **Status: `Updated`**   (Draft|In-Progress|Updated|Aligned|Deprecated)  
-> **Date:** `25-10-20`  
+> **Date:** `2025-10-24`  
 > **Deciders:** `현희찬`
 
 > **Non-Authoritative!!**: `Aligned`이 아닌 UC 문서는 참고용  
@@ -9,7 +9,7 @@
 
 ## Intent
 
-오늘 완료(`COMPLETED`)된 출고 납품서(Note) 목록을 조회 (지연 라인 수 요약 포함)
+오늘 완료 또는 지연된(`COMPLETED | DELAYED`) 출고 납품서(Note) 목록을 조회
 
 ## I/O
 

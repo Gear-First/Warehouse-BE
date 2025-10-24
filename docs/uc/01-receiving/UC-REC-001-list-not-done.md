@@ -1,7 +1,7 @@
 # UC-REC-001 오늘 입고 대기 목록 조회
 
 > **Status: `Updated`**   (Draft|In-Progress|Updated|Aligned|Deprecated)  
-> **Date:** `25-10-20`  
+> **Date:** `2025-10-24`  
 > **Deciders:** `현희찬`
 
 > **Non-Authoritative!!**: `Aligned`이 아닌 UC 문서는 참고용  
@@ -38,3 +38,12 @@
 ## Errors
 
 - 400: 잘못된 날짜 포맷
+
+## Notes
+
+- 선택적 필터 사전 고지: `dateFrom`, `dateTo`, `keyword`, `status[]` (현 단계 미구현)
+- 멀티 창고(warehouseId) 필터는 향후 도입 가능성만 문서화, 현 단계 미도입
+
+## References
+- Policy: [receiving-inspection.md](../../policy/receiving-inspection.md)
+- ADR: [ADR-05-Use-Cases-are-Non-Authoritative.md](../../adr/ADR-05-Use-Cases-are-Non-Authoritative.md)

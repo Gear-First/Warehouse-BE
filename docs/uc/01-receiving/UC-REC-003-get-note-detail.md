@@ -1,7 +1,7 @@
 # UC-REC-003 입고 납품서 상세 조회
 
 > **Status: `Updated`**   (Draft|In-Progress|Updated|Aligned|Deprecated)  
-> **Date:** `25-10-20`  
+> **Date:** `2025-10-24`  
 > **Deciders:** `현희찬`
 
 > **Non-Authoritative!!**: `Aligned`이 아닌 UC 문서는 참고용  
@@ -41,6 +41,10 @@
   "itemKinds": 3, "totalQty": 120,
   "lines": [
     { "lineId": 1, "product": { "productNo":"P-1001","name":"..." ,"imgUrl":"/img" },
-      "orderedQty": 50, "inspectedQty": 48, "status": "ACCEPTED|RETURNED|IN_PROGRESS|PENDING" }
+      "orderedQty": 50, "inspectedQty": 48, "status": "ACCEPTED|REJECTED|IN_PROGRESS|PENDING" }
   ]
 }
+
+## References
+- Policy: [receiving-inspection.md](../../policy/receiving-inspection.md)
+- ADR: [ADR-05-Use-Cases-are-Non-Authoritative.md](../../adr/ADR-05-Use-Cases-are-Non-Authoritative.md)

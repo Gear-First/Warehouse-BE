@@ -1,7 +1,7 @@
 # UC-REC-002 오늘 완료 입고 목록 조회
 
 > **Status: `Updated`**   (Draft|In-Progress|Updated|Aligned|Deprecated)  
-> **Date:** `25-10-20`  
+> **Date:** `2025-10-24`  
 > **Deciders:** `현희찬`
 
 > **Non-Authoritative!!**: `Aligned`이 아닌 UC 문서는 참고용  
@@ -9,7 +9,7 @@
 
 ## Intent
 
-오늘 완료(`COMPLETED`)된 입고 납품서 목록을 조회
+오늘 완료된(`COMPLETED_OK | COMPLETED_ISSUE`) 입고 납품서 목록을 조회
 
 ## Main Flow
 
@@ -20,7 +20,7 @@
 
 - Given 오늘 완료된 납품서가 있을 때,
   When 완료 목록을 조회하면,
-  Then `COMPLETED` 상태의 납품서와 `completedAt`이 포함된 요약 DTO 리스트가 반환
+  Then `COMPLETED_OK | COMPLETED_ISSUE` 상태의 납품서와 `completedAt`이 포함된 요약 DTO 리스트가 반환
 
 ## I/O
 
@@ -30,3 +30,12 @@
 ## Errors
 
 - 400: 잘못된 날짜 포맷
+
+## Notes
+
+- 선택적 필터 사전 고지: `dateFrom`, `dateTo`, `keyword`, `status[]` (현 단계 미구현)
+- 멀티 창고(warehouseId) 필터는 향후 도입 가능성만 문서화, 현 단계 미도입
+
+## References
+- Policy: [receiving-inspection.md](../../policy/receiving-inspection.md)
+- ADR: [ADR-05-Use-Cases-are-Non-Authoritative.md](../../adr/ADR-05-Use-Cases-are-Non-Authoritative.md)
