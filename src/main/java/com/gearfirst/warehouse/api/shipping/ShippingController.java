@@ -38,7 +38,7 @@ public class ShippingController {
         return ApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_DETAIL_SUCCESS, service.getDetail(noteId));
     }
 
-    @Operation(summary = "출고 항목 업데이트", description = "출고 내역서의 특정 항목에 대해 할당 수량, 집품 수량, 상태를 업데이트합니다.")
+    @Operation(summary = "출고 항목 업데이트", description = "출고 내역서의 특정 항목에 대해 할당 수량과 집품 수량을 업데이트합니다. 상태는 서버가 도출합니다.")
     @PatchMapping("/{noteId}/lines/{lineId}")
     public ResponseEntity<ApiResponse<ShippingNoteDetailResponse>> updateLine(
             @PathVariable Long noteId,

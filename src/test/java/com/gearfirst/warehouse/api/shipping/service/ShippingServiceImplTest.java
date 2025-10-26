@@ -7,6 +7,8 @@ import com.gearfirst.warehouse.api.shipping.domain.NoteStatus;
 import com.gearfirst.warehouse.api.shipping.domain.ShippingNote;
 import com.gearfirst.warehouse.api.shipping.domain.ShippingNoteLine;
 import com.gearfirst.warehouse.api.shipping.repository.InMemoryShippingNoteRepository;
+import com.gearfirst.warehouse.common.exception.ConflictException;
+import com.gearfirst.warehouse.common.exception.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -79,8 +81,8 @@ class ShippingServiceImplTest {
     }
 
     @Test
-    @DisplayName("complete: SHORTAGE 없고 READY만 아님 -> IN_PROGRESS로 유지")
-    void complete_staysInProgress() {
+    @DisplayName("complete: SHORTAGE 없고 READY만 아님 -> 409 Conflict 발생")
+    void complete_conflict_whenNotAllReady() {
         // 임시 노트 생성: READY + PENDING (SHORTAGE 없음)
         var temp = ShippingNote.builder()
                 .noteId(9001L)
@@ -98,7 +100,26 @@ class ShippingServiceImplTest {
                 .build();
         repo.save(temp);
 
-        var resp = service.complete(9001L);
-        assertNull(resp.completedAt());
+        assertThrows(ConflictException.class, () -> service.complete(9001L));
+    }
+
+    @Test
+    @DisplayName("updateLine: allocatedQty가 orderedQty를 초과하면 BadRequestException")
+    void updateLine_allocatedExceedsOrdered() {
+        // noteId=502 lineId=10 ordered=20
+        assertThrows(BadRequestException.class, () -> service.updateLine(502L, 10L, new UpdateLineRequest(21, 0)));
+    }
+
+    @Test
+    @DisplayName("updateLine: pickedQty가 orderedQty를 초과하면 BadRequestException")
+    void updateLine_pickedExceedsOrdered() {
+        // picked>ordered(20) & picked>allocated(20) 둘 다 위반되므로 400을 기대
+        assertThrows(BadRequestException.class, () -> service.updateLine(502L, 10L, new UpdateLineRequest(20, 21)));
+    }
+
+    @Test
+    @DisplayName("updateLine: 존재하지 않는 lineId면 NotFoundException")
+    void updateLine_lineNotFound() {
+        assertThrows(NotFoundException.class, () -> service.updateLine(502L, 999L, new UpdateLineRequest(1, 1)));
     }
 }

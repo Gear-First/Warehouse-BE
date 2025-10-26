@@ -13,6 +13,8 @@ public enum ErrorStatus {
     INVALID_TOKEN(HttpStatus.BAD_REQUEST, "유효하지 않은 토큰입니다."),
     RECEIVING_ORDERED_QTY_EXCEEDS_INSPECTED_QTY(HttpStatus.BAD_REQUEST, "입고 요청 수량이 검사 수량을 초과할 수 없습니다."),
     SHIPPING_PICKED_QTY_EXCEEDS_ALLOCATED_QTY(HttpStatus.BAD_REQUEST, "출고 집품 수량이 할당 수량을 초과할 수 없습니다."),
+    SHIPPING_ALLOCATED_QTY_EXCEEDS_ORDERED_QTY(HttpStatus.BAD_REQUEST, "출고 할당 수량이 주문 수량을 초과할 수 없습니다."),
+    SHIPPING_PICKED_QTY_EXCEEDS_ORDERED_QTY(HttpStatus.BAD_REQUEST, "출고 집품 수량이 주문 수량을 초과할 수 없습니다."),
 
 
 
@@ -30,6 +32,7 @@ public enum ErrorStatus {
     /** 409 CONFLICT */
     CONFLICT_RESOURCE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 자원입니다."),
     CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED(HttpStatus.CONFLICT, "출고 전표가 더 이상 수정될 수 없는 상태입니다."),
+    CONFLICT_CANNOT_COMPLETE_WHEN_NOT_READY(HttpStatus.CONFLICT, "출고 완료 불가: READY가 아닌 라인이 포함되어 있습니다."),
 
     /** 500 SERVER_ERROR */
     FAILED_TO_SAVE_ENTITY(HttpStatus.INTERNAL_SERVER_ERROR, "엔티티 저장에 실패했습니다."),

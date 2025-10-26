@@ -55,8 +55,21 @@ public class ShippingServiceImpl implements ShippingService {
             throw new ConflictException(CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED);
         }
 
+        // 대상 라인 조회
+        ShippingNoteLine target = note.getLines().stream()
+                .filter(l -> l.getLineId().equals(lineId))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("Shipping line not found: " + lineId));
+
+        // 유효성: 0 ≤ picked ≤ allocated ≤ ordered
         if (request.pickedQty() > request.allocatedQty()) {
             throw new BadRequestException(ErrorStatus.SHIPPING_PICKED_QTY_EXCEEDS_ALLOCATED_QTY);
+        }
+        if (request.allocatedQty() > target.getOrderedQty()) {
+            throw new BadRequestException(ErrorStatus.SHIPPING_ALLOCATED_QTY_EXCEEDS_ORDERED_QTY);
+        }
+        if (request.pickedQty() > target.getOrderedQty()) {
+            throw new BadRequestException(ErrorStatus.SHIPPING_PICKED_QTY_EXCEEDS_ORDERED_QTY);
         }
 
         List<ShippingNoteLine> newLines = new ArrayList<>();
@@ -84,8 +97,16 @@ public class ShippingServiceImpl implements ShippingService {
             }
         }
 
+        // 상태 계산: 라인 중 SHORTAGE가 하나라도 있으면 즉시 DELAYED로 전이하고 completedAt 기록
+        var hasShortage = newLines.stream().anyMatch(l -> l.getStatus() == LineStatus.SHORTAGE);
         var newStatus = note.getStatus();
-        if (newStatus == NoteStatus.PENDING) newStatus = NoteStatus.IN_PROGRESS;
+        String completedAt = note.getCompletedAt();
+        if (hasShortage) {
+            newStatus = NoteStatus.DELAYED;
+            completedAt = OffsetDateTime.now(ZoneOffset.UTC).toString();
+        } else if (newStatus == NoteStatus.PENDING) {
+            newStatus = NoteStatus.IN_PROGRESS;
+        }
 
         var updated = ShippingNote.builder()
                 .noteId(note.getNoteId())
@@ -93,7 +114,7 @@ public class ShippingServiceImpl implements ShippingService {
                 .itemKindsNumber(note.getItemKindsNumber())
                 .totalQty(note.getTotalQty())
                 .status(newStatus)
-                .completedAt(note.getCompletedAt())
+                .completedAt(completedAt)
                 .lines(newLines)
                 .build();
         repository.save(updated);
@@ -106,9 +127,13 @@ public class ShippingServiceImpl implements ShippingService {
         boolean hasShortage = note.getLines().stream().anyMatch(l -> l.getStatus() == LineStatus.SHORTAGE);
         boolean allReady = note.getLines().stream().allMatch(l -> l.getStatus() == LineStatus.READY);
 
-        var finalStatus = hasShortage ? NoteStatus.DELAYED : (allReady ? NoteStatus.COMPLETED : NoteStatus.IN_PROGRESS);
-        var completedAt = (finalStatus == NoteStatus.COMPLETED || finalStatus == NoteStatus.DELAYED)
-                ? OffsetDateTime.now(ZoneOffset.UTC).toString() : null;
+        if (!hasShortage && !allReady) {
+            // READY만 아닌 상태가 섞여 있으면 완료 불가 (409)
+            throw new ConflictException(ErrorStatus.CONFLICT_CANNOT_COMPLETE_WHEN_NOT_READY);
+        }
+
+        var finalStatus = hasShortage ? NoteStatus.DELAYED : NoteStatus.COMPLETED;
+        var completedAt = OffsetDateTime.now(ZoneOffset.UTC).toString();
 
         var updated = ShippingNote.builder()
                 .noteId(note.getNoteId())
