@@ -48,18 +48,18 @@ class ShippingServiceImplTest {
     @DisplayName("updateLine: PENDING 노트는 IN_PROGRESS로 전이되고 라인 값이 반영된다")
     void updateLine_transitionsAndUpdates() {
         // noteId=502 (PENDING), lineId=10 존재
-        var updated = service.updateLine(502L, 10L, new UpdateLineRequest(5, 3, "READY"));
+        var updated = service.updateLine(502L, 10L, new UpdateLineRequest(5, 3));
         assertEquals("IN_PROGRESS", updated.status());
         var line = updated.lines().stream().filter(l -> l.lineId().equals(10L)).findFirst().orElseThrow();
         assertEquals(5, line.allocatedQty());
         assertEquals(3, line.pickedQty());
-        assertEquals("READY", line.status());
+        assertEquals("PENDING", line.status());
     }
 
     @Test
     @DisplayName("updateLine: pickedQty > allocatedQty면 BadRequestException")
     void updateLine_ruleViolation() {
-        assertThrows(BadRequestException.class, () -> service.updateLine(501L, 1L, new UpdateLineRequest(2, 3, "READY")));
+        assertThrows(BadRequestException.class, () -> service.updateLine(501L, 1L, new UpdateLineRequest(2, 3)));
     }
 
     @Test

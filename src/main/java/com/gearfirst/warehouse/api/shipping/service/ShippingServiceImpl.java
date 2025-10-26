@@ -54,6 +54,11 @@ public class ShippingServiceImpl implements ShippingService {
         List<ShippingNoteLine> newLines = new ArrayList<>();
         for (var l : note.getLines()) {
             if (l.getLineId().equals(lineId)) {
+                // 서버 도출: READY if picked == allocated and allocated > 0, otherwise PENDING (SHORTAGE 판단은 후속 단계에서 onHand 기반)
+                LineStatus derivedStatus = (request.allocatedQty() > 0 && request.pickedQty().equals(request.allocatedQty()))
+                        ? LineStatus.READY
+                        : LineStatus.PENDING;
+
                 newLines.add(ShippingNoteLine.builder()
                         .lineId(l.getLineId())
                         .productId(l.getProductId())
@@ -64,7 +69,7 @@ public class ShippingServiceImpl implements ShippingService {
                         .orderedQty(l.getOrderedQty())
                         .allocatedQty(request.allocatedQty())
                         .pickedQty(request.pickedQty())
-                        .status(LineStatus.valueOf(request.status()))
+                        .status(derivedStatus)
                         .build());
             } else {
                 newLines.add(l);

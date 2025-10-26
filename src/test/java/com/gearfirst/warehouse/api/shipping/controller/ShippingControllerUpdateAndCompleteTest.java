@@ -40,7 +40,7 @@ class ShippingControllerUpdateAndCompleteTest {
     @DisplayName("PATCH /api/v1/shipping/{noteId}/lines/{lineId} - 성공적으로 라인을 업데이트한다")
     void updateLine_success() throws Exception {
         // given
-        var req = new UpdateLineRequest(10, 8, "READY");
+        var req = new UpdateLineRequest(10, 8);
         var lines = List.of(new ShippingNoteLineResponse(1L,
                 new ShippingProductResponse(11L, "LOT-A", "S-01", "볼트", "/img"),
                 10, 10, 8, "READY"));
@@ -62,7 +62,7 @@ class ShippingControllerUpdateAndCompleteTest {
     @DisplayName("PATCH /api/v1/shipping/{noteId}/lines/{lineId} - pickedQty > allocatedQty면 422를 반환한다")
     void updateLine_validationError() throws Exception {
         // given
-        var req = new UpdateLineRequest(5, 8, "READY");
+        var req = new UpdateLineRequest(5, 8);
         when(shippingService.updateLine(eq(4002L), eq(1L), org.mockito.ArgumentMatchers.any(UpdateLineRequest.class)))
                 .thenThrow(new BadRequestException(ErrorStatus.SHIPPING_PICKED_QTY_EXCEEDS_ALLOCATED_QTY));
 
