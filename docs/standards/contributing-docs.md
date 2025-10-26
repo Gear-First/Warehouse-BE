@@ -20,7 +20,7 @@
 
 ## 표준 준수
 - 응답 래퍼: ApiResponse<T>; 목록은 PageEnvelope({items,page,size,total}) 권장(문서 적용, 구현은 후속)
-- 오류 예시: 최소 1개의 4xx(400/409/422) 포함
+- 오류 예시: 최소 1개의 4xx(400/409) 포함 — 422는 사용하지 않음(standards/exception-and-response.md 참조)
 - 상태/용어: glossary.md 참조, 정책과 일치
 
 ## 리뷰 체크리스트

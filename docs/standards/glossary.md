@@ -1,14 +1,14 @@
 # Glossary (상태/수량/식별자)
 
-- Status: Draft
-- Date: 2025-10-24
+- Status: Updated
+- Date: 2025-10-27
 - Deciders: 현희찬
 
 ## 상태(State)
 - Shipping Note: PENDING → IN_PROGRESS → COMPLETED | DELAYED
-- Shipping Line: PENDING → IN_PROGRESS → READY | SHORTAGE
+- Shipping Line: PENDING → READY | SHORTAGE
 - Receiving Note: PENDING → IN_PROGRESS → COMPLETED_OK | COMPLETED_ISSUE
-- Receiving Line: PENDING → IN_PROGRESS → ACCEPTED | REJECTED
+- Receiving Line: PENDING → ACCEPTED | REJECTED
 
 ## 수량(Quantities)
 - orderedQty: 지시/주문 수량(>0)
@@ -30,5 +30,6 @@
 - PageEnvelope: 목록 응답 래퍼 { items, page, size, total }
 
 ## 참고
+- minutes: context/minute-of-functional-spec.md (상태 정의의 최상위 요약)
 - 정책: policy/shipping-fulfillment.md, policy/receiving-inspection.md
 - ADR: ADR-05 Use Cases are Non-Authoritative

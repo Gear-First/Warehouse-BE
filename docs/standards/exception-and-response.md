@@ -5,11 +5,18 @@
 
 ## 예외 표준
 
-- 모든 컨트롤러 예외는 ControllerExceptionAdvice에서 전역 처리
+- 모든 컨트롤러 예외는 GlobalExceptionHandler에서 전역 처리
 - 도메인/상황별 예외는 BaseException 상속, 네이밍은 XXXException
 - 예) BadRequestException, NotFoundException, UnAuthorizedException.
 
 > 상세 배경은 ADR-002 참조.
+
+### HTTP 코드 가이드(문서 기준)
+- 400 Bad Request: 입력 검증 실패(범위/포맷/누락 등)
+- 401 Unauthorized: 인증 실패
+- 404 Not Found: 대상 미존재(note/line/part 등)
+- 409 Conflict: 도메인 규칙 위반으로 인한 진행 불가(예: DELAYED 이후 변경 차단, 완료 불가 상태)
+- 422 Unprocessable Entity: 사용하지 않음(현 API는 400을 사용). 과거 UC에서 422 표기는 400으로 정규화한다
 
 ## ApiResponse<T> 및 관련 Enum 정리
 
@@ -26,13 +33,12 @@
 
 ```json
 {
-  "status": 200, // HTTP 상태 코드
-  "success": true,        // 성공 여부
-  "message": "요청이 성공적으로 처리되었습니다.", // 상태 메시지
-  "data": {          // 데이터 필드, 성공 시 포함
+  "status": 200,
+  "success": true,
+  "message": "요청이 성공적으로 처리되었습니다.",
+  "data": {
     "id": 1,
-    "name": "Sample Item",
-    ... // 기타 데이터 필드
+    "name": "Sample Item"
   }
 }
 ```
@@ -79,7 +85,7 @@
 
 ```json
 {
-  "items": [ /* 도메인별 아이템 배열 */ ],
+  "items": [],
   "page": 0,
   "size": 20,
   "total": 123
@@ -110,6 +116,6 @@
 ```
 
 - Shipping 완료 실패(UC-SHP-005): `problematicLines[].status = SHORTAGE`, `reason = onHand<ordered`
-- Receiving 완료 실패(UC-REC-005): `problematicLines[]`는 `ACCEPTED/REJECTED` 외 상태(예: IN_PROGRESS)를 포함하는 라인 스냅샷
+- Receiving 완료 실패(UC-REC-005): `problematicLines[]`는 `ACCEPTED/REJECTED` 외 상태(예: PENDING)를 포함하는 라인 스냅샷
 
 > 구현 주의: 컨트롤러/핸들러에서 409 반환 시 `data`는 선택. 본 표준은 문서 단계이며, 실제 코드는 후속 PR에서 반영한다.

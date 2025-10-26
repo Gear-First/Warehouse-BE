@@ -31,7 +31,7 @@
 - **Given** `REJECTED` 라인이 하나 이상 포함되어 있고,  
   **When** 완료를 요청하면,  
   **Then** **`ACCEPTED` 라인 합계만** 재고가 증가하고 노트는 `COMPLETED_ISSUE`가 된다.
-- **Given** `ACCEPTED`/`REJECTED` 외의 상태(예: `IN_PROGRESS`, `PENDING`) 라인이 하나라도 있고,  
+- **Given** `ACCEPTED`/`REJECTED` 외의 상태(예: `PENDING`) 라인이 하나라도 있고,
   **When** 완료를 요청하면,  
   **Then** 409(완료 불가)가 반환된다.
 
@@ -53,6 +53,8 @@
 }
 ```
 
+## Implementation Note
+- 실제 재고 증가 처리(Inventory 반영)는 도메인 서비스/애플리케이션 서비스 계층에서 수행되며, 본 문서는 결과 스냅샷 형태만 정의한다. 구현은 후속 PR에서 반영된다.
 
 ## Errors
 
@@ -68,7 +70,7 @@
     "noteId": 301,
     "noteStatus": "IN_PROGRESS",
     "problematicLines": [
-      { "lineId": 7, "part": { "code": "P-1003", "name": "에어필터" }, "orderedQty": 50, "inspectedQty": 48, "status": "IN_PROGRESS", "reason": "미검수 라인 존재" }
+      { "lineId": 7, "part": { "code": "P-1003", "name": "에어필터" }, "orderedQty": 50, "inspectedQty": 48, "status": "PENDING", "reason": "미검수 라인 존재" }
     ]
   }
 }

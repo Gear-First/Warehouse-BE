@@ -12,7 +12,7 @@
 - **Note:** `PENDING → IN_PROGRESS → COMPLETED | DELAYED`
     - DELAYED = 정책상 “지급 지연(노트 완료 불가)” 의미
     - DELAYED 노트 재시작 관련 정책은 후속 PR에서 정의(TODO)
-- **Line:** `PENDING → IN_PROGRESS → READY | SHORTAGE`
+- **Line:** `PENDING → READY | SHORTAGE`
 
 ## ShippingNote (Aggregate Root)
 
@@ -47,10 +47,11 @@
 
 ### 책임
 
-- **유효성:** `orderedQty > 0`, `inspectedQty ≥ 0`; 완료 상태 재수정 금지
-- **진행 반영/변경:** `applyProgress(inspectedQty, onHand)`
-    - `onHand < orderedQty` => `SHORTAGE`
-    - 그 외 진행 완료 => `READY`
+- **유효성:** `orderedQty > 0`, `0 ≤ pickedQty ≤ allocatedQty ≤ orderedQty`; 완료 상태 재수정 금지
+- **진행 반영/변경:** `applyProgress(allocatedQty, pickedQty, onHand)`
+    - `onHand < allocatedQty` => `SHORTAGE`
+    - `onHand ≥ allocatedQty` 이고 `pickedQty == allocatedQty` => `READY`
+    - 그 외(예: pickedQty < allocatedQty, onHand 충분) => 상태 유지(`PENDING`)
 - **완료 판정:** `isDone()`는 `READY | SHORTAGE` 중 하나일 때 true
 
 ### 협력
@@ -75,7 +76,7 @@
 ### 라인 진행 갱신 (UC-SHP-004)
 
 - 상위 레이어가 onHand를 조회하여 `applyProgress()`에 전달
-- 라인이 `SHORTAGE` 또는 `ISSUE`로 변경되면 **노트는 즉시 `DELAYED`**로 전환된다
+- 라인이 `SHORTAGE`로 변경되면 **노트는 즉시 `DELAYED`**로 전환된다
 
 ### 출고 완료 (UC-SHP-005)
 

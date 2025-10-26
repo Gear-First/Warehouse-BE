@@ -43,11 +43,46 @@
 - Request `{ "inspectedQty": 48, "hasIssue": false }`
 - Response: 최신 NoteDetail 스냅샷
 
+예시(ACCEPTED 결과):
+```json
+{
+  "noteId": 301,
+  "status": "IN_PROGRESS",
+  "lines": [
+    {
+      "lineId": 7,
+      "part": { "code": "P-1001", "name": "오일필터" },
+      "orderedQty": 50,
+      "inspectedQty": 48,
+      "status": "ACCEPTED"
+    }
+  ]
+}
+```
+
+예시(REJECTED 결과):
+```json
+{
+  "noteId": 301,
+  "status": "IN_PROGRESS",
+  "lines": [
+    {
+      "lineId": 8,
+      "part": { "code": "P-1002", "name": "에어필터" },
+      "orderedQty": 40,
+      "inspectedQty": 0,
+      "status": "REJECTED",
+      "remark": "파손 발견"
+    }
+  ]
+}
+```
+
 ## Errors
 
 - 404: note/line 미존재
 - 409: 완료 라인 재수정
-- 422: 음수 수량 등 유효성 실패
+- 400: 음수 수량 등 유효성 실패
 
 ## References
 - Policy: [receiving-inspection.md](../../policy/receiving-inspection.md)

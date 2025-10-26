@@ -26,9 +26,9 @@
   "assignee": { "name": "홍길동", "dept": "물류", "phone": "010-0000-0000" },
   "remark": null,
   "lines": [
-    { "lineId": 1, "product": { "productNo":"P-1001","name":"...","unit":"EA","imgUrl":"/img" },
+    { "lineId": 1, "product": { "productNo":"P-1001","name":"...","imgUrl":"/img" },
       "orderedQty": 30, "allocatedQty": 30, "pickedQty": 28,
-      "status": "READY|SHORTAGE|IN_PROGRESS|PENDING" }
+      "status": "PENDING|READY|SHORTAGE" }
   ]
 }
 ```

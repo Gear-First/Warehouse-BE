@@ -8,6 +8,7 @@
 
 - 독립 도메인으로 문서화만 진행. 현 단계에서는 입고/출고와 연동하지 않는다(재고 도메인 도입 이후 점진 통합 예정).
 - 본 문서는 최소 스키마와 검색 기준을 정의한다. 구현(API/엔티티)은 후속 PR에서 진행한다.
+- CRUD 범위(결정): MVP에서는 PartCategory/Part CRUD만 문서화 및 구현 대상으로 한다. CarModel/PartCarModel은 매핑 정보만 유지하며 CRUD는 범위 밖(OOS). 사유: 초기 운영에서 차량 모델은 변동이 적고 외부 카탈로그 연동을 고려 중이므로 별도 이니셔티브로 분리.
 
 ## ERD(개념)
 
@@ -18,8 +19,10 @@
 
 ### PartCategory
 - id: Long (PK)
-- name: String (필수, 유니크)
-- description: String (선택)
+- name: String (필수, 유니크, 2..50)
+- description: String (선택, 0..200)
+- createdAt/updatedAt: datetime
+- enabled: boolean (soft delete 용, 기본 true)
 
 Indexes
 - UQ_part_category_name(name)
@@ -27,18 +30,16 @@ Indexes
 ### Part
 - id: Long (PK)
 - code: String (필수, 유니크)
-- name: String (필수)
-- unit: String (필수, 예: EA, BOX)
-- price: Number (필수)
+- name: String (필수, 2..100)
+- price: Number (필수, >=0)
 - categoryId: Long (FK → PartCategory.id, 필수)
 - imageUrl: String (선택)
+- enabled: boolean (soft delete 용, 기본 true)
+- createdAt/updatedAt: datetime
 
 Indexes
 - UQ_part_code(code)
 - IDX_part_category(categoryId)
-
-Notes
-- price만 사용(통화 표기 없음)
 
 ### CarModel
 - id: Long (PK)
@@ -68,7 +69,7 @@ Indexes
 {
   "partCategory": { "id": 10, "name": "Filter", "description": "Oil/Air filters" },
   "part": {
-    "id": 1001, "code": "P-1001", "name": "오일필터", "unit": "EA", "price": 12000,
+    "id": 1001, "code": "P-1001", "name": "오일필터", "price": 12000,
     "categoryId": 10, "imageUrl": "/img/parts/p-1001.png"
   },
   "carModel": { "id": 501, "maker": "Hyundai", "name": "Avante", "yearRange": "2020-2024" },
@@ -79,7 +80,3 @@ Indexes
 ## Query Strategy(향후)
 - 현 단계: Spring Data/JPQL 유지.
 - 파일럿 후보: Parts Read 검색에서 Querydsl 도입 검토(후속 PR).
-
-## References
-- ADR: docs/adr/ADR-05-Use-Cases-are-Non-Authoritative.md
-- Standards(추가 예정): query-strategy, glossary, acceptance-checklists

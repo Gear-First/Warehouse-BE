@@ -13,7 +13,7 @@
 ## 상태 정의(정합화)
 
 - Note: PENDING → IN_PROGRESS → COMPLETED_OK | COMPLETED_ISSUE
-- Line: PENDING → IN_PROGRESS → ACCEPTED | REJECTED
+- Line: PENDING → ACCEPTED | REJECTED
 - REJECTED 트리거: 파손/부족 등 검수 이슈가 발생하면 해당 라인은 전량 거부(REJECTED)
 
 ## 적용 수량 규칙
