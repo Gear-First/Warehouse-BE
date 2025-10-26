@@ -29,6 +29,7 @@ public enum ErrorStatus {
 
     /** 409 CONFLICT */
     CONFLICT_RESOURCE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 자원입니다."),
+    CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED(HttpStatus.CONFLICT, "출고 전표가 더 이상 수정될 수 없는 상태입니다."),
 
     /** 500 SERVER_ERROR */
     FAILED_TO_SAVE_ENTITY(HttpStatus.INTERNAL_SERVER_ERROR, "엔티티 저장에 실패했습니다."),

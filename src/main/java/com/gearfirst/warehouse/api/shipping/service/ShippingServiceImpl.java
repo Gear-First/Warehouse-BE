@@ -1,7 +1,10 @@
 package com.gearfirst.warehouse.api.shipping.service;
 
+import static com.gearfirst.warehouse.common.response.ErrorStatus.CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED;
+
 import com.gearfirst.warehouse.api.shipping.dto.*;
 import com.gearfirst.warehouse.common.exception.BadRequestException;
+import com.gearfirst.warehouse.common.exception.ConflictException;
 import com.gearfirst.warehouse.common.exception.NotFoundException;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
 import com.gearfirst.warehouse.api.shipping.domain.*;
@@ -46,6 +49,11 @@ public class ShippingServiceImpl implements ShippingService {
     @Override
     public ShippingNoteDetailResponse updateLine(Long noteId, Long lineId, UpdateLineRequest request) {
         var note = repository.findById(noteId).orElseThrow(() -> new NotFoundException("Shipping note not found: " + noteId));
+
+        // DELAYED/COMPLETED 상태에서는 수정 차단 (409)
+        if (note.getStatus() == NoteStatus.DELAYED || note.getStatus() == NoteStatus.COMPLETED) {
+            throw new ConflictException(CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED);
+        }
 
         if (request.pickedQty() > request.allocatedQty()) {
             throw new BadRequestException(ErrorStatus.SHIPPING_PICKED_QTY_EXCEEDS_ALLOCATED_QTY);
