@@ -23,6 +23,7 @@ import java.util.List;
 public class ShippingServiceImpl implements ShippingService {
 
     private final ShippingNoteRepository repository;
+    private final OnHandProvider onHandProvider;
 
     @Override
     public List<ShippingNoteSummaryResponse> getNotDone(String date) {
@@ -75,10 +76,19 @@ public class ShippingServiceImpl implements ShippingService {
         List<ShippingNoteLine> newLines = new ArrayList<>();
         for (var l : note.getLines()) {
             if (l.getLineId().equals(lineId)) {
-                // 서버 도출: READY if picked == allocated and allocated > 0, otherwise PENDING (SHORTAGE 판단은 후속 단계에서 onHand 기반)
-                LineStatus derivedStatus = (request.allocatedQty() > 0 && request.pickedQty().equals(request.allocatedQty()))
-                        ? LineStatus.READY
-                        : LineStatus.PENDING;
+                // 서버 도출(온핸드 반영):
+                // SHORTAGE if onHand < allocated
+                // READY if allocated > 0 and picked == allocated and onHand >= allocated
+                // otherwise PENDING
+                int onHand = onHandProvider.getOnHandQty(l.getProductId());
+                LineStatus derivedStatus;
+                if (request.allocatedQty() > onHand) {
+                    derivedStatus = LineStatus.SHORTAGE;
+                } else if (request.allocatedQty() > 0 && request.pickedQty().equals(request.allocatedQty())) {
+                    derivedStatus = LineStatus.READY;
+                } else {
+                    derivedStatus = LineStatus.PENDING;
+                }
 
                 newLines.add(ShippingNoteLine.builder()
                         .lineId(l.getLineId())

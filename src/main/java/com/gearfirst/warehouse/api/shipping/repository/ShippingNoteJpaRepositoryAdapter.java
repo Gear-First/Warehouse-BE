@@ -20,12 +20,29 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
     @Override
     public List<ShippingNote> findNotDone(String date) {
         var notDone = jpaRepository.findAllByStatusNotIn(List.of(NoteStatus.COMPLETED, NoteStatus.DELAYED));
+        // Optional date filter (yyyy-MM-dd) on createdAt; ignore if parsing fails or createdAt is null
+        if (date != null && !date.isBlank()) {
+            try {
+                var target = java.time.LocalDate.parse(date);
+                notDone = notDone.stream()
+                        .filter(e -> e.getCreatedAt() != null && e.getCreatedAt().toLocalDate().isEqual(target))
+                        .toList();
+            } catch (Exception ignored) { /* keep unfiltered on parse error */ }
+        }
         return notDone.stream().map(this::toDomain).toList();
     }
 
     @Override
     public List<ShippingNote> findDone(String date) {
         var done = jpaRepository.findAllByStatusIn(List.of(NoteStatus.COMPLETED, NoteStatus.DELAYED));
+        if (date != null && !date.isBlank()) {
+            try {
+                var target = java.time.LocalDate.parse(date);
+                done = done.stream()
+                        .filter(e -> e.getCreatedAt() != null && e.getCreatedAt().toLocalDate().isEqual(target))
+                        .toList();
+            } catch (Exception ignored) { }
+        }
         return done.stream().map(this::toDomain).toList();
     }
 

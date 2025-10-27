@@ -13,7 +13,7 @@ Date: 2025-10-27
 - Policy
   - [Receiving Inspection](policy/receiving-inspection.md)
   - [Shipping Fulfillment](policy/shipping-fulfillment.md)
-  - [Inventory Overview](/docs/policy/inventory-overview.md)
+  - [Inventory Overview](policy/inventory-overview.md)
 - Use Cases
   - Receiving: docs/uc/01-receiving/*
   - Shipping: docs/uc/02-shipping/*

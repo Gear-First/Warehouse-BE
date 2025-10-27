@@ -15,8 +15,10 @@ public enum ErrorStatus {
     SHIPPING_PICKED_QTY_EXCEEDS_ALLOCATED_QTY(HttpStatus.BAD_REQUEST, "출고 집품 수량이 할당 수량을 초과할 수 없습니다."),
     SHIPPING_ALLOCATED_QTY_EXCEEDS_ORDERED_QTY(HttpStatus.BAD_REQUEST, "출고 할당 수량이 주문 수량을 초과할 수 없습니다."),
     SHIPPING_PICKED_QTY_EXCEEDS_ORDERED_QTY(HttpStatus.BAD_REQUEST, "출고 집품 수량이 주문 수량을 초과할 수 없습니다."),
-
-
+    PART_CATEGORY_NAME_INVALID(HttpStatus.BAD_REQUEST, "카테고리 이름이 유효하지 않습니다."),
+    PART_CODE_INVALID(HttpStatus.BAD_REQUEST, "부품 코드가 유효하지 않습니다."),
+    PART_NAME_INVALID(HttpStatus.BAD_REQUEST, "부품 이름이 유효하지 않습니다."),
+    PART_PRICE_INVALID(HttpStatus.BAD_REQUEST, "부품 가격이 유효하지 않습니다."),
 
     /** 401 UNAUTHORIZED */
     USER_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증되지 않은 사용자입니다."),
@@ -33,6 +35,12 @@ public enum ErrorStatus {
     CONFLICT_RESOURCE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 자원입니다."),
     CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED(HttpStatus.CONFLICT, "출고 전표가 더 이상 수정될 수 없는 상태입니다."),
     CONFLICT_CANNOT_COMPLETE_WHEN_NOT_READY(HttpStatus.CONFLICT, "출고 완료 불가: READY가 아닌 라인이 포함되어 있습니다."),
+    CONFLICT_RECEIVING_LINE_ALREADY_DONE(HttpStatus.CONFLICT, "입고 라인이 이미 완료되어 수정할 수 없습니다."),
+    CONFLICT_RECEIVING_NOTE_ALREADY_COMPLETED(HttpStatus.CONFLICT, "입고 전표가 이미 완료 상태입니다."),
+    CONFLICT_RECEIVING_CANNOT_COMPLETE_WHEN_NOT_DONE(HttpStatus.CONFLICT, "입고 완료 불가: 진행 중 라인이 존재합니다."),
+    PART_CATEGORY_NAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 카테고리 이름입니다."),
+    PART_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 부품 코드입니다."),
+    PART_CATEGORY_HAS_PARTS(HttpStatus.CONFLICT, "카테고리에 속한 부품이 있어 삭제할 수 없습니다."),
 
     /** 500 SERVER_ERROR */
     FAILED_TO_SAVE_ENTITY(HttpStatus.INTERNAL_SERVER_ERROR, "엔티티 저장에 실패했습니다."),

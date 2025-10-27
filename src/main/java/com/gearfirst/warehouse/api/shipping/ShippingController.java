@@ -16,6 +16,7 @@ import java.util.List;
 @Controller
 @RequestMapping("/api/v1/shipping")
 @RequiredArgsConstructor
+@io.swagger.v3.oas.annotations.tags.Tag(name = "Shipping", description = "출고 API: 서버가 상태를 도출하며 SHORTAGE 시 DELAYED 전이")
 public class ShippingController {
 
     private final ShippingService service;
@@ -50,8 +51,8 @@ public class ShippingController {
     }
 
     @PostMapping("/{noteId}:complete")
-    public ResponseEntity<ShippingCompleteResponse> complete(@PathVariable Long noteId) {
+    public ResponseEntity<ApiResponse<ShippingCompleteResponse>> complete(@PathVariable Long noteId) {
         var resp = service.complete(noteId);
-        return ResponseEntity.ok(resp);
+        return ApiResponse.success(SuccessStatus.SEND_SHIPPING_COMPLETE_SUCCESS, resp);
     }
 }

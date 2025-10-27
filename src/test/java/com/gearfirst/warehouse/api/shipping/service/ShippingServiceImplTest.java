@@ -9,6 +9,7 @@ import com.gearfirst.warehouse.api.shipping.domain.ShippingNoteLine;
 import com.gearfirst.warehouse.api.shipping.repository.InMemoryShippingNoteRepository;
 import com.gearfirst.warehouse.common.exception.ConflictException;
 import com.gearfirst.warehouse.common.exception.NotFoundException;
+import com.gearfirst.warehouse.api.shipping.service.OnHandProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,7 +28,8 @@ class ShippingServiceImplTest {
     @BeforeEach
     void setUp() {
         repo = new InMemoryShippingNoteRepository();
-        service = new ShippingServiceImpl(repo);
+        OnHandProvider provider = productId -> Integer.MAX_VALUE / 2; // default: sufficient stock
+        service = new ShippingServiceImpl(repo, provider);
     }
 
     @Test
