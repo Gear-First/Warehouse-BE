@@ -64,15 +64,15 @@ class ShippingControllerNegativeTest {
     }
 
     @Test
-    @DisplayName("PATCH /api/v1/shipping/{noteId}/lines/{lineId} - status 패턴 위반 시 400 반환")
-    void updateLine_statusPatternError() throws Exception {
-        // given: 잘못된 status 값
-        var invalid = new com.gearfirst.warehouse.api.shipping.dto.UpdateLineRequest(5, 3, "INVALID_STATUS");
+    @DisplayName("PATCH /api/v1/shipping/{noteId}/lines/{lineId} - 필수 필드 누락 시 400 반환")
+    void updateLine_requiredFieldMissing() throws Exception {
+        // given: pickedQty 누락
+        var invalidJson = "{\n  \"allocatedQty\": 5\n}";
 
         // when & then
         mockMvc.perform(patch("/api/v1/shipping/{noteId}/lines/{lineId}", 100L, 10L)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalid)))
+                        .content(invalidJson))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.status", is(400)));

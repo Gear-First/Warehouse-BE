@@ -19,6 +19,20 @@ public enum SuccessStatus {
     SEND_SHIPPING_NOTE_DETAIL_SUCCESS(HttpStatus.OK, "출고요청서 상세 조회 성공"),
     SEND_SHIPPING_COMPLETE_SUCCESS(HttpStatus.OK, "출고 완료 처리 성공"),
     SEND_SHIPPING_NOTE_LINE_UPDATE_SUCCESS(HttpStatus.OK, "출고요청서 항목 수정 성공"),
+
+    SEND_PART_CATEGORY_LIST_SUCCESS(HttpStatus.OK, "부품 카테고리 목록 조회 성공"),
+    SEND_PART_CATEGORY_DETAIL_SUCCESS(HttpStatus.OK, "부품 카테고리 상세 조회 성공"),
+    SEND_PART_CATEGORY_CREATE_SUCCESS(HttpStatus.OK, "부품 카테고리 생성 성공"),
+    SEND_PART_CATEGORY_UPDATE_SUCCESS(HttpStatus.OK, "부품 카테고리 수정 성공"),
+    SEND_PART_CATEGORY_DELETE_SUCCESS(HttpStatus.OK, "부품 카테고리 삭제 성공"),
+
+    SEND_PART_LIST_SUCCESS(HttpStatus.OK, "부품 목록 조회 성공"),
+    SEND_PART_DETAIL_SUCCESS(HttpStatus.OK, "부품 상세 조회 성공"),
+    SEND_PART_CREATE_SUCCESS(HttpStatus.OK, "부품 생성 성공"),
+    SEND_PART_UPDATE_SUCCESS(HttpStatus.OK, "부품 수정 성공"),
+    SEND_PART_DELETE_SUCCESS(HttpStatus.OK, "부품 삭제 성공"),
+
+    SEND_INVENTORY_ONHAND_LIST_SUCCESS(HttpStatus.OK, "재고 현황 목록 조회 성공"),
     /** 201 CREATED */
 
     /** 202 ACCEPTED */

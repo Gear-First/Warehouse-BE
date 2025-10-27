@@ -1,7 +1,7 @@
 # UC-REC-003 입고 납품서 상세 조회
 
 > **Status: `Updated`**   (Draft|In-Progress|Updated|Aligned|Deprecated)  
-> **Date:** `25-10-20`  
+> **Date:** `2025-10-24`  
 > **Deciders:** `현희찬`
 
 > **Non-Authoritative!!**: `Aligned`이 아닌 UC 문서는 참고용  
@@ -37,10 +37,35 @@
 
 ```json
 {
-  "noteId": 101, "supplierName": "...", "status": "IN_PROGRESS",
-  "itemKinds": 3, "totalQty": 120,
+  "noteId": 101,
+  "receivingNo": "IN/WH1/20251024/001",
+  "warehouse": { "id": "WH1", "name": "본사창고" },
+  "supplier": { "name": "ABC공장", "code": "SUP-001" },
+  "requestedAt": "2025-10-24T08:00:00Z",
+  "expectedReceiveDate": "2025-10-25",
+  "receivedAt": null,
+  "inspector": { "name": "홍길동", "dept": "물류", "phone": "010-0000-0000" },
+  "remark": null,
+  "status": "IN_PROGRESS",
+  "itemKinds": 3,
+  "totalQty": 120,
   "lines": [
-    { "lineId": 1, "product": { "productNo":"P-1001","name":"..." ,"imgUrl":"/img" },
-      "orderedQty": 50, "inspectedQty": 48, "status": "ACCEPTED|RETURNED|IN_PROGRESS|PENDING" }
+    {
+      "lineId": 1,
+      "lotNo": "LOT-2401",
+      "part": { "code": "P-1001", "name": "오일필터" },
+      "orderedQty": 50,
+      "inspectedQty": 48,
+      "status": "PENDING|ACCEPTED|REJECTED",
+      "lineRemark": null
+    }
   ]
 }
+```
+
+## Errors
+- 404: noteId 미존재
+
+## References
+- Policy: [receiving-inspection.md](../../policy/receiving-inspection.md)
+- ADR: [ADR-05-Use-Cases-are-Non-Authoritative.md](../../adr/ADR-05-Use-Cases-are-Non-Authoritative.md)

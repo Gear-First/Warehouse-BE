@@ -6,6 +6,6 @@ public record ReceivingNoteLineResponse(
         int orderedQty,
         int inspectedQty,
         int issueQty,
-        String status // NOT_STARTED | IN_PROGRESS | DONE_OK | DONE_ISSUE
+        String status // PENDING | ACCEPTED | REJECTED (Mock model for current phase)
 ) {
 }

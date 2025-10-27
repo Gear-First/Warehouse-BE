@@ -7,7 +7,7 @@ public record ReceivingNoteDetailResponse(
         String supplierName,
         int itemKindsNumber,
         int totalQty,
-        String status,       // PENDING | IN_PROGRESS | DONE_OK | DONE_ISSUE
+        String status,       // PENDING | IN_PROGRESS | COMPLETED_OK | COMPLETED_ISSUE
         String completedAt,   // ISO8601 string or null
         List<ReceivingNoteLineResponse> lines
 ) {

@@ -1,7 +1,7 @@
 # OOP CRC – Shipping (MVP, Defensive Cancel Policy)
 
 - Status: Accepted
-- Date: 2025-10-21
+- Date: 2025-10-24
 - Deciders: 현희찬
 
 > 본 문서는 객체의 **역할·책임·협력**만 기술함
@@ -9,10 +9,10 @@
 
 ## 공통 상태(요약)
 
-- **Note:** `PENDING => IN_PROGRESS => COMPLETED | DELAYED`
-    - DELAYED = 정책상 “노트 전체 취소” 의미
-    - DELAYED 노트 재시작 관련 정책 추가 필요 (TODO)
-- **Line:** `PENDING => IN_PROGRESS => READY | SHORTAGE |`
+- **Note:** `PENDING → IN_PROGRESS → COMPLETED | DELAYED`
+    - DELAYED = 정책상 “지급 지연(노트 완료 불가)” 의미
+    - DELAYED 노트 재시작 관련 정책은 후속 PR에서 정의(TODO)
+- **Line:** `PENDING → READY | SHORTAGE`
 
 ## ShippingNote (Aggregate Root)
 
@@ -23,7 +23,7 @@
 ### 책임
 
 - **라인 갱신 관문:** 첫 갱신 시 `PENDING => IN_PROGRESS` 변경 보장
-- **취소 변경:** 라인 갱신 결과가 `SHORTAGE` 또는 `ISSUE`이면 **즉시 `Note=DELAYED`**로 변경하며 이후 변경/완료를 거부
+- **지연 전이:** 라인 갱신 결과가 `SHORTAGE`이면 **즉시 `Note=DELAYED`**로 변경하며 이후 변경/완료를 거부
 - **완료 가능 판단:** 전 라인이 `READY`이고 Note가 `DELAYED`가 아닐 때만 `canComplete=true`
 - **완료 집계:**
     - `complete()` 호출
@@ -47,11 +47,11 @@
 
 ### 책임
 
-- **유효성:** `orderedQty > 0`, `inspectedQty ≥ 0`; 완료 상태 재수정 금지
-- **진행 반영/변경:** `applyProgress(inspectedQty, onHand, issue?)`
-    - `onHand < orderedQty` => `SHORTAGE`
-    - `issue != null` => `ISSUE`
-    - 위 두 조건이 아니고 진행 완료 => `READY`
+- **유효성:** `orderedQty > 0`, `0 ≤ pickedQty ≤ allocatedQty ≤ orderedQty`; 완료 상태 재수정 금지
+- **진행 반영/변경:** `applyProgress(allocatedQty, pickedQty, onHand)`
+    - `onHand < allocatedQty` => `SHORTAGE`
+    - `onHand ≥ allocatedQty` 이고 `pickedQty == allocatedQty` => `READY`
+    - 그 외(예: pickedQty < allocatedQty, onHand 충분) => 상태 유지(`PENDING`)
 - **완료 판정:** `isDone()`는 `READY | SHORTAGE` 중 하나일 때 true
 
 ### 협력
@@ -76,7 +76,7 @@
 ### 라인 진행 갱신 (UC-SHP-004)
 
 - 상위 레이어가 onHand를 조회하여 `applyProgress()`에 전달
-- 라인이 `SHORTAGE` 또는 `ISSUE`로 변경되면 **노트는 즉시 `DELAYED`**로 전환된다
+- 라인이 `SHORTAGE`로 변경되면 **노트는 즉시 `DELAYED`**로 전환된다
 
 ### 출고 완료 (UC-SHP-005)
 
