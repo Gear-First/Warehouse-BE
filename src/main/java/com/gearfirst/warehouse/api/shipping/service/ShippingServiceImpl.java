@@ -2,21 +2,28 @@ package com.gearfirst.warehouse.api.shipping.service;
 
 import static com.gearfirst.warehouse.common.response.ErrorStatus.CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED;
 
-import com.gearfirst.warehouse.api.shipping.dto.*;
+import com.gearfirst.warehouse.api.shipping.domain.LineStatus;
+import com.gearfirst.warehouse.api.shipping.domain.NoteStatus;
+import com.gearfirst.warehouse.api.shipping.domain.ShippingNote;
+import com.gearfirst.warehouse.api.shipping.domain.ShippingNoteLine;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteResponse;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteDetailResponse;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteLineResponse;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteSummaryResponse;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingProductResponse;
+import com.gearfirst.warehouse.api.shipping.dto.UpdateLineRequest;
+import com.gearfirst.warehouse.api.shipping.repository.ShippingNoteRepository;
 import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.common.exception.ConflictException;
 import com.gearfirst.warehouse.common.exception.NotFoundException;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
-import com.gearfirst.warehouse.api.shipping.domain.*;
-import com.gearfirst.warehouse.api.shipping.repository.ShippingNoteRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor

@@ -3,11 +3,10 @@ package com.gearfirst.warehouse.api.receiving.repository;
 import com.gearfirst.warehouse.api.receiving.domain.ReceivingNoteStatus;
 import com.gearfirst.warehouse.api.receiving.persistence.ReceivingNoteJpaRepository;
 import com.gearfirst.warehouse.api.receiving.persistence.entity.ReceivingNoteEntity;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Repository;
-
 import java.util.List;
 import java.util.Optional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
 
 @Repository
 @RequiredArgsConstructor

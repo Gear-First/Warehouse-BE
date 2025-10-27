@@ -1,8 +1,13 @@
 package com.gearfirst.warehouse.api.shipping.repository;
 
-import com.gearfirst.warehouse.api.shipping.domain.*;
-
-import java.util.*;
+import com.gearfirst.warehouse.api.shipping.domain.LineStatus;
+import com.gearfirst.warehouse.api.shipping.domain.NoteStatus;
+import com.gearfirst.warehouse.api.shipping.domain.ShippingNote;
+import com.gearfirst.warehouse.api.shipping.domain.ShippingNoteLine;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 

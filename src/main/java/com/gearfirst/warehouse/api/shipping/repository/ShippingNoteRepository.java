@@ -1,7 +1,6 @@
 package com.gearfirst.warehouse.api.shipping.repository;
 
 import com.gearfirst.warehouse.api.shipping.domain.ShippingNote;
-
 import java.util.List;
 import java.util.Optional;
 

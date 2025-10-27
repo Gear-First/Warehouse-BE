@@ -5,14 +5,13 @@ import com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.PartRef;
 import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
-import org.springframework.stereotype.Service;
-
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
 
 @Service
 public class InventoryServiceImpl implements InventoryService {

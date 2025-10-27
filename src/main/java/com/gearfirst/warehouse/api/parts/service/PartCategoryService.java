@@ -1,7 +1,9 @@
 package com.gearfirst.warehouse.api.parts.service;
 
-import com.gearfirst.warehouse.api.parts.dto.CategoryDtos.*;
-
+import com.gearfirst.warehouse.api.parts.dto.CategoryDtos.CategoryDetailResponse;
+import com.gearfirst.warehouse.api.parts.dto.CategoryDtos.CategorySummaryResponse;
+import com.gearfirst.warehouse.api.parts.dto.CategoryDtos.CreateCategoryRequest;
+import com.gearfirst.warehouse.api.parts.dto.CategoryDtos.UpdateCategoryRequest;
 import java.util.List;
 
 public interface PartCategoryService {

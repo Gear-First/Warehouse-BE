@@ -1,7 +1,6 @@
 package com.gearfirst.warehouse.api.receiving.repository;
 
 import com.gearfirst.warehouse.api.receiving.persistence.entity.ReceivingNoteEntity;
-
 import java.util.List;
 import java.util.Optional;
 

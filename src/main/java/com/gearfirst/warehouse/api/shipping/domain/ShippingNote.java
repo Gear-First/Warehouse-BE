@@ -1,10 +1,9 @@
 package com.gearfirst.warehouse.api.shipping.domain;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-
-import java.util.List;
 
 @Getter
 @Builder
