@@ -24,7 +24,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@ActiveProfiles("test-h2")
+//@ActiveProfiles("test-h2")
 @Transactional
 class ReceivingServiceImplTest {
 

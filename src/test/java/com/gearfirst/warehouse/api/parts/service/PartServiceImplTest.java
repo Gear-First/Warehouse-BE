@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@ActiveProfiles("test-h2")
+//@ActiveProfiles("test-h2")
 @Transactional
 class PartServiceImplTest {
 
@@ -59,9 +59,9 @@ class PartServiceImplTest {
     @Test
     @DisplayName("update: 코드 변경 시 중복이면 409")
     void update_conflict_duplicateCodeOnChange() {
-        var a = partService.create(new CreatePartRequest("P-A", "A", 1000, categoryId, null));
-        var b = partService.create(new CreatePartRequest("P-B", "B", 2000, categoryId, null));
-        assertThrows(ConflictException.class, () -> partService.update(b.id(), new UpdatePartRequest("P-A", "B2", 2100, categoryId, null, true)));
+        var a = partService.create(new CreatePartRequest("P-A", "AA", 1000, categoryId, null));
+        var b = partService.create(new CreatePartRequest("P-B", "BB", 2000, categoryId, null));
+        assertThrows(ConflictException.class, () -> partService.update(b.id(), new UpdatePartRequest("P-A", "BB2", 2100, categoryId, null, true)));
     }
 
     @Test

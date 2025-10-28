@@ -12,11 +12,14 @@ import com.gearfirst.warehouse.api.parts.service.PartCategoryService;
 import com.gearfirst.warehouse.api.parts.service.PartService;
 import com.gearfirst.warehouse.common.response.ApiResponse;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
+import com.gearfirst.warehouse.common.response.PageEnvelope;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -72,17 +75,37 @@ public class PartsController {
         }
 
     // Parts
-    @Operation(summary = "부품 목록", description = "code/name/categoryId로 필터합니다. (임시) 전체 리스트 반환 후 필터 적용")
+    @Operation(summary = "부품 목록", description = "code/name/categoryId로 필터하고 페이지네이션하여 조회합니다. 컨트롤러 레벨에서 PageEnvelope로 래핑합니다.")
     @GetMapping
-    public ResponseEntity<ApiResponse<List<PartSummaryResponse>>> listParts(
+    public ResponseEntity<ApiResponse<PageEnvelope<PartSummaryResponse>>> listParts(
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String name,
-            @RequestParam(required = false) Long categoryId
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) List<String> sort
     ) {
         String c = (code == null) ? "" : code;
         String n = (name == null) ? "" : name;
         Long cat = (categoryId == null) ? 0L : categoryId; // ensure non-null to satisfy mocks expecting anyLong()
-        return ApiResponse.success(SuccessStatus.SEND_PART_LIST_SUCCESS, partService.list(c, n, cat));
+        int p = Math.max(0, page);
+        int s = Math.max(1, Math.min(size, 100));
+
+        List<PartSummaryResponse> list = partService.list(c, n, cat);
+
+        // Default sort: name,asc then code,asc
+        Comparator<PartSummaryResponse> comp = Comparator
+                .comparing(PartSummaryResponse::name, String.CASE_INSENSITIVE_ORDER)
+                .thenComparing(PartSummaryResponse::code, String.CASE_INSENSITIVE_ORDER);
+        List<PartSummaryResponse> sorted = list.stream().sorted(comp).collect(Collectors.toList());
+
+        long total = sorted.size();
+        int fromIndex = Math.min(p * s, (int) total);
+        int toIndex = Math.min(fromIndex + s, (int) total);
+        List<PartSummaryResponse> pageItems = sorted.subList(fromIndex, toIndex);
+
+        PageEnvelope<PartSummaryResponse> envelope = PageEnvelope.of(pageItems, p, s, total);
+        return ApiResponse.success(SuccessStatus.SEND_PART_LIST_SUCCESS, envelope);
     }
 
     @Operation(summary = "부품 상세", description = "부품 ID로 상세를 조회합니다.")

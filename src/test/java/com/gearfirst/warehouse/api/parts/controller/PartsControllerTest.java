@@ -69,7 +69,7 @@ class PartsControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/parts - 목록 성공")
+    @DisplayName("GET /api/v1/parts - 목록 성공(PageEnvelope)")
     void listParts_success() throws Exception {
         when(partService.list(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyLong())).thenReturn(List.of(
                 new PartSummaryResponse(1001L, "P-1001", "오일필터", new CategoryRef(10L, "Filter"))
@@ -79,7 +79,10 @@ class PartsControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
                 .andExpect(jsonPath("$.status", is(SuccessStatus.SEND_PART_LIST_SUCCESS.getStatusCode())))
-                .andExpect(jsonPath("$.data[0].code", is("P-1001")));
+                .andExpect(jsonPath("$.data.items[0].code", is("P-1001")))
+                .andExpect(jsonPath("$.data.page", is(0)))
+                .andExpect(jsonPath("$.data.size", is(20)))
+                .andExpect(jsonPath("$.data.total", is(1)));
     }
 
     @Test

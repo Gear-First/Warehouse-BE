@@ -98,7 +98,7 @@ public class PartServiceImpl implements PartService {
     private void validateCreate(CreatePartRequest req) {
         if (req == null) throw new BadRequestException(ErrorStatus.PART_NAME_INVALID);
         if (req.code() == null || req.code().isBlank()) throw new BadRequestException(ErrorStatus.PART_CODE_INVALID);
-        if (req.name() == null || req.name().trim().length() < 1 || req.name().length() > 100) throw new BadRequestException(ErrorStatus.PART_NAME_INVALID);
+        if (req.name() == null || req.name().trim().length() < 2 || req.name().length() > 100) throw new BadRequestException(ErrorStatus.PART_NAME_INVALID);
         if (req.price() == null || req.price() < 0) throw new BadRequestException(ErrorStatus.PART_PRICE_INVALID);
         if (req.categoryId() == null) throw new BadRequestException(ErrorStatus.PART_CATEGORY_NAME_INVALID);
     }
