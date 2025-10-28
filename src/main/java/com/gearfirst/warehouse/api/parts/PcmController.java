@@ -2,6 +2,9 @@ package com.gearfirst.warehouse.api.parts;
 
 import com.gearfirst.warehouse.api.parts.dto.CarModelDtos.CarModelSummary;
 import com.gearfirst.warehouse.api.parts.dto.PartDtos.PartSummaryResponse;
+import com.gearfirst.warehouse.api.parts.dto.PartCarModelDtos.CreateMappingRequest;
+import com.gearfirst.warehouse.api.parts.dto.PartCarModelDtos.PartCarModelDetail;
+import com.gearfirst.warehouse.api.parts.dto.PartCarModelDtos.UpdateMappingRequest;
 import com.gearfirst.warehouse.api.parts.service.PartCarModelService;
 import com.gearfirst.warehouse.common.response.ApiResponse;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
@@ -10,19 +13,18 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @Controller
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
-@Tag(name = "PCM", description = "Part–CarModel 매핑 조회 API")
+@Tag(name = "PCM", description = "Part–CarModel 매핑 API")
 public class PcmController {
 
     private final PartCarModelService pcmService;
@@ -75,5 +77,36 @@ public class PcmController {
         int to = Math.min(from + s, (int) total);
         PageEnvelope<PartSummaryResponse> envelope = PageEnvelope.of(sorted.subList(from, to), p, s, total);
         return ApiResponse.success(SuccessStatus.SEND_PCM_PART_LIST_SUCCESS, envelope);
+    }
+
+    @Operation(summary = "부품-차량 모델 매핑 생성", description = "(partId, carModelId) 조합 생성. 비활성 매핑 존재 시 재활성화")
+    @PostMapping("/parts/{partId}/car-models")
+    public ResponseEntity<ApiResponse<PartCarModelDetail>> createMapping(
+            @PathVariable Long partId,
+            @RequestBody @Valid CreateMappingRequest req
+    ) {
+        var detail = pcmService.createMapping(partId, req);
+        return ApiResponse.success(SuccessStatus.SEND_PCM_CREATE_SUCCESS, detail);
+    }
+
+    @Operation(summary = "부품-차량 모델 매핑 수정", description = "note/enabled 변경")
+    @PatchMapping("/parts/{partId}/car-models/{carModelId}")
+    public ResponseEntity<ApiResponse<PartCarModelDetail>> updateMapping(
+            @PathVariable Long partId,
+            @PathVariable Long carModelId,
+            @RequestBody @Valid UpdateMappingRequest req
+    ) {
+        var detail = pcmService.updateMapping(partId, carModelId, req);
+        return ApiResponse.success(SuccessStatus.SEND_PCM_UPDATE_SUCCESS, detail);
+    }
+
+    @Operation(summary = "부품-차량 모델 매핑 삭제(soft)", description = "enabled=false 처리")
+    @DeleteMapping("/parts/{partId}/car-models/{carModelId}")
+    public ResponseEntity<ApiResponse<Map<String, Boolean>>> deleteMapping(
+            @PathVariable Long partId,
+            @PathVariable Long carModelId
+    ) {
+        pcmService.deleteMapping(partId, carModelId);
+        return ApiResponse.success(SuccessStatus.SEND_PCM_DELETE_SUCCESS, java.util.Map.of("deleted", true));
     }
 }
