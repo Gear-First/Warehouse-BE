@@ -41,6 +41,7 @@ public enum ErrorStatus {
     PART_CATEGORY_NAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 카테고리 이름입니다."),
     PART_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 부품 코드입니다."),
     PART_CATEGORY_HAS_PARTS(HttpStatus.CONFLICT, "카테고리에 속한 부품이 있어 삭제할 수 없습니다."),
+    PART_HAS_MAPPINGS(HttpStatus.CONFLICT, "해당 부품은 차량 모델 매핑이 있어 삭제할 수 없습니다."),
 
     /** 500 SERVER_ERROR */
     FAILED_TO_SAVE_ENTITY(HttpStatus.INTERNAL_SERVER_ERROR, "엔티티 저장에 실패했습니다."),

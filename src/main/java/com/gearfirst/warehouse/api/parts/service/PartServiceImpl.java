@@ -25,6 +25,7 @@ public class PartServiceImpl implements PartService {
 
     private final PartJpaRepository partRepo;
     private final PartCategoryJpaRepository categoryRepo;
+    private final PartCarModelReader partCarModelReader;
 
     @Override
     @Transactional(readOnly = true)
@@ -90,6 +91,11 @@ public class PartServiceImpl implements PartService {
     @Override
     public void delete(Long id) {
         var p = partRepo.findById(id).orElseThrow(() -> new NotFoundException("Part not found: " + id));
+        // guard: block deletion when mappings exist (PCM ready)
+        long mappingCount = partCarModelReader != null ? partCarModelReader.countByPartId(id) : 0L;
+        if (mappingCount > 0) {
+            throw new ConflictException(ErrorStatus.PART_HAS_MAPPINGS);
+        }
         // soft delete per docs: enabled=false
         p.setEnabled(false);
         partRepo.save(p);
