@@ -46,8 +46,11 @@ class ReceivingControllerDoneTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
                 .andExpect(jsonPath("$.status", is(SuccessStatus.SEND_RECEIVING_NOTE_LIST_SUCCESS.getStatusCode())))
-                .andExpect(jsonPath("$.data", hasSize(2)))
-                .andExpect(jsonPath("$.data[0].status", startsWith("COMPLETED")))
-                .andExpect(jsonPath("$.data[1].status", startsWith("COMPLETED")));
+                .andExpect(jsonPath("$.data.items", hasSize(2)))
+                .andExpect(jsonPath("$.data.items[0].status", startsWith("COMPLETED")))
+                .andExpect(jsonPath("$.data.items[1].status", startsWith("COMPLETED")))
+                .andExpect(jsonPath("$.data.page", is(0)))
+                .andExpect(jsonPath("$.data.size", is(20)))
+                .andExpect(jsonPath("$.data.total", is(2)));
     }
 }

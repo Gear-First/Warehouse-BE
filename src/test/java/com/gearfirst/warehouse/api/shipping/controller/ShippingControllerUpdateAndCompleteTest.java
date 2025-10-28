@@ -40,12 +40,12 @@ class ShippingControllerUpdateAndCompleteTest {
     @DisplayName("PATCH /api/v1/shipping/{noteId}/lines/{lineId} - 성공적으로 라인을 업데이트한다")
     void updateLine_success() throws Exception {
         // given
-        var req = new UpdateLineRequest(10, 8);
+        var req = new ShippingUpdateLineRequest(10, 8);
         var lines = List.of(new ShippingNoteLineResponse(1L,
                 new ShippingProductResponse(11L, "LOT-A", "S-01", "볼트", "/img"),
                 10, 10, 8, "READY"));
         var detail = new ShippingNoteDetailResponse(4001L, "ACME", 1, 10, "IN_PROGRESS", null, lines);
-        when(shippingService.updateLine(eq(4001L), eq(1L), org.mockito.ArgumentMatchers.any(UpdateLineRequest.class))).thenReturn(detail);
+        when(shippingService.updateLine(eq(4001L), eq(1L), org.mockito.ArgumentMatchers.any(ShippingUpdateLineRequest.class))).thenReturn(detail);
 
         // when & then
         mockMvc.perform(patch("/api/v1/shipping/{noteId}/lines/{lineId}", 4001L, 1L)
@@ -62,8 +62,8 @@ class ShippingControllerUpdateAndCompleteTest {
     @DisplayName("PATCH /api/v1/shipping/{noteId}/lines/{lineId} - pickedQty > allocatedQty면 422를 반환한다")
     void updateLine_validationError() throws Exception {
         // given
-        var req = new UpdateLineRequest(5, 8);
-        when(shippingService.updateLine(eq(4002L), eq(1L), org.mockito.ArgumentMatchers.any(UpdateLineRequest.class)))
+        var req = new ShippingUpdateLineRequest(5, 8);
+        when(shippingService.updateLine(eq(4002L), eq(1L), org.mockito.ArgumentMatchers.any(ShippingUpdateLineRequest.class)))
                 .thenThrow(new BadRequestException(ErrorStatus.SHIPPING_PICKED_QTY_EXCEEDS_ALLOCATED_QTY));
 
         // when & then

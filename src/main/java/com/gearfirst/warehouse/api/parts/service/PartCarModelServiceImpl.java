@@ -93,7 +93,7 @@ public class PartCarModelServiceImpl implements PartCarModelService {
         if (request == null || request.carModelId() == null || !carModelRepo.existsById(request.carModelId())) {
             throw new NotFoundException("CarModel not found: " + (request == null ? null : request.carModelId()));
         }
-        Optional<com.gearfirst.warehouse.api.parts.persistence.entity.PartCarModelEntity> existingOpt = pcmRepo.findByPartIdAndCarModelId(partId, request.carModelId());
+        Optional<PartCarModelEntity> existingOpt = pcmRepo.findByPartIdAndCarModelId(partId, request.carModelId());
         boolean enableVal = request.enabled() == null ? true : request.enabled();
         if (existingOpt.isPresent()) {
             var existing = existingOpt.get();

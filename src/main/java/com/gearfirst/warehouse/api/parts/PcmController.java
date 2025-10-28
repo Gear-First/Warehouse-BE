@@ -24,7 +24,7 @@ import jakarta.validation.Valid;
 @Controller
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
-@Tag(name = "PCM", description = "Part–CarModel 매핑 API")
+@Tag(name = "PCM PartCarModel", description = "Part–CarModel 매핑 API")
 public class PcmController {
 
     private final PartCarModelService pcmService;

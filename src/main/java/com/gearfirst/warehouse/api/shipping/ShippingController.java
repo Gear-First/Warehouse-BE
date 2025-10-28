@@ -3,7 +3,7 @@ package com.gearfirst.warehouse.api.shipping;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteDetailResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteSummaryResponse;
-import com.gearfirst.warehouse.api.shipping.dto.UpdateLineRequest;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingUpdateLineRequest;
 import com.gearfirst.warehouse.api.shipping.service.ShippingService;
 import com.gearfirst.warehouse.common.response.ApiResponse;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
@@ -52,7 +52,7 @@ public class ShippingController {
     public ResponseEntity<ApiResponse<ShippingNoteDetailResponse>> updateLine(
             @PathVariable Long noteId,
             @PathVariable Long lineId,
-            @RequestBody @Valid UpdateLineRequest req
+            @RequestBody @Valid ShippingUpdateLineRequest req
     ) {
         var updated = service.updateLine(noteId, lineId, req);
         return ApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_LINE_UPDATE_SUCCESS, updated);

@@ -13,8 +13,17 @@ import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.common.exception.ConflictException;
 import com.gearfirst.warehouse.common.exception.NotFoundException;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
+import com.gearfirst.warehouse.common.response.PageEnvelope;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,16 +38,54 @@ public class PartServiceImpl implements PartService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<PartSummaryResponse> list(String code, String name, Long categoryId) {
-        var list = partRepo.findAll();
-        return list.stream()
-                .filter(p -> p.isEnabled())
-                .filter(p -> code == null || code.isBlank() || p.getCode().toLowerCase().contains(code.toLowerCase()))
-                .filter(p -> name == null || name.isBlank() || p.getName().toLowerCase().contains(name.toLowerCase()))
-                .filter(p -> categoryId == null || p.getCategoryId().equals(categoryId))
-                .map(p -> new PartSummaryResponse(p.getId(), p.getCode(), p.getName(),
-                        new CategoryRef(p.getCategoryId(), resolveCategoryName(p.getCategoryId()))))
+    public PageEnvelope<PartSummaryResponse> list(String code, String name, Long categoryId, int page, int size, java.util.List<String> sortParams) {
+        String c = code == null ? "" : code;
+        String n = name == null ? "" : name;
+        int p = Math.max(0, page);
+        int s = Math.max(1, Math.min(size, 100));
+        Sort sort = buildSort(sortParams);
+        Pageable pageable = PageRequest.of(p, s, sort);
+
+        Page<PartEntity> pageData;
+        if (categoryId == null) {
+            pageData = partRepo.findByEnabledTrueAndCodeContainingIgnoreCaseAndNameContainingIgnoreCase(c, n, pageable);
+        } else {
+            pageData = partRepo.findByEnabledTrueAndCodeContainingIgnoreCaseAndNameContainingIgnoreCaseAndCategoryId(c, n, categoryId, pageable);
+        }
+
+        List<PartEntity> parts = pageData.getContent();
+        // batch load categories to avoid N+1
+        Set<Long> categoryIds = parts.stream().map(PartEntity::getCategoryId).collect(Collectors.toSet());
+        Map<Long, String> catNames = categoryRepo.findAllById(categoryIds).stream()
+                .collect(Collectors.toMap(PartCategoryEntity::getId, PartCategoryEntity::getName));
+
+        List<PartSummaryResponse> items = parts.stream()
+                .map(pv -> new PartSummaryResponse(pv.getId(), pv.getCode(), pv.getName(),
+                        new CategoryRef(pv.getCategoryId(), catNames.get(pv.getCategoryId()))))
                 .toList();
+
+        return PageEnvelope.of(items, pageData.getNumber(), pageData.getSize(), pageData.getTotalElements());
+    }
+
+    private Sort buildSort(java.util.List<String> sortParams) {
+        // default: name,asc → code,asc
+        Sort defaultSort = Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.asc("code").ignoreCase());
+        if (sortParams == null || sortParams.isEmpty()) return defaultSort;
+        try {
+            List<Sort.Order> orders = sortParams.stream()
+                    .map(s -> {
+                        String[] arr = s.split(",");
+                        String prop = arr[0].trim();
+                        String dir = arr.length > 1 ? arr[1].trim().toLowerCase() : "asc";
+                        Sort.Order o = "desc".equals(dir) ? Sort.Order.desc(prop) : Sort.Order.asc(prop);
+                        return o.ignoreCase();
+                    })
+                    .toList();
+            if (orders.isEmpty()) return defaultSort;
+            return Sort.by(orders);
+        } catch (Exception e) {
+            return defaultSort;
+        }
     }
 
     @Override

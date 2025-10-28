@@ -1,6 +1,6 @@
 package com.gearfirst.warehouse.api.shipping.service;
 
-import com.gearfirst.warehouse.api.shipping.dto.UpdateLineRequest;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingUpdateLineRequest;
 import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.api.shipping.domain.LineStatus;
 import com.gearfirst.warehouse.api.shipping.domain.NoteStatus;
@@ -9,7 +9,6 @@ import com.gearfirst.warehouse.api.shipping.domain.ShippingNoteLine;
 import com.gearfirst.warehouse.api.shipping.repository.InMemoryShippingNoteRepository;
 import com.gearfirst.warehouse.common.exception.ConflictException;
 import com.gearfirst.warehouse.common.exception.NotFoundException;
-import com.gearfirst.warehouse.api.shipping.service.OnHandProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -52,7 +51,7 @@ class ShippingServiceImplTest {
     @DisplayName("updateLine: PENDING 노트는 IN_PROGRESS로 전이되고 라인 값이 반영된다")
     void updateLine_transitionsAndUpdates() {
         // noteId=502 (PENDING), lineId=10 존재
-        var updated = service.updateLine(502L, 10L, new UpdateLineRequest(5, 3));
+        var updated = service.updateLine(502L, 10L, new ShippingUpdateLineRequest(5, 3));
         assertEquals("IN_PROGRESS", updated.status());
         var line = updated.lines().stream().filter(l -> l.lineId().equals(10L)).findFirst().orElseThrow();
         assertEquals(5, line.allocatedQty());
@@ -63,7 +62,7 @@ class ShippingServiceImplTest {
     @Test
     @DisplayName("updateLine: pickedQty > allocatedQty면 BadRequestException")
     void updateLine_ruleViolation() {
-        assertThrows(BadRequestException.class, () -> service.updateLine(501L, 1L, new UpdateLineRequest(2, 3)));
+        assertThrows(BadRequestException.class, () -> service.updateLine(501L, 1L, new ShippingUpdateLineRequest(2, 3)));
     }
 
     @Test
@@ -109,19 +108,19 @@ class ShippingServiceImplTest {
     @DisplayName("updateLine: allocatedQty가 orderedQty를 초과하면 BadRequestException")
     void updateLine_allocatedExceedsOrdered() {
         // noteId=502 lineId=10 ordered=20
-        assertThrows(BadRequestException.class, () -> service.updateLine(502L, 10L, new UpdateLineRequest(21, 0)));
+        assertThrows(BadRequestException.class, () -> service.updateLine(502L, 10L, new ShippingUpdateLineRequest(21, 0)));
     }
 
     @Test
     @DisplayName("updateLine: pickedQty가 orderedQty를 초과하면 BadRequestException")
     void updateLine_pickedExceedsOrdered() {
         // picked>ordered(20) & picked>allocated(20) 둘 다 위반되므로 400을 기대
-        assertThrows(BadRequestException.class, () -> service.updateLine(502L, 10L, new UpdateLineRequest(20, 21)));
+        assertThrows(BadRequestException.class, () -> service.updateLine(502L, 10L, new ShippingUpdateLineRequest(20, 21)));
     }
 
     @Test
     @DisplayName("updateLine: 존재하지 않는 lineId면 NotFoundException")
     void updateLine_lineNotFound() {
-        assertThrows(NotFoundException.class, () -> service.updateLine(502L, 999L, new UpdateLineRequest(1, 1)));
+        assertThrows(NotFoundException.class, () -> service.updateLine(502L, 999L, new ShippingUpdateLineRequest(1, 1)));
     }
 }

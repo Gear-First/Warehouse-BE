@@ -75,7 +75,7 @@ public class PartsController {
         }
 
     // Parts
-    @Operation(summary = "부품 목록", description = "code/name/categoryId로 필터하고 페이지네이션하여 조회합니다. 컨트롤러 레벨에서 PageEnvelope로 래핑합니다.")
+    @Operation(summary = "부품 목록", description = "code/name/categoryId로 필터하고 서버사이드 페이지네이션/정렬로 조회합니다. 기본 정렬: name,asc → code,asc")
     @GetMapping
     public ResponseEntity<ApiResponse<PageEnvelope<PartSummaryResponse>>> listParts(
             @RequestParam(required = false) String code,
@@ -85,26 +85,9 @@ public class PartsController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) List<String> sort
     ) {
-        String c = (code == null) ? "" : code;
-        String n = (name == null) ? "" : name;
-        Long cat = (categoryId == null) ? 0L : categoryId; // ensure non-null to satisfy mocks expecting anyLong()
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
-
-        List<PartSummaryResponse> list = partService.list(c, n, cat);
-
-        // Default sort: name,asc then code,asc
-        Comparator<PartSummaryResponse> comp = Comparator
-                .comparing(PartSummaryResponse::name, String.CASE_INSENSITIVE_ORDER)
-                .thenComparing(PartSummaryResponse::code, String.CASE_INSENSITIVE_ORDER);
-        List<PartSummaryResponse> sorted = list.stream().sorted(comp).collect(Collectors.toList());
-
-        long total = sorted.size();
-        int fromIndex = Math.min(p * s, (int) total);
-        int toIndex = Math.min(fromIndex + s, (int) total);
-        List<PartSummaryResponse> pageItems = sorted.subList(fromIndex, toIndex);
-
-        PageEnvelope<PartSummaryResponse> envelope = PageEnvelope.of(pageItems, p, s, total);
+        PageEnvelope<PartSummaryResponse> envelope = partService.list(code, name, categoryId, p, s, sort);
         return ApiResponse.success(SuccessStatus.SEND_PART_LIST_SUCCESS, envelope);
     }
 

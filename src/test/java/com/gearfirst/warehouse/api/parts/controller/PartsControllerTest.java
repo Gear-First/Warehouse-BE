@@ -9,6 +9,7 @@ import com.gearfirst.warehouse.api.parts.service.PartService;
 import com.gearfirst.warehouse.common.exception.ConflictException;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
+import com.gearfirst.warehouse.common.response.PageEnvelope;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +19,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.hamcrest.Matchers.*;
-import static org.mockito.ArgumentMatchers.eq;
+// Mockito matchers (use FQN calls below to avoid clash with Hamcrest Matchers.any)
+// import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -71,9 +72,18 @@ class PartsControllerTest {
     @Test
     @DisplayName("GET /api/v1/parts - 목록 성공(PageEnvelope)")
     void listParts_success() throws Exception {
-        when(partService.list(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyLong())).thenReturn(List.of(
-                new PartSummaryResponse(1001L, "P-1001", "오일필터", new CategoryRef(10L, "Filter"))
-        ));
+        var envelope = PageEnvelope.of(
+                List.of(new PartSummaryResponse(1001L, "P-1001", "오일필터", new CategoryRef(10L, "Filter"))),
+                0, 20, 1
+        );
+        when(partService.list(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyInt(),
+                org.mockito.ArgumentMatchers.anyInt(),
+                org.mockito.ArgumentMatchers.isNull()
+        )).thenReturn(envelope);
 
         mockMvc.perform(get("/api/v1/parts").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
