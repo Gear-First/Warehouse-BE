@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@ActiveProfiles("test-h2")
+//@ActiveProfiles("test-h2")
 @Transactional
 class PartCategoryServiceImplTest {
 

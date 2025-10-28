@@ -5,7 +5,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
-@ActiveProfiles("test-h2")
+//@ActiveProfiles("test-h2")
 class WarehouseApplicationTests {
 
 	@Test

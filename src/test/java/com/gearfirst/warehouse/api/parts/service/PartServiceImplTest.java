@@ -9,13 +9,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.transaction.annotation.Transactional;
+import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@ActiveProfiles("test-h2")
+//@ActiveProfiles("test-h2")
 @Transactional
 class PartServiceImplTest {
 
@@ -24,6 +25,9 @@ class PartServiceImplTest {
 
     @Autowired
     private PartCategoryService categoryService;
+
+    @MockBean
+    private PartCarModelReader partCarModelReader;
 
     private Long categoryId;
 
@@ -59,9 +63,9 @@ class PartServiceImplTest {
     @Test
     @DisplayName("update: 코드 변경 시 중복이면 409")
     void update_conflict_duplicateCodeOnChange() {
-        var a = partService.create(new CreatePartRequest("P-A", "A", 1000, categoryId, null));
-        var b = partService.create(new CreatePartRequest("P-B", "B", 2000, categoryId, null));
-        assertThrows(ConflictException.class, () -> partService.update(b.id(), new UpdatePartRequest("P-A", "B2", 2100, categoryId, null, true)));
+        var a = partService.create(new CreatePartRequest("P-A", "AA", 1000, categoryId, null));
+        var b = partService.create(new CreatePartRequest("P-B", "BB", 2000, categoryId, null));
+        assertThrows(ConflictException.class, () -> partService.update(b.id(), new UpdatePartRequest("P-A", "BB2", 2100, categoryId, null, true)));
     }
 
     @Test
@@ -71,5 +75,14 @@ class PartServiceImplTest {
         partService.delete(p.id());
         var loaded = partService.get(p.id());
         assertFalse(loaded.enabled());
+    }
+
+    @Test
+    @DisplayName("delete: PCM 매핑 존재하면 409 Conflict")
+    void delete_guard_whenPartHasMappings() {
+        var p = partService.create(new CreatePartRequest("P-GUARD", "가드테스트", 1000, categoryId, null));
+        // simulate existing mappings
+        Mockito.when(partCarModelReader.countByPartId(p.id())).thenReturn(1L);
+        assertThrows(ConflictException.class, () -> partService.delete(p.id()));
     }
 }

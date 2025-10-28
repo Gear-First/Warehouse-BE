@@ -4,7 +4,7 @@ import com.gearfirst.warehouse.api.receiving.domain.ReceivingLineStatus;
 import com.gearfirst.warehouse.api.receiving.domain.ReceivingNoteStatus;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteDetailResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteLineResponse;
-import com.gearfirst.warehouse.api.receiving.dto.UpdateLineRequest;
+import com.gearfirst.warehouse.api.receiving.dto.ReceivingUpdateLineRequest;
 import com.gearfirst.warehouse.api.receiving.persistence.ReceivingNoteJpaRepository;
 import com.gearfirst.warehouse.api.receiving.persistence.entity.ReceivingNoteEntity;
 import com.gearfirst.warehouse.api.receiving.persistence.entity.ReceivingNoteLineEntity;
@@ -16,15 +16,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@ActiveProfiles("test-h2")
+//@ActiveProfiles("test-h2")
 @Transactional
 class ReceivingServiceImplTest {
 
@@ -92,7 +89,7 @@ class ReceivingServiceImplTest {
     @DisplayName("updateLine: hasIssue=false이면 ACCEPTED로 전이하고 note는 IN_PROGRESS")
     void updateLine_doneOk_success() {
         // given noteId=102 (PENDING), lineId=10 (PENDING, ordered=20)
-        var resp = service.updateLine(102L, 10L, new UpdateLineRequest(18, false));
+        var resp = service.updateLine(102L, 10L, new ReceivingUpdateLineRequest(18, false));
         assertEquals("IN_PROGRESS", resp.status());
         var line = findLine(resp, 10L);
         assertEquals(18, line.inspectedQty());
@@ -104,7 +101,7 @@ class ReceivingServiceImplTest {
     @DisplayName("updateLine: hasIssue=true이면 REJECTED로 전이하고 issueQty=ordered-inspected")
     void updateLine_doneIssue_success() {
         // given noteId=102 (PENDING), lineId=11 (PENDING, ordered=25)
-        var resp = service.updateLine(102L, 11L, new UpdateLineRequest(20, true));
+        var resp = service.updateLine(102L, 11L, new ReceivingUpdateLineRequest(20, true));
         assertEquals("IN_PROGRESS", resp.status());
         var line = findLine(resp, 11L);
         assertEquals(20, line.inspectedQty());
@@ -115,25 +112,25 @@ class ReceivingServiceImplTest {
     @Test
     @DisplayName("updateLine: inspectedQty > orderedQty면 400 BadRequest")
     void updateLine_validationError_inspectedExceedsOrdered() {
-        assertThrows(BadRequestException.class, () -> service.updateLine(101L, 3L, new UpdateLineRequest(1000, false)));
+        assertThrows(BadRequestException.class, () -> service.updateLine(101L, 3L, new ReceivingUpdateLineRequest(1000, false)));
     }
 
     @Test
     @DisplayName("updateLine: 완료 라인 재수정 시 409 Conflict")
     void updateLine_conflict_whenLineAlreadyDone() {
-        assertThrows(ConflictException.class, () -> service.updateLine(101L, 2L, new UpdateLineRequest(40, false)));
+        assertThrows(ConflictException.class, () -> service.updateLine(101L, 2L, new ReceivingUpdateLineRequest(40, false)));
     }
 
     @Test
     @DisplayName("updateLine: 완료 전표(201)에서 수정 시 409 Conflict")
     void updateLine_conflict_whenNoteAlreadyDone() {
-        assertThrows(ConflictException.class, () -> service.updateLine(201L, 20L, new UpdateLineRequest(10, false)));
+        assertThrows(ConflictException.class, () -> service.updateLine(201L, 20L, new ReceivingUpdateLineRequest(10, false)));
     }
 
     @Test
     @DisplayName("updateLine: 존재하지 않는 lineId면 404 NotFound")
     void updateLine_notFound_whenLineMissing() {
-        assertThrows(NotFoundException.class, () -> service.updateLine(102L, 999L, new UpdateLineRequest(1, false)));
+        assertThrows(NotFoundException.class, () -> service.updateLine(102L, 999L, new ReceivingUpdateLineRequest(1, false)));
     }
 
     private ReceivingNoteLineResponse findLine(ReceivingNoteDetailResponse resp, Long lineId) {

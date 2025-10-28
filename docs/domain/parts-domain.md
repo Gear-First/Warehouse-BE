@@ -6,9 +6,9 @@
 
 ## Scope
 
-- 독립 도메인으로 문서화만 진행. 현 단계에서는 입고/출고와 연동하지 않는다(재고 도메인 도입 이후 점진 통합 예정).
-- 본 문서는 최소 스키마와 검색 기준을 정의한다. 구현(API/엔티티)은 후속 PR에서 진행한다.
-- CRUD 범위(결정): MVP에서는 PartCategory/Part CRUD만 문서화 및 구현 대상으로 한다. CarModel/PartCarModel은 매핑 정보만 유지하며 CRUD는 범위 밖(OOS). 사유: 초기 운영에서 차량 모델은 변동이 적고 외부 카탈로그 연동을 고려 중이므로 별도 이니셔티브로 분리.
+- 독립 도메인으로 문서화 우선. 현 단계에서는 입고/출고와 연동하지 않는다(재고 도메인 도입 이후 점진 통합 예정).
+- 본 문서는 최소 스키마, 검색 기준과 함께 Part–CarModel 매핑(적용 차종) 관리 UC를 정의한다. 구현(API/엔티티)은 후속 PR에서 진행한다.
+- CRUD 범위(결정): 이 라운드에서는 PartCategory/Part CRUD와 더불어 PartCarModel 매핑의 생성/수정/삭제 및 조회(양방향)를 문서화한다. CarModel 자체의 CRUD는 여전히 범위 밖(OOS). 사유: 차량 모델 마스터는 외부 카탈로그 연동 후보로, 내부 CRUD는 보류.
 
 ## ERD(개념)
 
@@ -44,19 +44,25 @@ Indexes
 ### CarModel
 - id: Long (PK)
 - name: String (필수)
-- maker: String (필수)
-- yearRange: String (선택, 예: 2019-2024)
+- enabled: boolean (soft delete 용, 기본 true)
+- createdAt/updatedAt: datetime
 
 Indexes
-- UQ_carmodel_maker_name(maker, name)
+- UQ_carmodel_name(name)
 
 ### PartCarModel (Mapping)
 - partId: Long (PK, FK → Part.id)
 - carModelId: Long (PK, FK → CarModel.id)
+- note: String (선택, 0..200)
+- enabled: boolean (soft delete 용, 기본 true)
+- createdAt/updatedAt: datetime
+
+Constraints
+- UQ_part_car_model(partId, carModelId)
 
 Indexes
 - PK_part_car_model(partId, carModelId)
-- IDX_pcm_carmodel(carmodelId)
+- IDX_pcm_carmodel(carModelId)
 
 ## 검색 기준(초안)
 - code(정확/부분), name(부분), categoryId(=), carModelId(=)
@@ -72,7 +78,7 @@ Indexes
     "id": 1001, "code": "P-1001", "name": "오일필터", "price": 12000,
     "categoryId": 10, "imageUrl": "/img/parts/p-1001.png"
   },
-  "carModel": { "id": 501, "maker": "Hyundai", "name": "Avante", "yearRange": "2020-2024" },
+  "carModel": { "id": 501, "name": "Avante" },
   "partCarModel": { "partId": 1001, "carModelId": 501 }
 }
 ```

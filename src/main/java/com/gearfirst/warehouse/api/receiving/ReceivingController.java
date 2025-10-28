@@ -3,13 +3,13 @@ package com.gearfirst.warehouse.api.receiving;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingCompleteResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteDetailResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteSummaryResponse;
-import com.gearfirst.warehouse.api.receiving.dto.UpdateLineRequest;
+import com.gearfirst.warehouse.api.receiving.dto.ReceivingUpdateLineRequest;
 import com.gearfirst.warehouse.api.receiving.service.ReceivingService;
 import com.gearfirst.warehouse.common.response.ApiResponse;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
+import com.gearfirst.warehouse.common.response.PageEnvelope;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -31,14 +31,46 @@ public class ReceivingController {
 
     @Operation(summary = "입고 예정 리스트 조회", description = "입고 예정된 내역 리스트를 조회합니다. (예정)날짜 필터링이 가능합니다.")
     @GetMapping("/not-done")
-    public ResponseEntity<ApiResponse<List<ReceivingNoteSummaryResponse>>> getPendingNotes(@RequestParam(required = false) String date) {
-        return ApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_LIST_SUCCESS, service.getNotDone(date));
+    public ResponseEntity<ApiResponse<PageEnvelope<ReceivingNoteSummaryResponse>>> getPendingNotes(
+            @RequestParam(required = false) String date,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) java.util.List<String> sort
+    ) {
+        int p = Math.max(0, page);
+        int s = Math.max(1, Math.min(size, 100));
+        var all = service.getNotDone(date);
+        // 기본 정렬: noteId asc
+        var sorted = all.stream()
+                .sorted(java.util.Comparator.comparing(ReceivingNoteSummaryResponse::noteId))
+                .toList();
+        long total = sorted.size();
+        int from = Math.min(p * s, (int) total);
+        int to = Math.min(from + s, (int) total);
+        var envelope = PageEnvelope.of(sorted.subList(from, to), p, s, total);
+        return ApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_LIST_SUCCESS, envelope);
     }
 
     @Operation(summary = "입고 완료 리스트 조회", description = "입고 완료된 내역 리스트를 조회합니다. (예정)날짜 필터링이 가능합니다.")
     @GetMapping("/done")
-    public ResponseEntity<ApiResponse<List<ReceivingNoteSummaryResponse>>> getCompletedNotes(@RequestParam(required = false) String date) {
-        return ApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_LIST_SUCCESS, service.getDone(date));
+    public ResponseEntity<ApiResponse<PageEnvelope<ReceivingNoteSummaryResponse>>> getCompletedNotes(
+            @RequestParam(required = false) String date,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) java.util.List<String> sort
+    ) {
+        int p = Math.max(0, page);
+        int s = Math.max(1, Math.min(size, 100));
+        var all = service.getDone(date);
+        // 기본 정렬: noteId asc
+        var sorted = all.stream()
+                .sorted(java.util.Comparator.comparing(ReceivingNoteSummaryResponse::noteId))
+                .toList();
+        long total = sorted.size();
+        int from = Math.min(p * s, (int) total);
+        int to = Math.min(from + s, (int) total);
+        var envelope = PageEnvelope.of(sorted.subList(from, to), p, s, total);
+        return ApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_LIST_SUCCESS, envelope);
     }
 
     @Operation(summary = "입고 내역서 상세 조회", description = "내역서 ID를 통해 입고 내역서 상세 정보를 조회합니다.")
@@ -52,7 +84,7 @@ public class ReceivingController {
     public ResponseEntity<ApiResponse<ReceivingNoteDetailResponse>> updateLine(
             @PathVariable Long noteId,
             @PathVariable Long lineId,
-            @RequestBody @Valid UpdateLineRequest req
+            @RequestBody @Valid ReceivingUpdateLineRequest req
     ) {
         var updated = service.updateLine(noteId, lineId, req);
         return ApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_LINE_UPDATE_SUCCESS, updated);

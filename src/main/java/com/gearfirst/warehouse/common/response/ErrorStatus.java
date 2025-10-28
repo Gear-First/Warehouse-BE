@@ -30,6 +30,7 @@ public enum ErrorStatus {
     /** 404 NOT_FOUND */
     NOT_FOUND_MEMBER_EXCEPTION(HttpStatus.NOT_FOUND, "존재하지 않는 사용자 입니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 사용자입니다."),
+    PCM_NOT_FOUND(HttpStatus.NOT_FOUND, "부품-차량 모델 매핑을 찾을 수 없습니다."),
 
     /** 409 CONFLICT */
     CONFLICT_RESOURCE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 자원입니다."),
@@ -41,6 +42,8 @@ public enum ErrorStatus {
     PART_CATEGORY_NAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 카테고리 이름입니다."),
     PART_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 부품 코드입니다."),
     PART_CATEGORY_HAS_PARTS(HttpStatus.CONFLICT, "카테고리에 속한 부품이 있어 삭제할 수 없습니다."),
+    PART_HAS_MAPPINGS(HttpStatus.CONFLICT, "해당 부품은 차량 모델 매핑이 있어 삭제할 수 없습니다."),
+    PCM_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 부품-차량 모델 매핑입니다."),
 
     /** 500 SERVER_ERROR */
     FAILED_TO_SAVE_ENTITY(HttpStatus.INTERNAL_SERVER_ERROR, "엔티티 저장에 실패했습니다."),

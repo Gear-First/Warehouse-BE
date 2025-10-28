@@ -11,7 +11,7 @@ import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteDetailResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteLineResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteSummaryResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingProductResponse;
-import com.gearfirst.warehouse.api.shipping.dto.UpdateLineRequest;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingUpdateLineRequest;
 import com.gearfirst.warehouse.api.shipping.repository.ShippingNoteRepository;
 import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.common.exception.ConflictException;
@@ -55,7 +55,7 @@ public class ShippingServiceImpl implements ShippingService {
     }
 
     @Override
-    public ShippingNoteDetailResponse updateLine(Long noteId, Long lineId, UpdateLineRequest request) {
+    public ShippingNoteDetailResponse updateLine(Long noteId, Long lineId, ShippingUpdateLineRequest request) {
         var note = repository.findById(noteId).orElseThrow(() -> new NotFoundException("Shipping note not found: " + noteId));
 
         // DELAYED/COMPLETED 상태에서는 수정 차단 (409)

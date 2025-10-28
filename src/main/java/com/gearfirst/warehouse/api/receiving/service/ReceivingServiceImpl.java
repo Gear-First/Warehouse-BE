@@ -7,7 +7,7 @@ import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteDetailResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteLineResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteSummaryResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingProductResponse;
-import com.gearfirst.warehouse.api.receiving.dto.UpdateLineRequest;
+import com.gearfirst.warehouse.api.receiving.dto.ReceivingUpdateLineRequest;
 import com.gearfirst.warehouse.api.receiving.persistence.entity.ReceivingNoteEntity;
 import com.gearfirst.warehouse.api.receiving.persistence.entity.ReceivingNoteLineEntity;
 import com.gearfirst.warehouse.api.receiving.repository.ReceivingNoteRepository;
@@ -53,7 +53,7 @@ public class ReceivingServiceImpl implements ReceivingService {
     }
 
     @Override
-    public ReceivingNoteDetailResponse updateLine(Long noteId, Long lineId, UpdateLineRequest request) {
+    public ReceivingNoteDetailResponse updateLine(Long noteId, Long lineId, ReceivingUpdateLineRequest request) {
         var note = repository.findById(noteId).orElseThrow(() -> new NotFoundException("Receiving note not found: " + noteId));
 
         // Block when note already completed
