@@ -231,6 +231,17 @@ public class ShippingServiceImpl implements ShippingService {
         return new ShippingCompleteResponse(completedAt, finalStatus == NoteStatus.COMPLETED ? totalShipped : note.getTotalQty());
     }
 
+    @Override
+    public ShippingNoteDetailResponse create(com.gearfirst.warehouse.api.shipping.dto.ShippingCreateNoteRequest request) {
+        // TODO: Implement creation logic for Shipping note
+        //  - Generate/assign shippingNo according to business rules (pending)
+        //  - Validate fields (customerName, lines, quantities) once rules are finalized
+        //  - Map request to ShippingNote aggregate and lines
+        //  - Set initial status to PENDING and compute itemKindsNumber/totalQty
+        //  - Persist via repository.save(note) and return toDetail(note)
+        throw new UnsupportedOperationException("Shipping create is not implemented yet. TODO: request number generation/validation.");
+    }
+
     private ShippingNoteSummaryResponse toSummary(ShippingNote note) {
         return new ShippingNoteSummaryResponse(
                 note.getNoteId(),
@@ -250,6 +261,15 @@ public class ShippingServiceImpl implements ShippingService {
                 note.getTotalQty(),
                 note.getStatus().name(),
                 note.getCompletedAt(),
+                null, // shippingNo (TBD)
+                note.getWarehouseId(),
+                null, // requestedAt (TBD)
+                null, // expectedShipDate (TBD)
+                null, // shippedAt (TBD)
+                null, // assigneeName (TBD)
+                null, // assigneeDept (TBD)
+                null, // assigneePhone (TBD)
+                null, // remark (TBD)
                 note.getLines().stream().map(l -> new ShippingNoteLineResponse(
                         l.getLineId(),
                         new ShippingProductResponse(l.getProductId(), l.getProductLot(), l.getProductSerial(), l.getProductName(), l.getProductImgUrl()),

@@ -4,6 +4,7 @@ import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteDetailResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteSummaryResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingUpdateLineRequest;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingCreateNoteRequest;
 import java.util.List;
 
 public interface ShippingService {
@@ -28,4 +29,7 @@ public interface ShippingService {
     ShippingNoteDetailResponse getDetail(Long noteId);
     ShippingNoteDetailResponse updateLine(Long noteId, Long lineId, ShippingUpdateLineRequest request);
     ShippingCompleteResponse complete(Long noteId);
+
+    // Create new shipping note (stub for now)
+    ShippingNoteDetailResponse create(ShippingCreateNoteRequest request);
 }

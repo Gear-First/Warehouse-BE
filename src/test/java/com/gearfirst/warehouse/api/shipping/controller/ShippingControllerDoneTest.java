@@ -46,7 +46,10 @@ class ShippingControllerDoneTest {
                 .andExpect(jsonPath("$.success", is(true)))
                 .andExpect(jsonPath("$.status", is(SuccessStatus.SEND_SHIPPING_NOTE_LIST_SUCCESS.getStatusCode())))
                 .andExpect(jsonPath("$.message", is(SuccessStatus.SEND_SHIPPING_NOTE_LIST_SUCCESS.getMessage())))
-                .andExpect(jsonPath("$.data", hasSize(2)))
-                .andExpect(jsonPath("$.data[*].status", everyItem(is(in(List.of("COMPLETED", "DELAYED"))))));
+                .andExpect(jsonPath("$.data.items", hasSize(2)))
+                .andExpect(jsonPath("$.data.items[*].status", everyItem(is(in(List.of("COMPLETED", "DELAYED"))))))
+                .andExpect(jsonPath("$.data.page", is(0)))
+                .andExpect(jsonPath("$.data.size", is(20)))
+                .andExpect(jsonPath("$.data.total", is(2)));
     }
 }

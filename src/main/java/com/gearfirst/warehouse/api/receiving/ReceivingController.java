@@ -3,6 +3,7 @@ package com.gearfirst.warehouse.api.receiving;
 import static java.util.Comparator.comparing;
 
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingCompleteResponse;
+import com.gearfirst.warehouse.api.receiving.dto.ReceivingCreateNoteRequest;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteDetailResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteSummaryResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingUpdateLineRequest;
@@ -32,7 +33,7 @@ public class ReceivingController {
 
     private final ReceivingService service;
 
-    @Operation(summary = "입고 예정 리스트 조회", description = "입고 예정된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원.")
+    @Operation(summary = "입고 예정 리스트 조회", description = "입고 예정된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseId(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc")
     @GetMapping("/not-done")
     public ResponseEntity<ApiResponse<PageEnvelope<ReceivingNoteSummaryResponse>>> getPendingNotes(
             @RequestParam(required = false) String date,
@@ -57,7 +58,7 @@ public class ReceivingController {
         return ApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_LIST_SUCCESS, envelope);
     }
 
-    @Operation(summary = "입고 완료 리스트 조회", description = "입고 완료된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원.")
+    @Operation(summary = "입고 완료 리스트 조회", description = "입고 완료된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseId(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc")
     @GetMapping("/done")
     public ResponseEntity<ApiResponse<PageEnvelope<ReceivingNoteSummaryResponse>>> getCompletedNotes(
             @RequestParam(required = false) String date,
@@ -103,5 +104,15 @@ public class ReceivingController {
     public ResponseEntity<ApiResponse<ReceivingCompleteResponse>> complete(@PathVariable Long noteId) {
         var resp = service.complete(noteId);
         return ApiResponse.success(SuccessStatus.SEND_RECEIVING_COMPLETE_SUCCESS, resp);
+    }
+
+    @Operation(summary = "입고 요청서 생성", description = "입고 요청서를 생성합니다. 현재 단계에서는 값 검증/번호 생성(LOT, receivingNo) 로직을 구현하지 않습니다. TODO 위치만 지정합니다.")
+    @PostMapping
+    public ResponseEntity<ApiResponse<ReceivingNoteDetailResponse>> create(
+            @RequestBody ReceivingCreateNoteRequest req
+    ) {
+        // TODO: 값 검증(필수 필드, 수량 범위), LOT 규칙 검증, receivingNo 생성 로직 추가
+        var created = service.create(req);
+        return ApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_DETAIL_SUCCESS, created);
     }
 }

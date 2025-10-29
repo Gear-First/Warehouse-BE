@@ -157,6 +157,18 @@ public class ReceivingServiceImpl implements ReceivingService {
         return new ReceivingCompleteResponse(completedAt.toString(), appliedSum);
     }
 
+    @Override
+    public ReceivingNoteDetailResponse create(com.gearfirst.warehouse.api.receiving.dto.ReceivingCreateNoteRequest request) {
+        // TODO: Implement creation logic for Receiving note
+        //  - Generate/assign receivingNo according to business rules (pending)
+        //  - Validate fields (supplierName, lines, quantities) once rules are finalized
+        //  - Handle LOT format/validation when defined
+        //  - Map request to ReceivingNoteEntity and ReceivingNoteLineEntity
+        //  - Set initial status to PENDING and compute itemKindsNumber/totalQty
+        //  - Persist via repository.save(entity) and return toDetail(entity)
+        throw new UnsupportedOperationException("Receiving create is not implemented yet. TODO: lot and request number generation/validation.");
+    }
+
     private boolean isDoneStatus(ReceivingNoteStatus status) {
         return DONE_STATUSES.contains(status);
     }

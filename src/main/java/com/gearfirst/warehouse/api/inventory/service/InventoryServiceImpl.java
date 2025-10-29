@@ -18,6 +18,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @lombok.RequiredArgsConstructor
@@ -27,7 +28,7 @@ public class InventoryServiceImpl implements InventoryService {
     private final com.gearfirst.warehouse.api.parts.persistence.PartJpaRepository parts;
 
     @Override
-    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     public PageEnvelope<OnHandSummary> listOnHand(Long warehouseId, String keyword, int page, int size) {
         if (page < 0 || size < 1 || size > 100) {
             throw new BadRequestException(ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
@@ -66,7 +67,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     public void increase(Long warehouseId, Long partId, int qty) {
         if (qty <= 0 || partId == null) return;
         var now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -82,7 +83,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    @org.springframework.transaction.annotation.Transactional
+    @Transactional
     public void decrease(Long warehouseId, Long partId, int qty) {
         if (qty <= 0 || partId == null) return;
         var entity = jpa.findByWarehouseIdAndPartId(warehouseId, partId)
