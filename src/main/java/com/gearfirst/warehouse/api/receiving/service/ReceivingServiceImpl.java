@@ -39,9 +39,33 @@ public class ReceivingServiceImpl implements ReceivingService {
                 .toList();
     }
 
+    // Overload with optional warehouse filter
+    public List<ReceivingNoteSummaryResponse> getNotDone(String date, Long warehouseId) {
+        var list = repository.findNotDone(date);
+        if (warehouseId != null) {
+            list = list.stream().filter(n -> java.util.Objects.equals(n.getWarehouseId(), warehouseId)).toList();
+        }
+        return list.stream()
+                .sorted(Comparator.comparing(ReceivingNoteEntity::getNoteId))
+                .map(this::toSummary)
+                .toList();
+    }
+
     @Override
     public List<ReceivingNoteSummaryResponse> getDone(String date) {
         return repository.findDone(date).stream()
+                .sorted(Comparator.comparing(ReceivingNoteEntity::getNoteId))
+                .map(this::toSummary)
+                .toList();
+    }
+
+    // Overload with optional warehouse filter
+    public List<ReceivingNoteSummaryResponse> getDone(String date, Long warehouseId) {
+        var list = repository.findDone(date);
+        if (warehouseId != null) {
+            list = list.stream().filter(n -> java.util.Objects.equals(n.getWarehouseId(), warehouseId)).toList();
+        }
+        return list.stream()
                 .sorted(Comparator.comparing(ReceivingNoteEntity::getNoteId))
                 .map(this::toSummary)
                 .toList();

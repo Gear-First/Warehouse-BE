@@ -33,14 +33,20 @@ public class ShippingController {
     @GetMapping("/not-done")
     public ResponseEntity<ApiResponse<List<ShippingNoteSummaryResponse>>> getPendingNotes(@RequestParam(required = false) String date,
                                                                                           @RequestParam(required = false) Long warehouseId) {
-        // Note: warehouseId filter is planned; parameter is accepted for forward-compatibility
-        return ApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_LIST_SUCCESS, service.getNotDone(date));
+        var list = (warehouseId == null)
+                ? service.getNotDone(date)
+                : service.getNotDone(date, warehouseId);
+        return ApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_LIST_SUCCESS, list);
     }
 
-    @Operation(summary = "출고 완료/지연 리스트 조회", description = "출고 완료 또는 지연된 내역 리스트를 조회합니다. (예정)날짜 필터링이 가능합니다.")
+    @Operation(summary = "출고 완료/지연 리스트 조회", description = "출고 완료 또는 지연된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원.")
     @GetMapping("/done")
-    public ResponseEntity<ApiResponse<List<ShippingNoteSummaryResponse>>> getCompletedNotes(@RequestParam(required = false) String date) {
-        return ApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_LIST_SUCCESS, service.getDone(date));
+    public ResponseEntity<ApiResponse<List<ShippingNoteSummaryResponse>>> getCompletedNotes(@RequestParam(required = false) String date,
+                                                                                             @RequestParam(required = false) Long warehouseId) {
+        var list = (warehouseId == null)
+                ? service.getDone(date)
+                : service.getDone(date, warehouseId);
+        return ApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_LIST_SUCCESS, list);
     }
 
     @Operation(summary = "출고 내역서 상세 조회", description = "내역서 ID를 통해 출고 내역서 상세 정보를 조회합니다.")

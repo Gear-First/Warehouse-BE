@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 public class InventoryServiceImpl implements InventoryService {
 
     private final InventoryOnHandJpaRepository jpa;
+    private final com.gearfirst.warehouse.api.parts.persistence.PartJpaRepository parts;
 
     @Override
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
@@ -38,12 +39,23 @@ public class InventoryServiceImpl implements InventoryService {
             entities = jpa.findAll();
         }
         var items = new ArrayList<OnHandSummary>();
+        // Load Part names for better UX
+        var partIds = entities.stream().map(InventoryOnHandEntity::getPartId).distinct().toList();
+        var partMap = new java.util.HashMap<Long, com.gearfirst.warehouse.api.parts.persistence.entity.PartEntity>();
+        if (!partIds.isEmpty()) {
+            for (var p : parts.findAllById(partIds)) {
+                partMap.put(p.getId(), p);
+            }
+        }
         for (var e : entities) {
-            var partRef = new PartRef(e.getPartId(), "P-" + e.getPartId(), null);
+            var pe = partMap.get(e.getPartId());
+            String code = pe != null ? pe.getCode() : ("P-" + e.getPartId());
+            String name = pe != null ? pe.getName() : null;
+            var partRef = new PartRef(e.getPartId(), code, name);
             var last = e.getLastUpdatedAt() != null ? e.getLastUpdatedAt().toString() : null;
             items.add(new OnHandSummary(e.getWarehouseId(), partRef, e.getOnHandQty(), last));
         }
-        // keyword filter (code/name synthesized)
+        // keyword filter (by code/name)
         var filtered = items.stream()
                 .filter(i -> keyword == null || keyword.isBlank() || containsIgnoreCase(i.part().code(), keyword) || containsIgnoreCase(i.part().name(), keyword))
                 .toList();

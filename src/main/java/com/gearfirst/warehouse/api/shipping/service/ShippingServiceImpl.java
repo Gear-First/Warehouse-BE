@@ -69,9 +69,33 @@ public class ShippingServiceImpl implements ShippingService {
                 .toList();
     }
 
+    // Overload with optional warehouse filter
+    public List<ShippingNoteSummaryResponse> getNotDone(String date, Long warehouseId) {
+        var notes = repository.findNotDone(date);
+        if (warehouseId != null) {
+            notes = notes.stream().filter(n -> java.util.Objects.equals(warehouseId, n.getWarehouseId())).toList();
+        }
+        return notes.stream()
+                .sorted(Comparator.comparing(ShippingNote::getNoteId))
+                .map(this::toSummary)
+                .toList();
+    }
+
     @Override
     public List<ShippingNoteSummaryResponse> getDone(String date) {
         return repository.findDone(date).stream()
+                .sorted(Comparator.comparing(ShippingNote::getNoteId))
+                .map(this::toSummary)
+                .toList();
+    }
+
+    // Overload with optional warehouse filter
+    public List<ShippingNoteSummaryResponse> getDone(String date, Long warehouseId) {
+        var notes = repository.findDone(date);
+        if (warehouseId != null) {
+            notes = notes.stream().filter(n -> java.util.Objects.equals(warehouseId, n.getWarehouseId())).toList();
+        }
+        return notes.stream()
                 .sorted(Comparator.comparing(ShippingNote::getNoteId))
                 .map(this::toSummary)
                 .toList();

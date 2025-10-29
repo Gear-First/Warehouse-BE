@@ -1,5 +1,7 @@
 package com.gearfirst.warehouse.api.receiving;
 
+import static java.util.Comparator.comparing;
+
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingCompleteResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteDetailResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteSummaryResponse;
@@ -10,6 +12,7 @@ import com.gearfirst.warehouse.common.response.SuccessStatus;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
+import java.util.Comparator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -29,20 +32,23 @@ public class ReceivingController {
 
     private final ReceivingService service;
 
-    @Operation(summary = "입고 예정 리스트 조회", description = "입고 예정된 내역 리스트를 조회합니다. (예정)날짜 필터링이 가능합니다.")
+    @Operation(summary = "입고 예정 리스트 조회", description = "입고 예정된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원.")
     @GetMapping("/not-done")
     public ResponseEntity<ApiResponse<PageEnvelope<ReceivingNoteSummaryResponse>>> getPendingNotes(
             @RequestParam(required = false) String date,
+            @RequestParam(required = false) Long warehouseId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) java.util.List<String> sort
     ) {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
-        var all = service.getNotDone(date);
+        var all = (warehouseId == null)
+                ? service.getNotDone(date)
+                : service.getNotDone(date, warehouseId);
         // 기본 정렬: noteId asc
         var sorted = all.stream()
-                .sorted(java.util.Comparator.comparing(ReceivingNoteSummaryResponse::noteId))
+                .sorted(Comparator.comparing(ReceivingNoteSummaryResponse::noteId))
                 .toList();
         long total = sorted.size();
         int from = Math.min(p * s, (int) total);
@@ -51,20 +57,23 @@ public class ReceivingController {
         return ApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_LIST_SUCCESS, envelope);
     }
 
-    @Operation(summary = "입고 완료 리스트 조회", description = "입고 완료된 내역 리스트를 조회합니다. (예정)날짜 필터링이 가능합니다.")
+    @Operation(summary = "입고 완료 리스트 조회", description = "입고 완료된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원.")
     @GetMapping("/done")
     public ResponseEntity<ApiResponse<PageEnvelope<ReceivingNoteSummaryResponse>>> getCompletedNotes(
             @RequestParam(required = false) String date,
+            @RequestParam(required = false) Long warehouseId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) java.util.List<String> sort
     ) {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
-        var all = service.getDone(date);
+        var all = (warehouseId == null)
+                ? service.getDone(date)
+                : service.getDone(date, warehouseId);
         // 기본 정렬: noteId asc
         var sorted = all.stream()
-                .sorted(java.util.Comparator.comparing(ReceivingNoteSummaryResponse::noteId))
+                .sorted(comparing(ReceivingNoteSummaryResponse::noteId))
                 .toList();
         long total = sorted.size();
         int from = Math.min(p * s, (int) total);
