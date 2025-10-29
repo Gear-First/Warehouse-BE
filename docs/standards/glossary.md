@@ -12,10 +12,13 @@
 
 ## 수량(Quantities)
 - orderedQty: 지시/주문 수량(>0)
+- receivedQty: 실제 도착 수량(입고)
+- inspectedQty: 검수 통과 수량(입고)
+- acceptedQty: 입고 수용 수량(재고 반영 기준; MVP: ACCEPTED→orderedQty, REJECTED→0)
 - allocatedQty: 출고 할당 수량(출고)
 - pickedQty: 집품/피킹 수량(출고)
-- inspectedQty: 검수 수량(입고)
-- acceptedQty: 입고 수용 수량(ACCEPTED 라인)
+- shippedQty: 실제 출고 수량(출고)
+- backorderQty: 파생, max(0, orderedQty − shippedQty)
 - returnedQty: 반품/거부 수량(REJECTED 라인은 orderedQty)
 - issueQty: 불량/파손 수량(현 단계 REJECTED면 orderedQty)
 

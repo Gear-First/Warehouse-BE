@@ -2,6 +2,7 @@ package com.gearfirst.warehouse.api.shipping.service;
 
 import static com.gearfirst.warehouse.common.response.ErrorStatus.CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED;
 
+import com.gearfirst.warehouse.api.inventory.service.InventoryService;
 import com.gearfirst.warehouse.api.shipping.domain.LineStatus;
 import com.gearfirst.warehouse.api.shipping.domain.NoteStatus;
 import com.gearfirst.warehouse.api.shipping.domain.ShippingNote;
@@ -17,6 +18,7 @@ import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.common.exception.ConflictException;
 import com.gearfirst.warehouse.common.exception.NotFoundException;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
+import com.gearfirst.warehouse.common.response.PageEnvelope;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -26,11 +28,38 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class ShippingServiceImpl implements ShippingService {
 
     private final ShippingNoteRepository repository;
     private final OnHandProvider onHandProvider;
+    private final InventoryService inventoryService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public ShippingServiceImpl(ShippingNoteRepository repository,
+                               OnHandProvider onHandProvider,
+                               InventoryService inventoryService) {
+        this.repository = repository;
+        this.onHandProvider = onHandProvider;
+        this.inventoryService = inventoryService;
+    }
+
+    // Backward-compatible ctor for tests that don't provide InventoryService
+    public ShippingServiceImpl(ShippingNoteRepository repository, OnHandProvider onHandProvider) {
+        this.repository = repository;
+        this.onHandProvider = onHandProvider;
+        this.inventoryService = new NoOpInventoryService();
+    }
+
+    private static final class NoOpInventoryService implements InventoryService {
+        @Override
+        public PageEnvelope<com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.OnHandSummary> listOnHand(Long warehouseId, String keyword, int page, int size) {
+            return PageEnvelope.of(java.util.List.of(), page, size, 0);
+        }
+        @Override
+        public void increase(Long warehouseId, Long partId, int qty) { /* no-op */ }
+        @Override
+        public void decrease(Long warehouseId, Long partId, int qty) { /* no-op */ }
+    }
 
     @Override
     public List<ShippingNoteSummaryResponse> getNotDone(String date) {
@@ -152,6 +181,18 @@ public class ShippingServiceImpl implements ShippingService {
         var finalStatus = hasShortage ? NoteStatus.DELAYED : NoteStatus.COMPLETED;
         var completedAt = OffsetDateTime.now(ZoneOffset.UTC).toString();
 
+        // If completing, apply inventory decreases based on shippedQty (=pickedQty) per READY line
+        int totalShipped = 0;
+        if (finalStatus == NoteStatus.COMPLETED) {
+            for (var l : note.getLines()) {
+                if (l.getStatus() == LineStatus.READY) {
+                    int shipped = l.getPickedQty();
+                    totalShipped += shipped;
+                    inventoryService.decrease(note.getWarehouseId(), l.getProductId(), shipped);
+                }
+            }
+        }
+
         var updated = ShippingNote.builder()
                 .noteId(note.getNoteId())
                 .customerName(note.getCustomerName())
@@ -163,7 +204,7 @@ public class ShippingServiceImpl implements ShippingService {
                 .build();
         repository.save(updated);
 
-        return new ShippingCompleteResponse(completedAt, note.getTotalQty());
+        return new ShippingCompleteResponse(completedAt, finalStatus == NoteStatus.COMPLETED ? totalShipped : note.getTotalQty());
     }
 
     private ShippingNoteSummaryResponse toSummary(ShippingNote note) {

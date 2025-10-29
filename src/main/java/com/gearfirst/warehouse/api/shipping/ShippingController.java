@@ -31,7 +31,9 @@ public class ShippingController {
 
     @Operation(summary = "출고 예정 리스트 조회", description = "출고 예정된 내역 리스트를 조회합니다. (예정)날짜 필터링이 가능합니다.")
     @GetMapping("/not-done")
-    public ResponseEntity<ApiResponse<List<ShippingNoteSummaryResponse>>> getPendingNotes(@RequestParam(required = false) String date) {
+    public ResponseEntity<ApiResponse<List<ShippingNoteSummaryResponse>>> getPendingNotes(@RequestParam(required = false) String date,
+                                                                                          @RequestParam(required = false) Long warehouseId) {
+        // Note: warehouseId filter is planned; parameter is accepted for forward-compatibility
         return ApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_LIST_SUCCESS, service.getNotDone(date));
     }
 

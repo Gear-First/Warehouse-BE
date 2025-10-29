@@ -38,6 +38,9 @@ public class ReceivingNoteEntity extends BaseTimeEntity {
 
     private int totalQty;
 
+    // Nullable for MVP; multi-warehouse adoption
+    private Long warehouseId;
+
     @Enumerated(EnumType.STRING)
     private ReceivingNoteStatus status; // PENDING | IN_PROGRESS | COMPLETED_OK | COMPLETED_ISSUE
 

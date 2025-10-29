@@ -29,6 +29,7 @@ public class ReceivingServiceImpl implements ReceivingService {
     private static final List<ReceivingNoteStatus> DONE_STATUSES = List.of(ReceivingNoteStatus.COMPLETED_OK, ReceivingNoteStatus.COMPLETED_ISSUE);
 
     private final ReceivingNoteRepository repository;
+    private final com.gearfirst.warehouse.api.inventory.service.InventoryService inventoryService;
 
     @Override
     public List<ReceivingNoteSummaryResponse> getNotDone(String date) {
@@ -109,10 +110,18 @@ public class ReceivingServiceImpl implements ReceivingService {
         if (!allFinal) {
             throw new ConflictException(ErrorStatus.CONFLICT_RECEIVING_CANNOT_COMPLETE_WHEN_NOT_DONE);
         }
+        // MVP policy: acceptedQty = orderedQty for ACCEPTED lines, REJECTED contributes 0
         int appliedSum = note.getLines().stream()
                 .filter(l -> l.getStatus() == ReceivingLineStatus.ACCEPTED)
-                .mapToInt(ReceivingNoteLineEntity::getInspectedQty)
+                .mapToInt(ReceivingNoteLineEntity::getOrderedQty)
                 .sum();
+
+        // Apply inventory increases per product (use warehouseId when available)
+        Long whId = note.getWarehouseId();
+        note.getLines().stream()
+                .filter(l -> l.getStatus() == ReceivingLineStatus.ACCEPTED)
+                .forEach(l -> inventoryService.increase(whId, l.getProductId(), l.getOrderedQty()));
+
         boolean hasRejected = note.getLines().stream().anyMatch(l -> l.getStatus() == ReceivingLineStatus.REJECTED);
         ReceivingNoteStatus finalStatus = hasRejected ? ReceivingNoteStatus.COMPLETED_ISSUE : ReceivingNoteStatus.COMPLETED_OK;
         var completedAt = OffsetDateTime.now(ZoneOffset.UTC);

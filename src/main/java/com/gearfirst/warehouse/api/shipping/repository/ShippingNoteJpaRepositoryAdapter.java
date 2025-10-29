@@ -65,6 +65,7 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
                 .customerName(e.getCustomerName())
                 .itemKindsNumber(e.getItemKindsNumber())
                 .totalQty(e.getTotalQty())
+                .warehouseId(e.getWarehouseId())
                 .status(e.getStatus())
                 .completedAt(e.getCompletedAt() == null ? null : e.getCompletedAt().toString())
                 .lines(e.getLines().stream().map(this::toDomainLine).toList())
@@ -92,6 +93,7 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
                 .customerName(d.getCustomerName())
                 .itemKindsNumber(d.getItemKindsNumber())
                 .totalQty(d.getTotalQty())
+                .warehouseId(d.getWarehouseId())
                 .status(d.getStatus())
                 .completedAt(d.getCompletedAt() == null ? null : OffsetDateTime.parse(d.getCompletedAt()));
         var entity = builder.build();

@@ -38,6 +38,9 @@ public class ShippingNoteEntity extends BaseTimeEntity {
 
     private int totalQty;
 
+    // Nullable for MVP; multi-warehouse adoption
+    private Long warehouseId;
+
     @Enumerated(EnumType.STRING)
     private NoteStatus status;
 

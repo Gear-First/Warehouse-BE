@@ -34,7 +34,12 @@
 ## 재고 반영 규칙(핵심)
 
 - 차감 시점: Note가 COMPLETED로 전이될 때
-- 차감 기준 수량: 각 READY 라인의 orderedQty
+- 차감 기준 수량: 각 라인의 shippedQty 합계(파생: backorderQty = orderedQty − shippedQty)
+- 일관성: 초기 버전은 동기 처리(서비스 계층)로 반영, 후속 ADR에서 비동기 전환 검토
+
+## 멀티 창고/권한 노트
+- 창고 담당자: 소속 창고 데이터만 접근 가능(문서 기준). HQ는 전 창고 조회 가능.
+- warehouseId 필터/필드는 문서에만 우선 반영하고 구현은 후속 PR에서 진행.
 
 ## 참고
 
