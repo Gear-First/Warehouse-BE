@@ -55,6 +55,7 @@
       "lotNo": "LOT-2401",
       "part": { "code": "P-1001", "name": "오일필터" },
       "orderedQty": 50,
+      "receivedQty": 50,
       "inspectedQty": 48,
       "status": "PENDING|ACCEPTED|REJECTED",
       "lineRemark": null

@@ -53,7 +53,7 @@
       "lineId": 7,
       "part": { "code": "P-1001", "name": "오일필터" },
       "orderedQty": 50,
-      "inspectedQty": 48,
+      "inspectedQty": 50,
       "status": "ACCEPTED"
     }
   ]

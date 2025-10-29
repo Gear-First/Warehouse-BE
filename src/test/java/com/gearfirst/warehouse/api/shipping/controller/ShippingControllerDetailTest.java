@@ -38,7 +38,9 @@ class ShippingControllerDetailTest {
                         new ShippingProductResponse(11L, "LOT-A", "S-01", "볼트", "/img/b"),
                         10, 10, 8, "READY")
         );
-        var detail = new ShippingNoteDetailResponse(3001L, "ACME", 1, 10, "IN_PROGRESS", null, lines);
+        var detail = new ShippingNoteDetailResponse(3001L, "ACME", 1, 10, "IN_PROGRESS", null,
+                        null, null, null, null, null, null, null, null, null,
+                        lines);
         when(shippingService.getDetail(anyLong())).thenReturn(detail);
 
         // when & then

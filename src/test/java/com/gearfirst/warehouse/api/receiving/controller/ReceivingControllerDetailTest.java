@@ -39,7 +39,9 @@ class ReceivingControllerDetailTest {
         var lines = List.of(new ReceivingNoteLineResponse(1L,
                 new ReceivingProductResponse(1L, "LOT-A", "P-1001", "오일필터", "/img"),
                 50, 48, 2, "REJECTED"));
-        var detail = new ReceivingNoteDetailResponse(101L, "ABC Supply", 3, 120, "IN_PROGRESS", null, lines);
+        var detail = new ReceivingNoteDetailResponse(101L, "ABC Supply", 3, 120, "IN_PROGRESS", null,
+                        null, null, null, null, null, null, null, null, null,
+                        lines);
         when(receivingService.getDetail(anyLong())).thenReturn(detail);
 
         mockMvc.perform(get("/api/v1/receiving/{noteId}", 101L).accept(MediaType.APPLICATION_JSON))

@@ -11,7 +11,7 @@
 
 - 모든 라인이 `READY`일 때만 완료 가능 → Note=`COMPLETED`
 - 라인 중 하나라도 `SHORTAGE`이면 즉시 Note=`DELAYED`로 전이되며, 완료 요청은 409로 거부(정책상 완료 불가)
-- 재고 차감 시점: `COMPLETED` 전이 시, 각 READY 라인의 orderedQty 합 기준으로 차감
+- 재고 차감 시점: `COMPLETED` 전이 시, 각 READY 라인의 shippedQty 합 기준으로 차감
 
 ## Preconditions
 
@@ -62,8 +62,14 @@
     "noteId": 602,
     "noteStatus": "DELAYED",
     "problematicLines": [
-      { "lineId": 3, "product": { "productNo": "P-2002", "name": "브레이크패드" }, "orderedQty": 20, "onHand": 12, "status": "SHORTAGE", "reason": "onHand<ordered" }
+      { "lineId": 3, "part": { "code": "P-2002", "name": "브레이크패드" }, "orderedQty": 20, "allocatedQty": 20, "pickedQty": 12, "status": "SHORTAGE", "reason": "onHand<ordered" }
     ]
   }
 }
 ```
+
+
+## References
+- Policy: [shipping-fulfillment.md](../../policy/shipping-fulfillment.md)
+- Standards: [exception-and-response.md](../../standards/exception-and-response.md)
+- ADR: [ADR-05-Use-Cases-are-Non-Authoritative.md](../../adr/ADR-05-Use-Cases-are-Non-Authoritative.md)

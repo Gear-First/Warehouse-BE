@@ -9,6 +9,8 @@
 ## Intent
 - 창고/부품별 현재 On-hand 수량을 조회한다.
 
+> 경고(중요): Inventory의 Create/Update/Delete 엔드포인트는 일반 운영에서 사용하지 않습니다. 이력 보정/초기 적재/오류 복구 등 특수 상황에서만 사용하며, 운영 화면/흐름은 입고(ACCEPTED)와 출고(COMPLETED)를 통해서만 재고가 변동됩니다.
+
 ## Preconditions
 - 없음(읽기 UC)
 

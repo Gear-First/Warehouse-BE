@@ -19,8 +19,9 @@
 ## Main Flow
 
 1) 시스템은 `noteId`로 노트를 로드하고 `canComplete()`를 확인한다.
-2) `complete()` 수행 시 **`ACCEPTED` 라인만** 제품별 합계를 계산한다.
-3) Inventory에 계산된 합계를 **증가** 반영한다.
+2) `complete()` 수행 시 **`ACCEPTED` 라인만** 제품별 합계를 계산한다(증가 기준: acceptedQty).
+   - MVP 정책에서는 부분 수용 미지원 → acceptedQty = orderedQty
+3) Inventory에 계산된 합계(acceptedQty 합) 를 **증가** 반영한다.
 4) `NoteStatus = COMPLETED_OK | COMPLETED_ISSUE`로 전이한다(REJECTED 라인 존재 시 COMPLETED_ISSUE), 완료 요약을 반환한다.
 
 ## Acceptance (GWT)
@@ -75,3 +76,9 @@
   }
 }
 ```
+
+
+## References
+- Policy: [receiving-inspection.md](../../policy/receiving-inspection.md)
+- Standards: [exception-and-response.md](../../standards/exception-and-response.md)
+- ADR: [ADR-05-Use-Cases-are-Non-Authoritative.md](../../adr/ADR-05-Use-Cases-are-Non-Authoritative.md)

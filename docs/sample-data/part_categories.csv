@@ -1,6 +1,0 @@
-id,name,description,enabled,createdAt,updatedAt
-10,Filter,Oil/Air/Cabin filters,true,2025-10-28T00:00:00Z,2025-10-28T00:00:00Z
-20,Brake,Brake pads/discs/fluids,true,2025-10-28T00:00:00Z,2025-10-28T00:00:00Z
-30,Engine,Engine-related consumables,true,2025-10-28T00:00:00Z,2025-10-28T00:00:00Z
-40,Electrical,Battery/Bulbs/Sensors,true,2025-10-28T00:00:00Z,2025-10-28T00:00:00Z
-50,Suspension,Arms/Shocks/Links,true,2025-10-28T00:00:00Z,2025-10-28T00:00:00Z

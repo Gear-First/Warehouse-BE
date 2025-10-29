@@ -39,6 +39,7 @@ public enum ErrorStatus {
     CONFLICT_RECEIVING_LINE_ALREADY_DONE(HttpStatus.CONFLICT, "입고 라인이 이미 완료되어 수정할 수 없습니다."),
     CONFLICT_RECEIVING_NOTE_ALREADY_COMPLETED(HttpStatus.CONFLICT, "입고 전표가 이미 완료 상태입니다."),
     CONFLICT_RECEIVING_CANNOT_COMPLETE_WHEN_NOT_DONE(HttpStatus.CONFLICT, "입고 완료 불가: 진행 중 라인이 존재합니다."),
+    CONFLICT_INVENTORY_INSUFFICIENT(HttpStatus.CONFLICT, "재고 부족으로 차감할 수 없습니다."),
     PART_CATEGORY_NAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 카테고리 이름입니다."),
     PART_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 부품 코드입니다."),
     PART_CATEGORY_HAS_PARTS(HttpStatus.CONFLICT, "카테고리에 속한 부품이 있어 삭제할 수 없습니다."),

@@ -2,11 +2,13 @@ package com.gearfirst.warehouse.api.shipping.service;
 
 import static com.gearfirst.warehouse.common.response.ErrorStatus.CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED;
 
+import com.gearfirst.warehouse.api.inventory.service.InventoryService;
 import com.gearfirst.warehouse.api.shipping.domain.LineStatus;
 import com.gearfirst.warehouse.api.shipping.domain.NoteStatus;
 import com.gearfirst.warehouse.api.shipping.domain.ShippingNote;
 import com.gearfirst.warehouse.api.shipping.domain.ShippingNoteLine;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteResponse;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingCreateNoteRequest;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteDetailResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteLineResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteSummaryResponse;
@@ -17,6 +19,7 @@ import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.common.exception.ConflictException;
 import com.gearfirst.warehouse.common.exception.NotFoundException;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
+import com.gearfirst.warehouse.common.response.PageEnvelope;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -26,11 +29,38 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class ShippingServiceImpl implements ShippingService {
 
     private final ShippingNoteRepository repository;
     private final OnHandProvider onHandProvider;
+    private final InventoryService inventoryService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public ShippingServiceImpl(ShippingNoteRepository repository,
+                               OnHandProvider onHandProvider,
+                               InventoryService inventoryService) {
+        this.repository = repository;
+        this.onHandProvider = onHandProvider;
+        this.inventoryService = inventoryService;
+    }
+
+    // Backward-compatible ctor for tests that don't provide InventoryService
+    public ShippingServiceImpl(ShippingNoteRepository repository, OnHandProvider onHandProvider) {
+        this.repository = repository;
+        this.onHandProvider = onHandProvider;
+        this.inventoryService = new NoOpInventoryService();
+    }
+
+    private static final class NoOpInventoryService implements InventoryService {
+        @Override
+        public PageEnvelope<com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.OnHandSummary> listOnHand(Long warehouseId, String keyword, int page, int size) {
+            return PageEnvelope.of(java.util.List.of(), page, size, 0);
+        }
+        @Override
+        public void increase(Long warehouseId, Long partId, int qty) { /* no-op */ }
+        @Override
+        public void decrease(Long warehouseId, Long partId, int qty) { /* no-op */ }
+    }
 
     @Override
     public List<ShippingNoteSummaryResponse> getNotDone(String date) {
@@ -40,9 +70,33 @@ public class ShippingServiceImpl implements ShippingService {
                 .toList();
     }
 
+    // Overload with optional warehouse filter
+    public List<ShippingNoteSummaryResponse> getNotDone(String date, Long warehouseId) {
+        var notes = repository.findNotDone(date);
+        if (warehouseId != null) {
+            notes = notes.stream().filter(n -> java.util.Objects.equals(warehouseId, n.getWarehouseId())).toList();
+        }
+        return notes.stream()
+                .sorted(Comparator.comparing(ShippingNote::getNoteId))
+                .map(this::toSummary)
+                .toList();
+    }
+
     @Override
     public List<ShippingNoteSummaryResponse> getDone(String date) {
         return repository.findDone(date).stream()
+                .sorted(Comparator.comparing(ShippingNote::getNoteId))
+                .map(this::toSummary)
+                .toList();
+    }
+
+    // Overload with optional warehouse filter
+    public List<ShippingNoteSummaryResponse> getDone(String date, Long warehouseId) {
+        var notes = repository.findDone(date);
+        if (warehouseId != null) {
+            notes = notes.stream().filter(n -> java.util.Objects.equals(warehouseId, n.getWarehouseId())).toList();
+        }
+        return notes.stream()
                 .sorted(Comparator.comparing(ShippingNote::getNoteId))
                 .map(this::toSummary)
                 .toList();
@@ -152,6 +206,18 @@ public class ShippingServiceImpl implements ShippingService {
         var finalStatus = hasShortage ? NoteStatus.DELAYED : NoteStatus.COMPLETED;
         var completedAt = OffsetDateTime.now(ZoneOffset.UTC).toString();
 
+        // If completing, apply inventory decreases based on shippedQty (=pickedQty) per READY line
+        int totalShipped = 0;
+        if (finalStatus == NoteStatus.COMPLETED) {
+            for (var l : note.getLines()) {
+                if (l.getStatus() == LineStatus.READY) {
+                    int shipped = l.getPickedQty();
+                    totalShipped += shipped;
+                    inventoryService.decrease(note.getWarehouseId(), l.getProductId(), shipped);
+                }
+            }
+        }
+
         var updated = ShippingNote.builder()
                 .noteId(note.getNoteId())
                 .customerName(note.getCustomerName())
@@ -163,7 +229,58 @@ public class ShippingServiceImpl implements ShippingService {
                 .build();
         repository.save(updated);
 
-        return new ShippingCompleteResponse(completedAt, note.getTotalQty());
+        return new ShippingCompleteResponse(completedAt, finalStatus == NoteStatus.COMPLETED ? totalShipped : note.getTotalQty());
+    }
+
+    @Override
+    public ShippingNoteDetailResponse create(ShippingCreateNoteRequest request) {
+        // Generate simple ids (temporary). In real system, use sequence/UUID.
+        long noteId = System.currentTimeMillis();
+        List<ShippingNoteLine> lines = new java.util.ArrayList<>();
+        int totalQty = 0;
+        java.util.Set<Long> productIds = new java.util.HashSet<>();
+        if (request != null && request.lines() != null) {
+            int i = 0;
+            for (var rl : request.lines()) {
+                long lineId = noteId + (++i);
+                int ordered = rl.orderedQty() == null ? 0 : rl.orderedQty();
+                totalQty += ordered;
+                if (rl.productId() != null) productIds.add(rl.productId());
+                lines.add(ShippingNoteLine.builder()
+                        .lineId(lineId)
+                        .productId(rl.productId())
+                        .productLot(null)
+                        .productSerial(null)
+                        .productName(null)
+                        .productImgUrl(null)
+                        .orderedQty(ordered)
+                        .allocatedQty(0)
+                        .pickedQty(0)
+                        .status(LineStatus.PENDING)
+                        .build());
+            }
+        }
+        int itemKinds = productIds.size();
+        var note = ShippingNote.builder()
+                .noteId(noteId)
+                .customerName(request == null ? null : request.customerName())
+                .itemKindsNumber(itemKinds)
+                .totalQty(totalQty)
+                .warehouseId(request == null ? null : request.warehouseId())
+                .shippingNo(request == null ? null : request.shippingNo())
+                .requestedAt(request == null ? null : request.requestedAt())
+                .expectedShipDate(request == null ? null : request.expectedShipDate())
+                .shippedAt(null)
+                .assigneeName(null)
+                .assigneeDept(null)
+                .assigneePhone(null)
+                .remark(request == null ? null : request.remark())
+                .status(NoteStatus.PENDING)
+                .completedAt(null)
+                .lines(lines)
+                .build();
+        var saved = repository.save(note);
+        return toDetail(saved);
     }
 
     private ShippingNoteSummaryResponse toSummary(ShippingNote note) {
@@ -185,6 +302,15 @@ public class ShippingServiceImpl implements ShippingService {
                 note.getTotalQty(),
                 note.getStatus().name(),
                 note.getCompletedAt(),
+                note.getShippingNo(),
+                note.getWarehouseId(),
+                note.getRequestedAt(),
+                note.getExpectedShipDate(),
+                note.getShippedAt(),
+                note.getAssigneeName(),
+                note.getAssigneeDept(),
+                note.getAssigneePhone(),
+                note.getRemark(),
                 note.getLines().stream().map(l -> new ShippingNoteLineResponse(
                         l.getLineId(),
                         new ShippingProductResponse(l.getProductId(), l.getProductLot(), l.getProductSerial(), l.getProductName(), l.getProductImgUrl()),

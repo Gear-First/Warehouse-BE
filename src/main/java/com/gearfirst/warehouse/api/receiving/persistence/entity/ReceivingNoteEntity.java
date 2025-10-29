@@ -38,12 +38,23 @@ public class ReceivingNoteEntity extends BaseTimeEntity {
 
     private int totalQty;
 
+    // Nullable for MVP; multi-warehouse adoption
+    private Long warehouseId;
+
+    // Additive metadata
+    private String receivingNo;
+    private OffsetDateTime requestedAt;
+    private OffsetDateTime expectedReceiveDate;
+    private OffsetDateTime receivedAt;
+    private String inspectorName;
+    private String inspectorDept;
+    private String inspectorPhone;
+    private String remark;
+
     @Enumerated(EnumType.STRING)
     private ReceivingNoteStatus status; // PENDING | IN_PROGRESS | COMPLETED_OK | COMPLETED_ISSUE
 
     private OffsetDateTime completedAt;
-
-    private String remark;
 
     @OneToMany(mappedBy = "note", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default

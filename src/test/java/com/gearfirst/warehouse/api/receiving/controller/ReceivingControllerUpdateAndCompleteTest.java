@@ -9,6 +9,7 @@ import com.gearfirst.warehouse.common.exception.ConflictException;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -45,8 +46,10 @@ class ReceivingControllerUpdateAndCompleteTest {
         var lines = List.of(new ReceivingNoteLineResponse(10L,
                 new ReceivingProductResponse(4L, "LOT-P-2001", "P-2001", "스페이서", "/img/p2001"),
                 20, 18, 0, "ACCEPTED"));
-        var detail = new ReceivingNoteDetailResponse(102L, "BCD Parts", 2, 45, "IN_PROGRESS", null, lines);
-        when(receivingService.updateLine(eq(102L), eq(10L), org.mockito.ArgumentMatchers.any(ReceivingUpdateLineRequest.class))).thenReturn(detail);
+        var detail = new ReceivingNoteDetailResponse(102L, "BCD Parts", 2, 45, "IN_PROGRESS", null,
+                null, null, null, null, null, null, null, null, null,
+                lines);
+        when(receivingService.updateLine(eq(102L), eq(10L), ArgumentMatchers.any(ReceivingUpdateLineRequest.class))).thenReturn(detail);
 
         // when & then
         mockMvc.perform(patch("/api/v1/receiving/{noteId}/lines/{lineId}", 102L, 10L)
@@ -68,8 +71,10 @@ class ReceivingControllerUpdateAndCompleteTest {
         var lines = List.of(new ReceivingNoteLineResponse(11L,
                 new ReceivingProductResponse(5L, "LOT-P-2002", "P-2002", "클립", "/img/p2002"),
                 25, 20, 5, "REJECTED"));
-        var detail = new ReceivingNoteDetailResponse(102L, "BCD Parts", 2, 45, "IN_PROGRESS", null, lines);
-        when(receivingService.updateLine(eq(102L), eq(11L), org.mockito.ArgumentMatchers.any(ReceivingUpdateLineRequest.class))).thenReturn(detail);
+        var detail = new ReceivingNoteDetailResponse(102L, "BCD Parts", 2, 45, "IN_PROGRESS", null,
+                null, null, null, null, null, null, null, null, null,
+                lines);
+        when(receivingService.updateLine(eq(102L), eq(11L), ArgumentMatchers.any(ReceivingUpdateLineRequest.class))).thenReturn(detail);
 
         // when & then
         mockMvc.perform(patch("/api/v1/receiving/{noteId}/lines/{lineId}", 102L, 11L)
@@ -87,7 +92,7 @@ class ReceivingControllerUpdateAndCompleteTest {
     @DisplayName("PATCH /api/v1/receiving/{noteId}/lines/{lineId} - inspectedQty > orderedQty면 400")
     void updateLine_validationError_inspectedExceedsOrdered() throws Exception {
         var req = new ReceivingUpdateLineRequest(1000, false);
-        when(receivingService.updateLine(eq(101L), eq(3L), org.mockito.ArgumentMatchers.any(ReceivingUpdateLineRequest.class)))
+        when(receivingService.updateLine(eq(101L), eq(3L), ArgumentMatchers.any(ReceivingUpdateLineRequest.class)))
                 .thenThrow(new BadRequestException(ErrorStatus.RECEIVING_ORDERED_QTY_EXCEEDS_INSPECTED_QTY));
 
         mockMvc.perform(patch("/api/v1/receiving/{noteId}/lines/{lineId}", 101L, 3L)
@@ -102,7 +107,7 @@ class ReceivingControllerUpdateAndCompleteTest {
     @DisplayName("PATCH /api/v1/receiving/{noteId}/lines/{lineId} - 완료 라인 재수정 시 409")
     void updateLine_conflict_whenLineAlreadyDone() throws Exception {
         var req = new ReceivingUpdateLineRequest(40, false);
-        when(receivingService.updateLine(eq(101L), eq(2L), org.mockito.ArgumentMatchers.any(ReceivingUpdateLineRequest.class)))
+        when(receivingService.updateLine(eq(101L), eq(2L), ArgumentMatchers.any(ReceivingUpdateLineRequest.class)))
                 .thenThrow(new ConflictException(ErrorStatus.CONFLICT_RECEIVING_LINE_ALREADY_DONE));
 
         mockMvc.perform(patch("/api/v1/receiving/{noteId}/lines/{lineId}", 101L, 2L)
@@ -117,10 +122,14 @@ class ReceivingControllerUpdateAndCompleteTest {
     @DisplayName("POST /api/v1/receiving/{noteId}:complete - 라인이 모두 ACCEPTED/REJECTED일 때 완료되고 appliedQtyTotal은 ACCEPTED 합")
     void complete_success() throws Exception {
         // stub two updates (responses are not asserted deeply in this test)
-        when(receivingService.updateLine(eq(102L), eq(10L), org.mockito.ArgumentMatchers.any(ReceivingUpdateLineRequest.class)))
-                .thenReturn(new ReceivingNoteDetailResponse(102L, "BCD Parts", 2, 45, "IN_PROGRESS", null, List.of()));
-        when(receivingService.updateLine(eq(102L), eq(11L), org.mockito.ArgumentMatchers.any(ReceivingUpdateLineRequest.class)))
-                .thenReturn(new ReceivingNoteDetailResponse(102L, "BCD Parts", 2, 45, "IN_PROGRESS", null, List.of()));
+        when(receivingService.updateLine(eq(102L), eq(10L), ArgumentMatchers.any(ReceivingUpdateLineRequest.class)))
+                .thenReturn(new ReceivingNoteDetailResponse(102L, "BCD Parts", 2, 45, "IN_PROGRESS", null,
+                        null, null, null, null, null, null, null, null, null,
+                        List.of()));
+        when(receivingService.updateLine(eq(102L), eq(11L), ArgumentMatchers.any(ReceivingUpdateLineRequest.class)))
+                .thenReturn(new ReceivingNoteDetailResponse(102L, "BCD Parts", 2, 45, "IN_PROGRESS", null,
+                        null, null, null, null, null, null, null, null, null,
+                        List.of()));
         when(receivingService.complete(102L))
                 .thenReturn(new ReceivingCompleteResponse("2025-10-27T05:00:00Z", 20));
 

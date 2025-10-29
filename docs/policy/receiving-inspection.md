@@ -31,6 +31,17 @@
   - COMPLETED_ISSUE: 하나 이상 라인이 REJECTED
 - 원칙: 문제 없는 라인은 모두 수용(ACCEPTED), 문제가 특정된 라인은 전량 거부(REJECTED). 거부 라인의 재요청/반품 등 후속 처리는 후속 PR에서 다룸.
 
+## 용어 정의
+
+- orderedQty: 요청/발주 수량(받아야 할 물량)
+- receivedQty: 실제 도착 수량
+- inspectedQty: 검수 통과 수량(MVP에서는 부분 수용 미지원 가정 하에 ACCEPTED 시 orderedQty와 동일)
+- acceptedQty(파생): 재고 반영 수량
+  - MVP: ACCEPTED → acceptedQty = orderedQty, REJECTED → acceptedQty = 0
+  - 향후 부분 수용 도입 시: acceptedQty = inspectedQty로 전환 가능(정책/UC 동시 개정)
+
+> 인벤토리 반영: 입고 완료 시 증가 기준은 acceptedQty의 합계(MVP에서는 사실상 orderedQty 합계)입니다.
+
 ## 참고
 
 - 관련: ADR-01, ADR-02, ADR-05

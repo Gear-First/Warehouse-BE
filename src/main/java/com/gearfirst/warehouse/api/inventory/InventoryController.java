@@ -22,7 +22,7 @@ public class InventoryController {
 
     private final InventoryService service;
 
-    @Operation(summary = "재고 현황(On-hand) 목록", description = "창고/부품 키워드로 On-hand 목록을 조회합니다. 페이지/사이즈 기본값: page=0, size=20")
+    @Operation(summary = "재고 현황(On-hand) 목록", description = "창고/부품 키워드로 On-hand 목록을 조회합니다. 필터: warehouseId, keyword (부분 일치). 페이지/사이즈 기본값: page=0, size=20. 주의: Inventory의 Create/Update/Delete 엔드포인트는 일반 운영에서 사용하지 않습니다.")
     @GetMapping("/onhand")
     public ResponseEntity<ApiResponse<PageEnvelope<OnHandSummary>>> listOnHand(
             @RequestParam(required = false) Long warehouseId,
