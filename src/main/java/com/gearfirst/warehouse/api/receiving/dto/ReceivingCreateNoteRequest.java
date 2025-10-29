@@ -10,6 +10,7 @@ import java.util.List;
 public record ReceivingCreateNoteRequest(
         String supplierName,
         Long warehouseId,
+        String receivingNo,
         String requestedAt,
         String expectedReceiveDate,
         String remark,

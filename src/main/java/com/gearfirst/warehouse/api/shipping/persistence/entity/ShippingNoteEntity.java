@@ -41,6 +41,16 @@ public class ShippingNoteEntity extends BaseTimeEntity {
     // Nullable for MVP; multi-warehouse adoption
     private Long warehouseId;
 
+    // Additive metadata
+    private String shippingNo;
+    private OffsetDateTime requestedAt;
+    private OffsetDateTime expectedShipDate;
+    private OffsetDateTime shippedAt;
+    private String assigneeName;
+    private String assigneeDept;
+    private String assigneePhone;
+    private String remark;
+
     @Enumerated(EnumType.STRING)
     private NoteStatus status;
 

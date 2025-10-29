@@ -66,6 +66,14 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
                 .itemKindsNumber(e.getItemKindsNumber())
                 .totalQty(e.getTotalQty())
                 .warehouseId(e.getWarehouseId())
+                .shippingNo(e.getShippingNo())
+                .requestedAt(e.getRequestedAt() == null ? null : e.getRequestedAt().toString())
+                .expectedShipDate(e.getExpectedShipDate() == null ? null : e.getExpectedShipDate().toString())
+                .shippedAt(e.getShippedAt() == null ? null : e.getShippedAt().toString())
+                .assigneeName(e.getAssigneeName())
+                .assigneeDept(e.getAssigneeDept())
+                .assigneePhone(e.getAssigneePhone())
+                .remark(e.getRemark())
                 .status(e.getStatus())
                 .completedAt(e.getCompletedAt() == null ? null : e.getCompletedAt().toString())
                 .lines(e.getLines().stream().map(this::toDomainLine).toList())
@@ -94,8 +102,16 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
                 .itemKindsNumber(d.getItemKindsNumber())
                 .totalQty(d.getTotalQty())
                 .warehouseId(d.getWarehouseId())
+                .shippingNo(d.getShippingNo())
+                .requestedAt(parseOffsetDateTime(d.getRequestedAt()))
+                .expectedShipDate(parseOffsetDateTime(d.getExpectedShipDate()))
+                .shippedAt(parseOffsetDateTime(d.getShippedAt()))
+                .assigneeName(d.getAssigneeName())
+                .assigneeDept(d.getAssigneeDept())
+                .assigneePhone(d.getAssigneePhone())
+                .remark(d.getRemark())
                 .status(d.getStatus())
-                .completedAt(d.getCompletedAt() == null ? null : OffsetDateTime.parse(d.getCompletedAt()));
+                .completedAt(parseOffsetDateTime(d.getCompletedAt()));
         var entity = builder.build();
         if (d.getLines() != null) {
             for (var dl : d.getLines()) {
@@ -116,5 +132,14 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
             }
         }
         return entity;
+    }
+
+    private java.time.OffsetDateTime parseOffsetDateTime(String text) {
+        if (text == null || text.isBlank()) return null;
+        try {
+            return java.time.OffsetDateTime.parse(text);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

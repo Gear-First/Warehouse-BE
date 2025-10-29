@@ -3,6 +3,7 @@ package com.gearfirst.warehouse.api.shipping;
 import static java.util.Comparator.comparing;
 
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteResponse;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingCreateNoteRequest;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteDetailResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteSummaryResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingUpdateLineRequest;
@@ -11,6 +12,7 @@ import com.gearfirst.warehouse.common.response.ApiResponse;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.Comparator;
 import java.util.List;
@@ -28,7 +30,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Controller
 @RequestMapping("/api/v1/shipping")
 @RequiredArgsConstructor
-@io.swagger.v3.oas.annotations.tags.Tag(name = "Shipping", description = "출고 API: 서버가 상태를 도출하며 SHORTAGE 시 DELAYED 전이")
+@Tag(name = "Shipping", description = "출고 API: 서버가 상태를 도출하며 SHORTAGE 시 DELAYED 전이")
 public class ShippingController {
 
     private final ShippingService service;
@@ -107,7 +109,7 @@ public class ShippingController {
     @Operation(summary = "출고 요청서 생성", description = "출고 요청서를 생성합니다. 현재 단계에서는 값 검증/번호 생성(shippingNo) 로직을 구현하지 않습니다. TODO 위치만 지정합니다.")
     @PostMapping
     public ResponseEntity<ApiResponse<ShippingNoteDetailResponse>> create(
-            @RequestBody com.gearfirst.warehouse.api.shipping.dto.ShippingCreateNoteRequest req
+            @RequestBody ShippingCreateNoteRequest req
     ) {
         // TODO: 값 검증(필수 필드, 수량 범위) 및 shippingNo 생성 로직 추가
         var created = service.create(req);

@@ -10,6 +10,7 @@ import java.util.List;
 public record ShippingCreateNoteRequest(
         String customerName,
         Long warehouseId,
+        String shippingNo,
         String requestedAt,
         String expectedShipDate,
         String remark,

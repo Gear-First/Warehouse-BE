@@ -9,6 +9,7 @@ import com.gearfirst.warehouse.common.response.SuccessStatus;
 import com.gearfirst.warehouse.api.shipping.service.ShippingService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -44,8 +45,10 @@ class ShippingControllerUpdateAndCompleteTest {
         var lines = List.of(new ShippingNoteLineResponse(1L,
                 new ShippingProductResponse(11L, "LOT-A", "S-01", "볼트", "/img"),
                 10, 10, 8, "READY"));
-        var detail = new ShippingNoteDetailResponse(4001L, "ACME", 1, 10, "IN_PROGRESS", null, lines);
-        when(shippingService.updateLine(eq(4001L), eq(1L), org.mockito.ArgumentMatchers.any(ShippingUpdateLineRequest.class))).thenReturn(detail);
+        var detail = new ShippingNoteDetailResponse(4001L, "ACME", 1, 10, "IN_PROGRESS", null,
+                        null, null, null, null, null, null, null, null, null,
+                        lines);
+        when(shippingService.updateLine(eq(4001L), eq(1L), ArgumentMatchers.any(ShippingUpdateLineRequest.class))).thenReturn(detail);
 
         // when & then
         mockMvc.perform(patch("/api/v1/shipping/{noteId}/lines/{lineId}", 4001L, 1L)
@@ -63,7 +66,7 @@ class ShippingControllerUpdateAndCompleteTest {
     void updateLine_validationError() throws Exception {
         // given
         var req = new ShippingUpdateLineRequest(5, 8);
-        when(shippingService.updateLine(eq(4002L), eq(1L), org.mockito.ArgumentMatchers.any(ShippingUpdateLineRequest.class)))
+        when(shippingService.updateLine(eq(4002L), eq(1L), ArgumentMatchers.any(ShippingUpdateLineRequest.class)))
                 .thenThrow(new BadRequestException(ErrorStatus.SHIPPING_PICKED_QTY_EXCEEDS_ALLOCATED_QTY));
 
         // when & then

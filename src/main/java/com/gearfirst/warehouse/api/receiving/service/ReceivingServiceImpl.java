@@ -3,6 +3,7 @@ package com.gearfirst.warehouse.api.receiving.service;
 import com.gearfirst.warehouse.api.receiving.domain.ReceivingLineStatus;
 import com.gearfirst.warehouse.api.receiving.domain.ReceivingNoteStatus;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingCompleteResponse;
+import com.gearfirst.warehouse.api.receiving.dto.ReceivingCreateNoteRequest;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteDetailResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteLineResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteSummaryResponse;
@@ -17,8 +18,11 @@ import com.gearfirst.warehouse.common.exception.NotFoundException;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -158,15 +162,72 @@ public class ReceivingServiceImpl implements ReceivingService {
     }
 
     @Override
-    public ReceivingNoteDetailResponse create(com.gearfirst.warehouse.api.receiving.dto.ReceivingCreateNoteRequest request) {
-        // TODO: Implement creation logic for Receiving note
-        //  - Generate/assign receivingNo according to business rules (pending)
-        //  - Validate fields (supplierName, lines, quantities) once rules are finalized
-        //  - Handle LOT format/validation when defined
-        //  - Map request to ReceivingNoteEntity and ReceivingNoteLineEntity
-        //  - Set initial status to PENDING and compute itemKindsNumber/totalQty
-        //  - Persist via repository.save(entity) and return toDetail(entity)
-        throw new UnsupportedOperationException("Receiving create is not implemented yet. TODO: lot and request number generation/validation.");
+    public ReceivingNoteDetailResponse create(ReceivingCreateNoteRequest request) {
+        long noteId = System.currentTimeMillis();
+        var builder = ReceivingNoteEntity.builder()
+                .noteId(noteId)
+                .supplierName(request == null ? null : request.supplierName())
+                .warehouseId(request == null ? null : request.warehouseId())
+                .remark(request == null ? null : request.remark())
+                .status(ReceivingNoteStatus.PENDING)
+                .completedAt(null);
+        // parse dates if provided; ignore errors
+        OffsetDateTime reqAt = parseOffsetDateTime(request == null ? null : request.requestedAt());
+        OffsetDateTime expAt = parseOffsetDateTime(request == null ? null : request.expectedReceiveDate());
+        builder.requestedAt(reqAt);
+        builder.expectedReceiveDate(expAt);
+        builder.receivedAt(null);
+        builder.receivingNo(request == null ? null : request.receivingNo());
+        // Inspector info is set during inspection process, keep null on create
+        builder.inspectorName(null);
+        builder.inspectorDept(null);
+        builder.inspectorPhone(null);
+
+        int totalQty = 0;
+        Set<Long> productIds = new HashSet<>();
+        List<ReceivingNoteLineEntity> lineEntities = new ArrayList<>();
+        if (request != null && request.lines() != null) {
+            int i = 0;
+            for (var rl : request.lines()) {
+                long lineId = noteId + (++i);
+                int ordered = rl.orderedQty() == null ? 0 : rl.orderedQty();
+                totalQty += ordered;
+                if (rl.productId() != null) productIds.add(rl.productId());
+                var line = ReceivingNoteLineEntity.builder()
+                        .lineId(lineId)
+                        .productId(rl.productId())
+                        .productLot(rl.lotNo())
+                        .productCode(null)
+                        .productName(null)
+                        .productImgUrl(null)
+                        .orderedQty(ordered)
+                        .inspectedQty(0)
+                        .issueQty(0)
+                        .status(ReceivingLineStatus.PENDING)
+                        .remark(rl.lineRemark())
+                        .build();
+                lineEntities.add(line);
+            }
+        }
+        int kinds = productIds.size();
+        builder.itemKindsNumber(kinds);
+        builder.totalQty(totalQty);
+        var entity = builder.build();
+        // link lines
+        for (var le : lineEntities) {
+            entity.addLine(le);
+        }
+        var saved = repository.save(entity);
+        return toDetail(saved);
+    }
+
+    private OffsetDateTime parseOffsetDateTime(String text) {
+        if (text == null || text.isBlank()) return null;
+        try {
+            return OffsetDateTime.parse(text);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private boolean isDoneStatus(ReceivingNoteStatus status) {
@@ -202,6 +263,15 @@ public class ReceivingServiceImpl implements ReceivingService {
                 n.getTotalQty(),
                 n.getStatus().name(),
                 completedAt,
+                n.getReceivingNo(),
+                n.getWarehouseId(),
+                n.getRequestedAt() == null ? null : n.getRequestedAt().toString(),
+                n.getExpectedReceiveDate() == null ? null : n.getExpectedReceiveDate().toString(),
+                n.getReceivedAt() == null ? null : n.getReceivedAt().toString(),
+                n.getInspectorName(),
+                n.getInspectorDept(),
+                n.getInspectorPhone(),
+                n.getRemark(),
                 lines
         );
     }

@@ -8,6 +8,7 @@ import com.gearfirst.warehouse.api.shipping.domain.NoteStatus;
 import com.gearfirst.warehouse.api.shipping.domain.ShippingNote;
 import com.gearfirst.warehouse.api.shipping.domain.ShippingNoteLine;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteResponse;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingCreateNoteRequest;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteDetailResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteLineResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteSummaryResponse;
@@ -232,14 +233,54 @@ public class ShippingServiceImpl implements ShippingService {
     }
 
     @Override
-    public ShippingNoteDetailResponse create(com.gearfirst.warehouse.api.shipping.dto.ShippingCreateNoteRequest request) {
-        // TODO: Implement creation logic for Shipping note
-        //  - Generate/assign shippingNo according to business rules (pending)
-        //  - Validate fields (customerName, lines, quantities) once rules are finalized
-        //  - Map request to ShippingNote aggregate and lines
-        //  - Set initial status to PENDING and compute itemKindsNumber/totalQty
-        //  - Persist via repository.save(note) and return toDetail(note)
-        throw new UnsupportedOperationException("Shipping create is not implemented yet. TODO: request number generation/validation.");
+    public ShippingNoteDetailResponse create(ShippingCreateNoteRequest request) {
+        // Generate simple ids (temporary). In real system, use sequence/UUID.
+        long noteId = System.currentTimeMillis();
+        List<ShippingNoteLine> lines = new java.util.ArrayList<>();
+        int totalQty = 0;
+        java.util.Set<Long> productIds = new java.util.HashSet<>();
+        if (request != null && request.lines() != null) {
+            int i = 0;
+            for (var rl : request.lines()) {
+                long lineId = noteId + (++i);
+                int ordered = rl.orderedQty() == null ? 0 : rl.orderedQty();
+                totalQty += ordered;
+                if (rl.productId() != null) productIds.add(rl.productId());
+                lines.add(ShippingNoteLine.builder()
+                        .lineId(lineId)
+                        .productId(rl.productId())
+                        .productLot(null)
+                        .productSerial(null)
+                        .productName(null)
+                        .productImgUrl(null)
+                        .orderedQty(ordered)
+                        .allocatedQty(0)
+                        .pickedQty(0)
+                        .status(LineStatus.PENDING)
+                        .build());
+            }
+        }
+        int itemKinds = productIds.size();
+        var note = ShippingNote.builder()
+                .noteId(noteId)
+                .customerName(request == null ? null : request.customerName())
+                .itemKindsNumber(itemKinds)
+                .totalQty(totalQty)
+                .warehouseId(request == null ? null : request.warehouseId())
+                .shippingNo(request == null ? null : request.shippingNo())
+                .requestedAt(request == null ? null : request.requestedAt())
+                .expectedShipDate(request == null ? null : request.expectedShipDate())
+                .shippedAt(null)
+                .assigneeName(null)
+                .assigneeDept(null)
+                .assigneePhone(null)
+                .remark(request == null ? null : request.remark())
+                .status(NoteStatus.PENDING)
+                .completedAt(null)
+                .lines(lines)
+                .build();
+        var saved = repository.save(note);
+        return toDetail(saved);
     }
 
     private ShippingNoteSummaryResponse toSummary(ShippingNote note) {
@@ -261,15 +302,15 @@ public class ShippingServiceImpl implements ShippingService {
                 note.getTotalQty(),
                 note.getStatus().name(),
                 note.getCompletedAt(),
-                null, // shippingNo (TBD)
+                note.getShippingNo(),
                 note.getWarehouseId(),
-                null, // requestedAt (TBD)
-                null, // expectedShipDate (TBD)
-                null, // shippedAt (TBD)
-                null, // assigneeName (TBD)
-                null, // assigneeDept (TBD)
-                null, // assigneePhone (TBD)
-                null, // remark (TBD)
+                note.getRequestedAt(),
+                note.getExpectedShipDate(),
+                note.getShippedAt(),
+                note.getAssigneeName(),
+                note.getAssigneeDept(),
+                note.getAssigneePhone(),
+                note.getRemark(),
                 note.getLines().stream().map(l -> new ShippingNoteLineResponse(
                         l.getLineId(),
                         new ShippingProductResponse(l.getProductId(), l.getProductLot(), l.getProductSerial(), l.getProductName(), l.getProductImgUrl()),
