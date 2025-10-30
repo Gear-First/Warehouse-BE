@@ -35,20 +35,24 @@ public class ShippingController {
 
     private final ShippingService service;
 
-    @Operation(summary = "출고 예정 리스트 조회", description = "출고 예정된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseId(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc")
+    @Operation(summary = "출고 예정 리스트 조회", description = "출고 예정된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseCode(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc")
     @GetMapping("/not-done")
     public ResponseEntity<ApiResponse<PageEnvelope<ShippingNoteSummaryResponse>>> getPendingNotes(
             @RequestParam(required = false) String date,
-            @RequestParam(required = false) Long warehouseId,
+            @RequestParam(required = false) String warehouseCode,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) java.util.List<String> sort
     ) {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
-        var all = (warehouseId == null)
+        Long wid = null;
+        if (warehouseCode != null && !warehouseCode.isBlank()) {
+            try { wid = Long.parseLong(warehouseCode.trim()); } catch (NumberFormatException ignore) { wid = null; }
+        }
+        var all = (wid == null)
                 ? service.getNotDone(date)
-                : service.getNotDone(date, warehouseId);
+                : service.getNotDone(date, wid);
         var sorted = all.stream()
                 .sorted(Comparator.comparing(ShippingNoteSummaryResponse::noteId))
                 .toList();
@@ -63,16 +67,20 @@ public class ShippingController {
     @GetMapping("/done")
     public ResponseEntity<ApiResponse<PageEnvelope<ShippingNoteSummaryResponse>>> getCompletedNotes(
             @RequestParam(required = false) String date,
-            @RequestParam(required = false) Long warehouseId,
+            @RequestParam(required = false) String warehouseCode,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) java.util.List<String> sort
     ) {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
-        var all = (warehouseId == null)
+        Long wid = null;
+                if (warehouseCode != null && !warehouseCode.isBlank()) {
+                    try { wid = Long.parseLong(warehouseCode.trim()); } catch (NumberFormatException ignore) { wid = null; }
+                }
+        var all = (wid == null)
                 ? service.getDone(date)
-                : service.getDone(date, warehouseId);
+                : service.getDone(date, wid);
         var sorted = all.stream()
                 .sorted(comparing(ShippingNoteSummaryResponse::noteId))
                 .toList();

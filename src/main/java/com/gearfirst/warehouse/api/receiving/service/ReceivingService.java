@@ -11,16 +11,16 @@ public interface ReceivingService {
     List<ReceivingNoteSummaryResponse> getNotDone(String date);
     List<ReceivingNoteSummaryResponse> getDone(String date);
 
-    // Overloads with optional warehouse filter
-    default List<ReceivingNoteSummaryResponse> getNotDone(String date, Long warehouseId) {
+    // Overloads with optional warehouse filter (use warehouseCode)
+    default List<ReceivingNoteSummaryResponse> getNotDone(String date, String warehouseCode) {
         var list = getNotDone(date);
-        if (warehouseId == null) return list;
-        return list; // impl override will handle
+        if (warehouseCode == null || warehouseCode.isBlank()) return list;
+        return list; // impl override will handle filtering where available
     }
-    default List<ReceivingNoteSummaryResponse> getDone(String date, Long warehouseId) {
+    default List<ReceivingNoteSummaryResponse> getDone(String date, String warehouseCode) {
         var list = getDone(date);
-        if (warehouseId == null) return list;
-        return list; // impl override will handle
+        if (warehouseCode == null || warehouseCode.isBlank()) return list;
+        return list; // impl override will handle filtering where available
     }
 
     ReceivingNoteDetailResponse getDetail(Long noteId);

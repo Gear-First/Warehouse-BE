@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -43,11 +44,11 @@ public class ReceivingServiceImpl implements ReceivingService {
                 .toList();
     }
 
-    // Overload with optional warehouse filter
-    public List<ReceivingNoteSummaryResponse> getNotDone(String date, Long warehouseId) {
+    // Overload with optional warehouse filter (warehouseCode)
+    public List<ReceivingNoteSummaryResponse> getNotDone(String date, String warehouseCode) {
         var list = repository.findNotDone(date);
-        if (warehouseId != null) {
-            list = list.stream().filter(n -> java.util.Objects.equals(n.getWarehouseId(), warehouseId)).toList();
+        if (warehouseCode != null && !warehouseCode.isBlank()) {
+            list = list.stream().filter(n -> Objects.equals(n.getWarehouseCode(), warehouseCode)).toList();
         }
         return list.stream()
                 .sorted(Comparator.comparing(ReceivingNoteEntity::getNoteId))
@@ -63,11 +64,11 @@ public class ReceivingServiceImpl implements ReceivingService {
                 .toList();
     }
 
-    // Overload with optional warehouse filter
-    public List<ReceivingNoteSummaryResponse> getDone(String date, Long warehouseId) {
+    // Overload with optional warehouse filter (warehouseCode)
+    public List<ReceivingNoteSummaryResponse> getDone(String date, String warehouseCode) {
         var list = repository.findDone(date);
-        if (warehouseId != null) {
-            list = list.stream().filter(n -> java.util.Objects.equals(n.getWarehouseId(), warehouseId)).toList();
+        if (warehouseCode != null && !warehouseCode.isBlank()) {
+            list = list.stream().filter(n -> Objects.equals(n.getWarehouseCode(), warehouseCode)).toList();
         }
         return list.stream()
                 .sorted(Comparator.comparing(ReceivingNoteEntity::getNoteId))
@@ -145,10 +146,10 @@ public class ReceivingServiceImpl implements ReceivingService {
                 .sum();
 
         // Apply inventory increases per product (use warehouseId when available)
-        Long whId = note.getWarehouseId();
+        String whCode = note.getWarehouseCode();
         note.getLines().stream()
                 .filter(l -> l.getStatus() == ReceivingLineStatus.ACCEPTED)
-                .forEach(l -> inventoryService.increase(whId, l.getProductId(), l.getOrderedQty()));
+                .forEach(l -> inventoryService.increase(whCode, l.getProductId(), l.getOrderedQty()));
 
         boolean hasRejected = note.getLines().stream().anyMatch(l -> l.getStatus() == ReceivingLineStatus.REJECTED);
         ReceivingNoteStatus finalStatus = hasRejected ? ReceivingNoteStatus.COMPLETED_ISSUE : ReceivingNoteStatus.COMPLETED_OK;
@@ -167,7 +168,7 @@ public class ReceivingServiceImpl implements ReceivingService {
         var builder = ReceivingNoteEntity.builder()
                 .noteId(noteId)
                 .supplierName(request == null ? null : request.supplierName())
-                .warehouseId(request == null ? null : request.warehouseId())
+                .warehouseCode(request == null ? null : request.warehouseCode())
                 .remark(request == null ? null : request.remark())
                 .status(ReceivingNoteStatus.PENDING)
                 .completedAt(null);
@@ -264,7 +265,7 @@ public class ReceivingServiceImpl implements ReceivingService {
                 n.getStatus().name(),
                 completedAt,
                 n.getReceivingNo(),
-                n.getWarehouseId(),
+                n.getWarehouseCode(),
                 n.getRequestedAt() == null ? null : n.getRequestedAt().toString(),
                 n.getExpectedReceiveDate() == null ? null : n.getExpectedReceiveDate().toString(),
                 n.getReceivedAt() == null ? null : n.getReceivedAt().toString(),

@@ -2,6 +2,7 @@ package com.gearfirst.warehouse.api.shipping.service;
 
 import static com.gearfirst.warehouse.common.response.ErrorStatus.CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED;
 
+import com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.OnHandSummary;
 import com.gearfirst.warehouse.api.inventory.service.InventoryService;
 import com.gearfirst.warehouse.api.shipping.domain.LineStatus;
 import com.gearfirst.warehouse.api.shipping.domain.NoteStatus;
@@ -53,13 +54,15 @@ public class ShippingServiceImpl implements ShippingService {
 
     private static final class NoOpInventoryService implements InventoryService {
         @Override
-        public PageEnvelope<com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.OnHandSummary> listOnHand(Long warehouseId, String keyword, int page, int size) {
-            return PageEnvelope.of(java.util.List.of(), page, size, 0);
+        public PageEnvelope<OnHandSummary> listOnHand(
+                String warehouseCode, String partKeyword, String supplierName, Integer minQty, Integer maxQty,
+                int page, int size, List<String> sort) {
+            return PageEnvelope.of(List.of(), page, size, 0);
         }
         @Override
-        public void increase(Long warehouseId, Long partId, int qty) { /* no-op */ }
+        public void increase(String warehouseCode, Long partId, int qty) { /* no-op */ }
         @Override
-        public void decrease(Long warehouseId, Long partId, int qty) { /* no-op */ }
+        public void decrease(String warehouseCode, Long partId, int qty) { /* no-op */ }
     }
 
     @Override
@@ -213,7 +216,7 @@ public class ShippingServiceImpl implements ShippingService {
                 if (l.getStatus() == LineStatus.READY) {
                     int shipped = l.getPickedQty();
                     totalShipped += shipped;
-                    inventoryService.decrease(note.getWarehouseId(), l.getProductId(), shipped);
+                    inventoryService.decrease(note.getWarehouseId() == null ? null : String.valueOf(note.getWarehouseId()), l.getProductId(), shipped);
                 }
             }
         }

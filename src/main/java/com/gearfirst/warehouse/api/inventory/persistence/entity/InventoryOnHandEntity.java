@@ -19,7 +19,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "inventory_onhand",
         indexes = {
-                @Index(name = "IDX_onhand_wh_part", columnList = "warehouseId,partId"),
+                @Index(name = "IDX_onhand_wh_part", columnList = "warehouseCode,partId"),
                 @Index(name = "IDX_onhand_part", columnList = "partId")
         })
 @Getter
@@ -34,7 +34,7 @@ public class InventoryOnHandEntity extends BaseTimeEntity {
     private Long id;
 
     // Nullable for MVP single-warehouse scenarios
-    private Long warehouseId;
+    private String warehouseCode;
 
     @Column(nullable = false)
     private Long partId;

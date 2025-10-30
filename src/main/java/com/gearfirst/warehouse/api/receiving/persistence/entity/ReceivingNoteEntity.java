@@ -39,7 +39,7 @@ public class ReceivingNoteEntity extends BaseTimeEntity {
     private int totalQty;
 
     // Nullable for MVP; multi-warehouse adoption
-    private Long warehouseId;
+    private String warehouseCode;
 
     // Additive metadata
     private String receivingNo;

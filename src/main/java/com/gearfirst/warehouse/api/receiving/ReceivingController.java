@@ -33,20 +33,20 @@ public class ReceivingController {
 
     private final ReceivingService service;
 
-    @Operation(summary = "입고 예정 리스트 조회", description = "입고 예정된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseId(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc")
+    @Operation(summary = "입고 예정 리스트 조회", description = "입고 예정된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseCode(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc")
     @GetMapping("/not-done")
     public ResponseEntity<ApiResponse<PageEnvelope<ReceivingNoteSummaryResponse>>> getPendingNotes(
             @RequestParam(required = false) String date,
-            @RequestParam(required = false) Long warehouseId,
+            @RequestParam(required = false) String warehouseCode,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) java.util.List<String> sort
     ) {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
-        var all = (warehouseId == null)
+        var all = (warehouseCode == null || warehouseCode.isBlank())
                 ? service.getNotDone(date)
-                : service.getNotDone(date, warehouseId);
+                : service.getNotDone(date, warehouseCode);
         // 기본 정렬: noteId asc
         var sorted = all.stream()
                 .sorted(Comparator.comparing(ReceivingNoteSummaryResponse::noteId))
@@ -58,20 +58,20 @@ public class ReceivingController {
         return ApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_LIST_SUCCESS, envelope);
     }
 
-    @Operation(summary = "입고 완료 리스트 조회", description = "입고 완료된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseId(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc")
+    @Operation(summary = "입고 완료 리스트 조회", description = "입고 완료된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseCode(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc")
     @GetMapping("/done")
     public ResponseEntity<ApiResponse<PageEnvelope<ReceivingNoteSummaryResponse>>> getCompletedNotes(
             @RequestParam(required = false) String date,
-            @RequestParam(required = false) Long warehouseId,
+            @RequestParam(required = false) String warehouseCode,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) java.util.List<String> sort
     ) {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
-        var all = (warehouseId == null)
+        var all = (warehouseCode == null || warehouseCode.isBlank())
                 ? service.getDone(date)
-                : service.getDone(date, warehouseId);
+                : service.getDone(date, warehouseCode);
         // 기본 정렬: noteId asc
         var sorted = all.stream()
                 .sorted(comparing(ReceivingNoteSummaryResponse::noteId))

@@ -4,6 +4,7 @@ import com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.OnHandSummary;
 import com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.PartRef;
 import com.gearfirst.warehouse.api.inventory.persistence.InventoryOnHandJpaRepository;
 import com.gearfirst.warehouse.api.inventory.persistence.entity.InventoryOnHandEntity;
+import com.gearfirst.warehouse.api.parts.persistence.entity.PartEntity;
 import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.common.exception.ConflictException;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
@@ -11,12 +12,9 @@ import com.gearfirst.warehouse.common.response.PageEnvelope;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,51 +27,93 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageEnvelope<OnHandSummary> listOnHand(Long warehouseId, String keyword, int page, int size) {
+    public PageEnvelope<OnHandSummary> listOnHand(
+            String warehouseCode,
+            String partKeyword,
+            String supplierName,
+            Integer minQty,
+            Integer maxQty,
+            int page,
+            int size,
+            List<String> sort
+    ) {
         if (page < 0 || size < 1 || size > 100) {
             throw new BadRequestException(ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
         }
-        List<InventoryOnHandEntity> entities;
-        if (warehouseId != null) {
-            entities = jpa.findAllByWarehouseId(warehouseId);
-        } else {
-            entities = jpa.findAll();
-        }
-        var items = new ArrayList<OnHandSummary>();
-        // Load Part names for better UX
+        List<InventoryOnHandEntity> entities = (warehouseCode == null || warehouseCode.isBlank())
+                ? jpa.findAll()
+                : jpa.findAllByWarehouseCode(warehouseCode);
+
+        // Enrich with Part data
         var partIds = entities.stream().map(InventoryOnHandEntity::getPartId).distinct().toList();
-        var partMap = new java.util.HashMap<Long, com.gearfirst.warehouse.api.parts.persistence.entity.PartEntity>();
+        var partMap = new HashMap<Long, PartEntity>();
         if (!partIds.isEmpty()) {
             for (var p : parts.findAllById(partIds)) {
                 partMap.put(p.getId(), p);
             }
         }
+        var items = new ArrayList<OnHandSummary>(entities.size());
         for (var e : entities) {
             var pe = partMap.get(e.getPartId());
             String code = pe != null ? pe.getCode() : ("P-" + e.getPartId());
             String name = pe != null ? pe.getName() : null;
             var partRef = new PartRef(e.getPartId(), code, name);
             var last = e.getLastUpdatedAt() != null ? e.getLastUpdatedAt().toString() : null;
-            items.add(new OnHandSummary(e.getWarehouseId(), partRef, e.getOnHandQty(), last));
+            items.add(new OnHandSummary(e.getWarehouseCode(), partRef, e.getOnHandQty(), last));
         }
-        // keyword filter (by code/name)
+        // Filters: partKeyword (code|name), supplierName (not available yet -> skip if provided), qty range
         var filtered = items.stream()
-                .filter(i -> keyword == null || keyword.isBlank() || containsIgnoreCase(i.part().code(), keyword) || containsIgnoreCase(i.part().name(), keyword))
+                .filter(i -> partKeyword == null || partKeyword.isBlank()
+                        || containsIgnoreCase(i.part().code(), partKeyword)
+                        || containsIgnoreCase(i.part().name(), partKeyword))
+                .filter(i -> minQty == null || i.onHandQty() >= minQty)
+                .filter(i -> maxQty == null || i.onHandQty() <= maxQty)
                 .toList();
-        long total = filtered.size();
+
+        // Sorting whitelist
+        Comparator<OnHandSummary> cmp = Comparator
+                .comparing((OnHandSummary s) -> s.part().name() == null ? "" : s.part().name(), String::compareToIgnoreCase)
+                .thenComparing((OnHandSummary s) -> s.part().code() == null ? "" : s.part().code(), String::compareToIgnoreCase);
+        if (sort != null && !sort.isEmpty()) {
+            cmp = buildComparator(sort, cmp);
+        }
+        var sorted = filtered.stream().sorted(cmp).toList();
+
+        long total = sorted.size();
         int from = Math.min(page * size, (int) total);
         int to = Math.min(from + size, (int) total);
-        return PageEnvelope.of(filtered.subList(from, to), page, size, total);
+        return PageEnvelope.of(sorted.subList(from, Math.max(from, to)), page, size, total);
+    }
+
+    private Comparator<OnHandSummary> buildComparator(List<String> sort, Comparator<OnHandSummary> defaultCmp) {
+        Comparator<OnHandSummary> cmp = null;
+        for (String s : sort) {
+            if (s == null || s.isBlank()) continue;
+            var parts = s.split(",");
+            String field = parts[0].trim();
+            String dir = parts.length > 1 ? parts[1].trim().toLowerCase(java.util.Locale.ROOT) : "asc";
+            Comparator<OnHandSummary> c;
+            switch (field) {
+                case "partName" -> c = Comparator.comparing(i -> i.part().name() == null ? "" : i.part().name(), String::compareToIgnoreCase);
+                case "partCode" -> c = Comparator.comparing(i -> i.part().code() == null ? "" : i.part().code(), String::compareToIgnoreCase);
+                case "onHandQty" -> c = Comparator.comparingInt(OnHandSummary::onHandQty);
+                case "lastUpdatedAt" -> c = Comparator.comparing(i -> i.lastUpdatedAt() == null ? "" : i.lastUpdatedAt());
+                default -> throw new BadRequestException(ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
+            }
+            if ("desc".equals(dir)) c = c.reversed();
+            cmp = (cmp == null) ? c : cmp.thenComparing(c);
+        }
+        return cmp == null ? defaultCmp : cmp;
     }
 
     @Override
     @Transactional
-    public void increase(Long warehouseId, Long partId, int qty) {
+    public void increase(String warehouseCode, Long partId, int qty) {
         if (qty <= 0 || partId == null) return;
         var now = OffsetDateTime.now(ZoneOffset.UTC);
-        var entity = jpa.findByWarehouseIdAndPartId(warehouseId, partId)
+        var entity = jpa.findByWarehouseCodeAndPartId(warehouseCode, partId)
                 .orElseGet(() -> InventoryOnHandEntity.builder()
-                        .warehouseId(warehouseId)
+                        .warehouseCode(warehouseCode)
                         .partId(partId)
                         .onHandQty(0)
                         .lastUpdatedAt(now)
@@ -84,11 +124,11 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     @Transactional
-    public void decrease(Long warehouseId, Long partId, int qty) {
+    public void decrease(String warehouseCode, Long partId, int qty) {
         if (qty <= 0 || partId == null) return;
-        var entity = jpa.findByWarehouseIdAndPartId(warehouseId, partId)
+        var entity = jpa.findByWarehouseCodeAndPartId(warehouseCode, partId)
                 .orElseGet(() -> InventoryOnHandEntity.builder()
-                        .warehouseId(warehouseId)
+                        .warehouseCode(warehouseCode)
                         .partId(partId)
                         .onHandQty(0)
                         .lastUpdatedAt(OffsetDateTime.now(ZoneOffset.UTC))
