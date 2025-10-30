@@ -119,3 +119,53 @@
 - Receiving 완료 실패(UC-REC-005): `problematicLines[]`는 `ACCEPTED/REJECTED` 외 상태(예: PENDING)를 포함하는 라인 스냅샷
 
 > 구현 주의: 컨트롤러/핸들러에서 409 반환 시 `data`는 선택. 본 표준은 문서 단계이며, 실제 코드는 후속 PR에서 반영한다.
+
+
+
+## Common Query Parameters (planned components)
+
+- page: integer >= 0, default 0
+- size: integer in [1..100], default 20
+- sort: list of `field,asc|desc` (baseline allowed fields vary by UC; e.g., `noteId, completedAt, status` for receiving/shipping lists; Inventory allows `partName, partCode, onHandQty, lastUpdatedAt`)
+- date: `YYYY-MM-DD` (UTC assumed)
+- dateFrom/dateTo: `YYYY-MM-DD` range (UTC, closed interval; when both date and range are provided, the range wins)
+- warehouseCode: optional warehouse filter
+- partKeyword (Inventory): case-insensitive contains over Part code OR name
+- supplierName (Inventory): case-insensitive contains over Part’s supplier attribution
+- minQty / maxQty (Inventory): onHandQty range filter; enforce `minQty <= maxQty` when both present
+
+> Implementation note: Define reusable OpenAPI components (components.parameters) in Swagger config in a follow-up PR. Also enforce sort-key whitelists; unknown sort key should return 400 per standards.
+
+## 409 Conflict Payload — Shared Schema (planned)
+
+- Reusable shape (used by completion endpoints, etc.):
+
+```json
+{
+  "status": 409,
+  "success": false,
+  "message": "도메인별 메시지",
+  "data": {
+    "noteId": 0,
+    "noteStatus": "...",
+    "problematicLines": [
+      { "lineId": 0, "status": "...", "reason": "...", "requestedQty": 0, "availableOnHand": 0 }
+    ]
+  }
+}
+```
+
+- Field notes
+  - `problematicLines[].requestedQty`: receiving → `inspectedQty`/ordered delta 또는 shipping → `allocatedQty/pickedQty` 관련 값으로 맵핑
+  - `problematicLines[].availableOnHand`: shipping에서 부족 사유 설명에 활용(선택)
+
+> OpenAPI: add `components.schemas.ConflictFailedLines` and reference it from UC-REC-005 and UC-SHP-005 in a later PR.
+
+
+
+## Timestamp fields policy (Receiving/Shipping lists)
+- All list item summaries MUST expose:
+  - `requestedAt`: UTC ISO-8601 when HQ registered the note request
+  - `completedAt`: UTC ISO-8601 or null; set on completion (Receiving: COMPLETED_OK/ISSUE; Shipping: COMPLETED) and also when Shipping becomes DELAYED (delay decision moment)
+- Date filters (`date` or `dateFrom/dateTo`) default to `requestedAt` (range wins; closed interval; UTC). A future parameter `dateField=requestedAt|completedAt` may allow switching.
+- Sorting: extend baseline allowed fields to include `requestedAt` and `completedAt` in list endpoints (default remains `noteId asc`).

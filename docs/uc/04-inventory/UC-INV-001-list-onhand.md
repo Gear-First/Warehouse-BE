@@ -15,8 +15,9 @@
 - 없음(읽기 UC)
 
 ## Filters
-- warehouseId: = (필수 또는 단일 창고 환경에서는 생략 가능)
-- keyword: partCode 또는 partName 부분 일치
+- warehouseCode: = (필수 또는 단일 창고 환경에서는 생략 가능)
+- partKeyword: partCode 또는 partName 부분 일치(대소문자 무시)
+- supplierName: 공급업체 명칭 부분 일치(대소문자 무시)
 - minQty / maxQty: onHandQty 범위 필터(선택)
 - page: 기본 0, size: 기본 20
 
@@ -29,13 +30,13 @@
 2) 정책에 정의된 컬럼으로 투영하여 PageEnvelope 형태로 반환한다.
 
 ## I/O
-- GET `/v1/inventory/onhand?warehouseId=1&keyword=filter&page=0&size=20&sort=partName,asc`
+- GET `/v1/inventory/onhand?warehouseCode=WH1&keyword=filter&page=0&size=20&sort=partName,asc`
 - Response (PageEnvelope)
 ```json
 {
   "items": [
     {
-      "warehouseId": 1,
+      "warehouseCode": "WH1",
       "part": { "id": 1001, "code": "P-1001", "name": "오일필터" },
       "onHandQty": 128,
       "lastUpdatedAt": "2025-10-27T03:00:00Z"
@@ -54,3 +55,28 @@
 - Policy: [inventory-overview.md](../../policy/inventory-overview.md)
 - Standards: [exception-and-response.md](../../standards/exception-and-response.md)
 - Context minutes: [minute-of-functional-spec.md](../../context/minute-of-functional-spec.md)
+
+
+
+### Update (2025-10-30)
+- Rename filter: `keyword` → `partKeyword` (case-insensitive contains over part.code OR part.name).
+- Add filters: `supplierName?` (case-insensitive contains), `minQty?`, `maxQty?` (onHandQty range).
+- Semantics: All filters are ANDed. Unknown sort keys → 400. Stable secondary sort by `partCode,asc`.
+- Examples:
+```
+GET /v1/inventory/onhand?warehouseCode=WH1&partKeyword=P-10&page=0&size=20&sort=partName,asc
+GET /v1/inventory/onhand?warehouseCode=WH1&supplierName=ABC공장&minQty=10&maxQty=500&page=0&size=20&sort=onHandQty,desc
+{
+  "items": [
+    {
+      "warehouseCode": "WH1",
+      "part": { "id": 1001, "code": "P-1001", "name": "오일필터" },
+      "onHandQty": 128,
+      "lastUpdatedAt": "2025-10-30T03:00:00Z"
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "total": 1
+}
+```

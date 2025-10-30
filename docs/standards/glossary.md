@@ -25,11 +25,12 @@
 ## 식별자(Identifiers)
 - shippingNo: OUT/<warehouse>/<yyyymmdd>/<seq>
 - receivingNo: IN/<warehouse>/<yyyymmdd>/<seq>
-- warehouseId: 창고 식별자(멀티 창고 도입 보류, 문서 표기만)
+- warehouseCode: 창고 코드(문자열)
 
 ## 기타 용어
 - branchName: 납품처(대리점) 명칭(Shipping)
-- supplierName: 공급업체/공장 명칭(Receiving)
+- supplierName: 공급업체/공장 명칭(Receiving/Inventory 검색용)
+- partKeyword: Inventory 목록에서 부품 코드/이름(둘 중 하나)에 대한 검색어(대소문자 무시, contains)
 - PageEnvelope: 목록 응답 래퍼 { items, page, size, total }
 
 ## 참고

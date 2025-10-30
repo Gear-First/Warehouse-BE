@@ -9,15 +9,16 @@
 - 구현은 후속 PR에서 진행하며, 본 문서는 UC와 표준 용어에 맞춰 필드/필터/정렬/페이지네이션을 명세한다.
 
 ## 기본 컬럼
-- warehouseId: Long
+- warehouseCode: String
 - part: { id, code, name }
 - onHandQty: int (>=0)
 - lastUpdatedAt: datetime (선택)
 
 ## 필터
-- warehouseId: = (필수 또는 기본 단일 창고 환경에서는 생략 가능)
-- partCode / partName: contains (부분 일치)
-- minQty / maxQty: 범위 필터 (선택)
+- warehouseCode: = (필수 또는 기본 단일 창고 환경에서는 생략 가능)
+- partKeyword: partCode 또는 partName 부분 일치(대소문자 무시)
+- supplierName: 공급업체 명칭 부분 일치(대소문자 무시)
+- minQty / maxQty: onHandQty 범위 필터 (선택)
 
 ## 정렬
 - 기본: partName ASC

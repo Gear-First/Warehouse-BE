@@ -13,11 +13,11 @@
 
 ## Filters
 - date: YYYY-MM-DD (기본: 오늘)
-- warehouseId: 창고 식별자(멀티 창고 적용)
+- warehouseCode: 창고 코드(문자열)
 
 ## I/O (페이지네이션 스케치)
 
-- GET `/v1/shipping/completed?date=YYYY-MM-DD&warehouseId=WH1&page=0&size=20`
+- GET `/v1/shipping/completed?date=YYYY-MM-DD&warehouseCode=WH1&page=0&size=20`
 - Response
 ```
 {
@@ -41,3 +41,36 @@
 - 정책: ANY LINE `SHORTAGE` 발생 시 Note는 `DELAYED` (완료 불가). 모든 라인이 `READY`일 때만 `COMPLETED` 가능
 - 관련 정책: [shipping-fulfillment.md](../../policy/shipping-fulfillment.md)
 - ADR: [ADR-05-Use-Cases-are-Non-Authoritative.md](../../adr/ADR-05-Use-Cases-are-Non-Authoritative.md)
+
+
+
+### Update (2025-10-30)
+- Planned additional query parameters to align with feedback and context docs:
+  - dateFrom?, dateTo? (UTC closed interval; when both date and range are provided, the range wins)
+  - shippingNo? (partial, case-insensitive)
+  - branchName? (partial, case-insensitive)
+  - sort? (baseline allowed fields: noteId, completedAt, status; default noteId asc)
+- Optional warehouse filter remains: warehouseCode?
+- New "all" endpoint to be introduced: GET `/v1/shipping/all` with the same pagination and filters. This UC remains focused on done; `/all` will be covered in a new UC or an extension note.
+- Response shape remains `ApiResponse<PageEnvelope<ShippingNoteSummaryResponse>>`.
+
+
+#### Update (2025-10-30 — timestamps on list items)
+- Each list item now includes two timestamps:
+  - `requestedAt` (UTC ISO-8601): when HQ registered the request.
+  - `completedAt` (UTC ISO-8601): completion time; for `DELAYED`, this records the delay decision time.
+- Example item snippet:
+```json
+{
+  "noteId": 701,
+  "shippingNo": "OUT/WH1/20251024/002",
+  "branchName": "강남대리점",
+  "itemKinds": 3,
+  "totalQty": 90,
+  "status": "DELAYED",
+  "warehouseCode": "WH1",
+  "requestedAt": "2025-10-24T00:10:00Z",
+  "completedAt": "2025-10-24T11:00:00Z"
+}
+```
+- Filtering (phase 1): `date`/`dateFrom`/`dateTo` apply to `requestedAt` by default (range wins; closed interval; UTC). A later PR may add `dateField` to switch to `completedAt`.
