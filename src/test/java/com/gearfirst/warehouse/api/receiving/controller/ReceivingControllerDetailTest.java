@@ -38,7 +38,7 @@ class ReceivingControllerDetailTest {
     void getDetail_success() throws Exception {
         var lines = List.of(new ReceivingNoteLineResponse(1L,
                 new ReceivingProductResponse(1L, "LOT-A", "P-1001", "오일필터", "/img"),
-                50, 48, 2, "REJECTED"));
+                50, 48, "REJECTED"));
         var detail = new ReceivingNoteDetailResponse(101L, "ABC Supply", 3, 120, "IN_PROGRESS", null,
                         null, null, null, null, null, null, null, null, null,
                         lines);

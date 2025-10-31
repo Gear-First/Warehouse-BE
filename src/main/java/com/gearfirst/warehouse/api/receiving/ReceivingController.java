@@ -115,4 +115,70 @@ public class ReceivingController {
         var created = service.create(req);
         return ApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_DETAIL_SUCCESS, created);
     }
+
+    @Operation(summary = "입고 통합 리스트 조회", description = "상태 파라미터로 not-done|done|all을 선택하여 조회합니다. 날짜/창고 필터링 지원. 기본 정렬: noteId asc (phase-1: date/dateFrom/dateTo는 requestedAt에 적용)")
+    @GetMapping("/notes")
+    public ResponseEntity<ApiResponse<PageEnvelope<ReceivingNoteSummaryResponse>>> getNotes(
+            @RequestParam(defaultValue = "not-done") String status,
+            @RequestParam(required = false) String date,
+            @RequestParam(required = false) String dateFrom,
+            @RequestParam(required = false) String dateTo,
+            @RequestParam(required = false) String warehouseCode,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) java.util.List<String> sort
+    ) {
+        int p = Math.max(0, page);
+        int s = Math.max(1, Math.min(size, 100));
+        java.util.List<ReceivingNoteSummaryResponse> list;
+        switch (status == null ? "not-done" : status.toLowerCase(java.util.Locale.ROOT)) {
+            case "done" -> list = (warehouseCode == null || warehouseCode.isBlank())
+                    ? service.getDone(date)
+                    : service.getDone(date, warehouseCode);
+            case "all" -> {
+                var nd = (warehouseCode == null || warehouseCode.isBlank())
+                        ? service.getNotDone(date)
+                        : service.getNotDone(date, warehouseCode);
+                var dn = (warehouseCode == null || warehouseCode.isBlank())
+                        ? service.getDone(date)
+                        : service.getDone(date, warehouseCode);
+                list = new java.util.ArrayList<>(nd.size() + dn.size());
+                list.addAll(nd);
+                list.addAll(dn);
+            }
+            default -> list = (warehouseCode == null || warehouseCode.isBlank())
+                    ? service.getNotDone(date)
+                    : service.getNotDone(date, warehouseCode);
+        }
+        // Apply date range filter (requestedAt) if dateFrom/dateTo provided (range wins), else apply single date if provided
+        java.time.LocalDate from = (dateFrom == null || dateFrom.isBlank()) ? null : java.time.LocalDate.parse(dateFrom);
+        java.time.LocalDate to = (dateTo == null || dateTo.isBlank()) ? null : java.time.LocalDate.parse(dateTo);
+        if (from != null || to != null || (date != null && !date.isBlank())) {
+            if (from == null && to == null && date != null && !date.isBlank()) {
+                var d = java.time.LocalDate.parse(date);
+                from = d;
+                to = d;
+            }
+            final java.time.LocalDate fFrom = from;
+            final java.time.LocalDate fTo = to;
+            list = list.stream().filter(it -> {
+                String ra = it.requestedAt();
+                if (ra == null || ra.isBlank()) return false;
+                java.time.LocalDate d;
+                try {
+                    if (ra.length() > 10) d = java.time.OffsetDateTime.parse(ra).toLocalDate();
+                    else d = java.time.LocalDate.parse(ra);
+                } catch (Exception e) { return false; }
+                if (fFrom != null && d.isBefore(fFrom)) return false;
+                if (fTo != null && d.isAfter(fTo)) return false;
+                return true;
+            }).toList();
+        }
+        var sorted = list.stream().sorted(java.util.Comparator.comparing(ReceivingNoteSummaryResponse::noteId)).toList();
+        long total = sorted.size();
+        int fromIdx = Math.min(p * s, (int) total);
+        int toIdx = Math.min(fromIdx + s, (int) total);
+        var envelope = PageEnvelope.of(sorted.subList(fromIdx, toIdx), p, s, total);
+        return ApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_LIST_SUCCESS, envelope);
+    }
 }

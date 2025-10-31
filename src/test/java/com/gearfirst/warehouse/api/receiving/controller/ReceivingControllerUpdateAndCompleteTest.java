@@ -45,7 +45,7 @@ class ReceivingControllerUpdateAndCompleteTest {
         var req = new ReceivingUpdateLineRequest(18, false);
         var lines = List.of(new ReceivingNoteLineResponse(10L,
                 new ReceivingProductResponse(4L, "LOT-P-2001", "P-2001", "스페이서", "/img/p2001"),
-                20, 18, 0, "ACCEPTED"));
+                20, 18, "ACCEPTED"));
         var detail = new ReceivingNoteDetailResponse(102L, "BCD Parts", 2, 45, "IN_PROGRESS", null,
                 null, null, null, null, null, null, null, null, null,
                 lines);
@@ -59,8 +59,7 @@ class ReceivingControllerUpdateAndCompleteTest {
                 .andExpect(jsonPath("$.success", is(true)))
                 .andExpect(jsonPath("$.data.status", is("IN_PROGRESS")))
                 .andExpect(jsonPath("$.data.lines[0].status", is("ACCEPTED")))
-                .andExpect(jsonPath("$.data.lines[0].inspectedQty", is(18)))
-                .andExpect(jsonPath("$.data.lines[0].issueQty", is(0)));
+                .andExpect(jsonPath("$.data.lines[0].inspectedQty", is(18)));
     }
 
     @Test
@@ -70,7 +69,7 @@ class ReceivingControllerUpdateAndCompleteTest {
         var req = new ReceivingUpdateLineRequest(20, true);
         var lines = List.of(new ReceivingNoteLineResponse(11L,
                 new ReceivingProductResponse(5L, "LOT-P-2002", "P-2002", "클립", "/img/p2002"),
-                25, 20, 5, "REJECTED"));
+                25, 20, "REJECTED"));
         var detail = new ReceivingNoteDetailResponse(102L, "BCD Parts", 2, 45, "IN_PROGRESS", null,
                 null, null, null, null, null, null, null, null, null,
                 lines);
@@ -84,8 +83,7 @@ class ReceivingControllerUpdateAndCompleteTest {
                 .andExpect(jsonPath("$.success", is(true)))
                 .andExpect(jsonPath("$.data.status", is("IN_PROGRESS")))
                 .andExpect(jsonPath("$.data.lines[0].status", is("REJECTED")))
-                .andExpect(jsonPath("$.data.lines[0].inspectedQty", is(20)))
-                .andExpect(jsonPath("$.data.lines[0].issueQty", is(5)));
+                .andExpect(jsonPath("$.data.lines[0].inspectedQty", is(20)));
     }
 
     @Test

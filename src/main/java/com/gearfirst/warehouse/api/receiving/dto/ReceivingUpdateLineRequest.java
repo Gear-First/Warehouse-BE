@@ -5,6 +5,6 @@ import jakarta.validation.constraints.NotNull;
 
 public record ReceivingUpdateLineRequest(
         @NotNull @Min(0) Integer inspectedQty,
-        @NotNull Boolean hasIssue
+        @NotNull Boolean rejected
 ) {
 }

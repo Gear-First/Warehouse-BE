@@ -46,13 +46,13 @@ class ReceivingServiceImplTest {
                 .build();
         n101.addLine(ReceivingNoteLineEntity.builder()
                 .lineId(1L).productId(1L).productLot("LOT-P-1001").productCode("P-1001").productName("볼트").productImgUrl("/img/p1001")
-                .orderedQty(50).inspectedQty(48).issueQty(2).status(ReceivingLineStatus.REJECTED).build());
+                .orderedQty(50).inspectedQty(48).status(ReceivingLineStatus.REJECTED).build());
         n101.addLine(ReceivingNoteLineEntity.builder()
                 .lineId(2L).productId(2L).productLot("LOT-P-1001").productCode("P-1002").productName("너트").productImgUrl("/img/p1002")
-                .orderedQty(40).inspectedQty(40).issueQty(0).status(ReceivingLineStatus.ACCEPTED).build());
+                .orderedQty(40).inspectedQty(40).status(ReceivingLineStatus.ACCEPTED).build());
         n101.addLine(ReceivingNoteLineEntity.builder()
                 .lineId(3L).productId(3L).productLot("LOT-P-1001").productCode("P-1003").productName("와셔").productImgUrl("/img/p1003")
-                .orderedQty(30).inspectedQty(0).issueQty(0).status(ReceivingLineStatus.PENDING).build());
+                .orderedQty(30).inspectedQty(0).status(ReceivingLineStatus.PENDING).build());
         jpa.save(n101);
 
         // noteId=102 (PENDING)
@@ -65,10 +65,10 @@ class ReceivingServiceImplTest {
                 .build();
         n102.addLine(ReceivingNoteLineEntity.builder()
                 .lineId(10L).productId(4L).productLot("LOT-P-2001").productCode("P-2001").productName("스페이서").productImgUrl("/img/p2001")
-                .orderedQty(20).inspectedQty(0).issueQty(0).status(ReceivingLineStatus.PENDING).build());
+                .orderedQty(20).inspectedQty(0).status(ReceivingLineStatus.PENDING).build());
         n102.addLine(ReceivingNoteLineEntity.builder()
                 .lineId(11L).productId(5L).productLot("LOT-P-2002").productCode("P-2002").productName("클립").productImgUrl("/img/p2002")
-                .orderedQty(25).inspectedQty(0).issueQty(0).status(ReceivingLineStatus.PENDING).build());
+                .orderedQty(25).inspectedQty(0).status(ReceivingLineStatus.PENDING).build());
         jpa.save(n102);
 
         // noteId=201 (COMPLETED_OK)
@@ -81,7 +81,7 @@ class ReceivingServiceImplTest {
                 .build();
         n201.addLine(ReceivingNoteLineEntity.builder()
                 .lineId(20L).productId(6L).productLot("LOT-P-3001").productCode("P-3001").productName("가스켓").productImgUrl("/img/p3001")
-                .orderedQty(10).inspectedQty(10).issueQty(0).status(ReceivingLineStatus.ACCEPTED).build());
+                .orderedQty(10).inspectedQty(10).status(ReceivingLineStatus.ACCEPTED).build());
         jpa.save(n201);
     }
 
@@ -93,7 +93,6 @@ class ReceivingServiceImplTest {
         assertEquals("IN_PROGRESS", resp.status());
         var line = findLine(resp, 10L);
         assertEquals(18, line.inspectedQty());
-        assertEquals(0, line.issueQty());
         assertEquals("ACCEPTED", line.status());
     }
 
@@ -105,7 +104,6 @@ class ReceivingServiceImplTest {
         assertEquals("IN_PROGRESS", resp.status());
         var line = findLine(resp, 11L);
         assertEquals(20, line.inspectedQty());
-        assertEquals(5, line.issueQty());
         assertEquals("REJECTED", line.status());
     }
 

@@ -109,12 +109,11 @@ public class ReceivingServiceImpl implements ReceivingService {
             throw new BadRequestException(ErrorStatus.RECEIVING_ORDERED_QTY_EXCEEDS_INSPECTED_QTY);
         }
 
-        int issueQty = Boolean.TRUE.equals(request.hasIssue()) ? Math.max(0, ordered - inspected) : 0;
-        ReceivingLineStatus newLineStatus = Boolean.TRUE.equals(request.hasIssue()) ? ReceivingLineStatus.REJECTED : ReceivingLineStatus.ACCEPTED;
+        boolean rejected = Boolean.TRUE.equals(request.rejected());
+        ReceivingLineStatus newLineStatus = rejected ? ReceivingLineStatus.REJECTED : ReceivingLineStatus.ACCEPTED;
 
         // Apply changes to line
         line.setInspectedQty(inspected);
-        line.setIssueQty(issueQty);
         line.setStatus(newLineStatus);
 
         // First update transitions PENDING -> IN_PROGRESS
@@ -129,6 +128,10 @@ public class ReceivingServiceImpl implements ReceivingService {
     @Override
     public ReceivingCompleteResponse complete(Long noteId) {
         var note = repository.findById(noteId).orElseThrow(() -> new NotFoundException("Receiving note not found: " + noteId));
+        // Require handler/inspector info before completion
+        if (note.getInspectorName() == null || note.getInspectorName().isBlank()) {
+            throw new BadRequestException(ErrorStatus.RECEIVING_HANDLER_INFO_REQUIRED);
+        }
 
         if (isDoneStatus(note.getStatus())) {
             throw new ConflictException(ErrorStatus.CONFLICT_RECEIVING_NOTE_ALREADY_COMPLETED);
@@ -145,7 +148,7 @@ public class ReceivingServiceImpl implements ReceivingService {
                 .mapToInt(ReceivingNoteLineEntity::getOrderedQty)
                 .sum();
 
-        // Apply inventory increases per product (use warehouseId when available)
+        // Apply inventory increases per product (use warehouseCode when available)
         String whCode = note.getWarehouseCode();
         note.getLines().stream()
                 .filter(l -> l.getStatus() == ReceivingLineStatus.ACCEPTED)
@@ -172,13 +175,21 @@ public class ReceivingServiceImpl implements ReceivingService {
                 .remark(request == null ? null : request.remark())
                 .status(ReceivingNoteStatus.PENDING)
                 .completedAt(null);
-        // parse dates if provided; ignore errors
+        // parse dates if provided; set defaults: requestedAt=now(UTC) if null; expected= requestedAt + 2 days if null
         OffsetDateTime reqAt = parseOffsetDateTime(request == null ? null : request.requestedAt());
+        if (reqAt == null) {
+            throw new BadRequestException(ErrorStatus.RECEIVING_REQUESTED_AT_INVALID);
+        }
         OffsetDateTime expAt = parseOffsetDateTime(request == null ? null : request.expectedReceiveDate());
+        if (expAt == null) expAt = reqAt.plusDays(2);
         builder.requestedAt(reqAt);
         builder.expectedReceiveDate(expAt);
         builder.receivedAt(null);
-        builder.receivingNo(request == null ? null : request.receivingNo());
+        String receivingNo = (request == null ? null : request.receivingNo());
+        if (receivingNo == null || receivingNo.isBlank()) {
+            throw new BadRequestException(ErrorStatus.RECEIVING_NO_INVALID);
+        }
+        builder.receivingNo(receivingNo);
         // Inspector info is set during inspection process, keep null on create
         builder.inspectorName(null);
         builder.inspectorDept(null);
@@ -203,7 +214,6 @@ public class ReceivingServiceImpl implements ReceivingService {
                         .productImgUrl(null)
                         .orderedQty(ordered)
                         .inspectedQty(0)
-                        .issueQty(0)
                         .status(ReceivingLineStatus.PENDING)
                         .remark(rl.lineRemark())
                         .build();
@@ -243,6 +253,8 @@ public class ReceivingServiceImpl implements ReceivingService {
                 n.getItemKindsNumber(),
                 n.getTotalQty(),
                 n.getStatus().name(),
+                n.getWarehouseCode(),
+                n.getRequestedAt() == null ? null : n.getRequestedAt().toString(),
                 completedAt
         );
     }
@@ -254,7 +266,6 @@ public class ReceivingServiceImpl implements ReceivingService {
                 new ReceivingProductResponse(l.getProductId(), l.getProductLot(), l.getProductCode(), l.getProductName(), l.getProductImgUrl()),
                 l.getOrderedQty(),
                 l.getInspectedQty(),
-                l.getIssueQty(),
                 l.getStatus().name()
         )).toList();
         return new ReceivingNoteDetailResponse(

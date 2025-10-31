@@ -42,7 +42,6 @@ public class ReceivingNoteLineEntity extends BaseTimeEntity {
 
     private int orderedQty;
     private int inspectedQty;
-    private int issueQty;
 
     @Enumerated(EnumType.STRING)
     private ReceivingLineStatus status; // PENDING | ACCEPTED | REJECTED

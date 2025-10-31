@@ -32,14 +32,14 @@ public class ShippingNoteEntity extends BaseTimeEntity {
     @Id
     private Long noteId;
 
-    private String customerName;
+    private String branchName;
 
     private int itemKindsNumber;
 
     private int totalQty;
 
     // Nullable for MVP; multi-warehouse adoption
-    private Long warehouseId;
+    private String warehouseCode;
 
     // Additive metadata
     private String shippingNo;

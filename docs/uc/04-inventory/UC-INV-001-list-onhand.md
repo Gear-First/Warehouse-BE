@@ -30,7 +30,7 @@
 2) 정책에 정의된 컬럼으로 투영하여 PageEnvelope 형태로 반환한다.
 
 ## I/O
-- GET `/v1/inventory/onhand?warehouseCode=WH1&keyword=filter&page=0&size=20&sort=partName,asc`
+- GET `/v1/inventory/onhand?warehouseCode=WH1&partKeyword=filter&page=0&size=20&sort=partName,asc`
 - Response (PageEnvelope)
 ```json
 {
@@ -63,9 +63,11 @@
 - Add filters: `supplierName?` (case-insensitive contains), `minQty?`, `maxQty?` (onHandQty range).
 - Semantics: All filters are ANDed. Unknown sort keys → 400. Stable secondary sort by `partCode,asc`.
 - Examples:
-```
+
 GET /v1/inventory/onhand?warehouseCode=WH1&partKeyword=P-10&page=0&size=20&sort=partName,asc
+
 GET /v1/inventory/onhand?warehouseCode=WH1&supplierName=ABC공장&minQty=10&maxQty=500&page=0&size=20&sort=onHandQty,desc
+```json
 {
   "items": [
     {

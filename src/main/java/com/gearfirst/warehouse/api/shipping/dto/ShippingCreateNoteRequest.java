@@ -8,8 +8,8 @@ import java.util.List;
  * TODO: Add value validations and shippingNo generation when rules are finalized.
  */
 public record ShippingCreateNoteRequest(
-        String customerName,
-        Long warehouseId,
+        String branchName,
+        String warehouseCode,
         String shippingNo,
         String requestedAt,
         String expectedShipDate,

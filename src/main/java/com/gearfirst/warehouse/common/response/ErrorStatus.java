@@ -19,6 +19,12 @@ public enum ErrorStatus {
     PART_CODE_INVALID(HttpStatus.BAD_REQUEST, "부품 코드가 유효하지 않습니다."),
     PART_NAME_INVALID(HttpStatus.BAD_REQUEST, "부품 이름이 유효하지 않습니다."),
     PART_PRICE_INVALID(HttpStatus.BAD_REQUEST, "부품 가격이 유효하지 않습니다."),
+    RECEIVING_NO_INVALID(HttpStatus.BAD_REQUEST, "입고 번호가 유효하지 않습니다."),
+    RECEIVING_REQUESTED_AT_INVALID(HttpStatus.BAD_REQUEST, "입고 요청일자가 유효하지 않습니다."),
+    SHIPPING_NO_INVALID(HttpStatus.BAD_REQUEST, "출고 번호가 유효하지 않습니다."),
+    SHIPPING_REQUESTED_AT_INVALID(HttpStatus.BAD_REQUEST, "출고 요청일자가 유효하지 않습니다."),
+    RECEIVING_HANDLER_INFO_REQUIRED(HttpStatus.BAD_REQUEST, "입고 담당자 정보가 필요합니다."),
+    SHIPPING_HANDLER_INFO_REQUIRED(HttpStatus.BAD_REQUEST, "출고 담당자 정보가 필요합니다."),
 
     /** 401 UNAUTHORIZED */
     USER_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증되지 않은 사용자입니다."),

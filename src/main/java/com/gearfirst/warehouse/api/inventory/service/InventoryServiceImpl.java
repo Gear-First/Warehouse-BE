@@ -22,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 @lombok.RequiredArgsConstructor
 public class InventoryServiceImpl implements InventoryService {
 
-    private final InventoryOnHandJpaRepository jpa;
+    private final InventoryOnHandJpaRepository repo;
     private final com.gearfirst.warehouse.api.parts.persistence.PartJpaRepository parts;
 
     @Override
@@ -40,9 +40,12 @@ public class InventoryServiceImpl implements InventoryService {
         if (page < 0 || size < 1 || size > 100) {
             throw new BadRequestException(ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
         }
+        if (minQty != null && maxQty != null && minQty > maxQty) {
+            throw new BadRequestException(ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
+        }
         List<InventoryOnHandEntity> entities = (warehouseCode == null || warehouseCode.isBlank())
-                ? jpa.findAll()
-                : jpa.findAllByWarehouseCode(warehouseCode);
+                ? repo.findAll()
+                : repo.findAllByWarehouseCode(warehouseCode);
 
         // Enrich with Part data
         var partIds = entities.stream().map(InventoryOnHandEntity::getPartId).distinct().toList();
@@ -61,11 +64,17 @@ public class InventoryServiceImpl implements InventoryService {
             var last = e.getLastUpdatedAt() != null ? e.getLastUpdatedAt().toString() : null;
             items.add(new OnHandSummary(e.getWarehouseCode(), partRef, e.getOnHandQty(), last));
         }
-        // Filters: partKeyword (code|name), supplierName (not available yet -> skip if provided), qty range
+        // Filters: partKeyword (code|name), supplierName (part attribution), qty range
         var filtered = items.stream()
                 .filter(i -> partKeyword == null || partKeyword.isBlank()
                         || containsIgnoreCase(i.part().code(), partKeyword)
                         || containsIgnoreCase(i.part().name(), partKeyword))
+                .filter(i -> {
+                    if (supplierName == null || supplierName.isBlank()) return true;
+                    var pe = partMap.get(i.part().id());
+                    var sname = (pe == null ? null : pe.getSupplierName());
+                    return sname != null && containsIgnoreCase(sname, supplierName);
+                })
                 .filter(i -> minQty == null || i.onHandQty() >= minQty)
                 .filter(i -> maxQty == null || i.onHandQty() <= maxQty)
                 .toList();
@@ -111,7 +120,7 @@ public class InventoryServiceImpl implements InventoryService {
     public void increase(String warehouseCode, Long partId, int qty) {
         if (qty <= 0 || partId == null) return;
         var now = OffsetDateTime.now(ZoneOffset.UTC);
-        var entity = jpa.findByWarehouseCodeAndPartId(warehouseCode, partId)
+        var entity = repo.findByWarehouseCodeAndPartId(warehouseCode, partId)
                 .orElseGet(() -> InventoryOnHandEntity.builder()
                         .warehouseCode(warehouseCode)
                         .partId(partId)
@@ -119,14 +128,14 @@ public class InventoryServiceImpl implements InventoryService {
                         .lastUpdatedAt(now)
                         .build());
         entity.increase(qty, now);
-        jpa.save(entity);
+        repo.save(entity);
     }
 
     @Override
     @Transactional
     public void decrease(String warehouseCode, Long partId, int qty) {
         if (qty <= 0 || partId == null) return;
-        var entity = jpa.findByWarehouseCodeAndPartId(warehouseCode, partId)
+        var entity = repo.findByWarehouseCodeAndPartId(warehouseCode, partId)
                 .orElseGet(() -> InventoryOnHandEntity.builder()
                         .warehouseCode(warehouseCode)
                         .partId(partId)
@@ -138,7 +147,7 @@ public class InventoryServiceImpl implements InventoryService {
             throw new ConflictException(ErrorStatus.CONFLICT_INVENTORY_INSUFFICIENT);
         }
         entity.decrease(qty, OffsetDateTime.now(ZoneOffset.UTC));
-        jpa.save(entity);
+        repo.save(entity);
     }
 
     private boolean containsIgnoreCase(String text, String kw) {

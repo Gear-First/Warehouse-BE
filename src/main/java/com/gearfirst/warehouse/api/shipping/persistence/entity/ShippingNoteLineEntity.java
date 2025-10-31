@@ -35,7 +35,6 @@ public class ShippingNoteLineEntity {
     private String productImgUrl;
 
     private int orderedQty;
-    private int allocatedQty;
     private int pickedQty;
 
     @Enumerated(EnumType.STRING)
