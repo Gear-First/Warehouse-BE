@@ -42,9 +42,8 @@ class ReceivingInventoryIntegrationTest {
         onHandRepo.deleteAll();
         noteRepo.deleteAll();
 
-        // Seed receiving note with 2 ACCEPTED and 1 REJECTED line
+        // Seed receiving note header first (no lines), then attach lines to managed entity
         var note = ReceivingNoteEntity.builder()
-                .noteId(8801L)
                 .supplierName("PG-Supplier")
                 .warehouseCode("WHPG")
                 .itemKindsNumber(3)
@@ -55,16 +54,18 @@ class ReceivingInventoryIntegrationTest {
                 .inspectorDept("DEFAULT")
                 .inspectorPhone("N/A")
                 .build();
+        note = noteRepo.save(note);
+        // attach lines (new entities with null ids)
         note.addLine(ReceivingNoteLineEntity.builder()
-                .lineId(880101L).productId(501L).productLot("LOT-501").productCode("P-501").productName("품목501").productImgUrl("/img/501")
+                .productId(501L).productLot("LOT-501").productCode("P-501").productName("품목501").productImgUrl("/img/501")
                 .orderedQty(5).inspectedQty(5).status(ReceivingLineStatus.ACCEPTED).build());
         note.addLine(ReceivingNoteLineEntity.builder()
-                .lineId(880102L).productId(502L).productLot("LOT-502").productCode("P-502").productName("품목502").productImgUrl("/img/502")
+                .productId(502L).productLot("LOT-502").productCode("P-502").productName("품목502").productImgUrl("/img/502")
                 .orderedQty(7).inspectedQty(7).status(ReceivingLineStatus.ACCEPTED).build());
         note.addLine(ReceivingNoteLineEntity.builder()
-                .lineId(880103L).productId(503L).productLot("LOT-503").productCode("P-503").productName("품목503").productImgUrl("/img/503")
+                .productId(503L).productLot("LOT-503").productCode("P-503").productName("품목503").productImgUrl("/img/503")
                 .orderedQty(8).inspectedQty(0).status(ReceivingLineStatus.REJECTED).build());
-        noteRepo.save(note);
+        note = noteRepo.save(note);
         this.noteId = note.getNoteId();
     }
 

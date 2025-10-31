@@ -31,67 +31,83 @@ class ReceivingServiceImplTest {
     @Autowired
     private ReceivingNoteJpaRepository jpa;
 
+    // Captured IDs after auto-generation
+    private Long n101Id;
+    private Long n101_lineRejectedId;
+    private Long n101_lineAcceptedId;
+    private Long n101_linePendingId;
+
+    private Long n102Id;
+    private Long n102_lineProd4Id;
+    private Long n102_lineProd5Id;
+
+    private Long n201Id;
+
     @BeforeEach
     void setUp() {
-        // Clean and seed H2 with fixtures equivalent to previous mock store
+        // Clean and seed PostgreSQL with fixtures
         jpa.deleteAll();
 
-        // noteId=101 (IN_PROGRESS) with lines: 1 REJECTED(50->48 issue2), 2 ACCEPTED(40), 3 PENDING(30)
+        // IN_PROGRESS note with 3 lines: REJECTED(50->48), ACCEPTED(40), PENDING(30)
         var n101 = ReceivingNoteEntity.builder()
-                .noteId(101L)
                 .supplierName("ABC Supply")
                 .itemKindsNumber(3)
                 .totalQty(120)
                 .status(ReceivingNoteStatus.IN_PROGRESS)
                 .build();
         n101.addLine(ReceivingNoteLineEntity.builder()
-                .lineId(1L).productId(1L).productLot("LOT-P-1001").productCode("P-1001").productName("볼트").productImgUrl("/img/p1001")
+                .productId(1L).productLot("LOT-P-1001").productCode("P-1001").productName("볼트").productImgUrl("/img/p1001")
                 .orderedQty(50).inspectedQty(48).status(ReceivingLineStatus.REJECTED).build());
         n101.addLine(ReceivingNoteLineEntity.builder()
-                .lineId(2L).productId(2L).productLot("LOT-P-1001").productCode("P-1002").productName("너트").productImgUrl("/img/p1002")
+                .productId(2L).productLot("LOT-P-1001").productCode("P-1002").productName("너트").productImgUrl("/img/p1002")
                 .orderedQty(40).inspectedQty(40).status(ReceivingLineStatus.ACCEPTED).build());
         n101.addLine(ReceivingNoteLineEntity.builder()
-                .lineId(3L).productId(3L).productLot("LOT-P-1001").productCode("P-1003").productName("와셔").productImgUrl("/img/p1003")
+                .productId(3L).productLot("LOT-P-1001").productCode("P-1003").productName("와셔").productImgUrl("/img/p1003")
                 .orderedQty(30).inspectedQty(0).status(ReceivingLineStatus.PENDING).build());
-        jpa.save(n101);
+        n101 = jpa.save(n101);
+        this.n101Id = n101.getNoteId();
+        this.n101_lineRejectedId = n101.getLines().stream().filter(l -> l.getProductId().equals(1L)).findFirst().get().getLineId();
+        this.n101_lineAcceptedId = n101.getLines().stream().filter(l -> l.getProductId().equals(2L)).findFirst().get().getLineId();
+        this.n101_linePendingId  = n101.getLines().stream().filter(l -> l.getProductId().equals(3L)).findFirst().get().getLineId();
 
-        // noteId=102 (PENDING)
+        // PENDING note with 2 PENDING lines
         var n102 = ReceivingNoteEntity.builder()
-                .noteId(102L)
                 .supplierName("BCD Parts")
                 .itemKindsNumber(2)
                 .totalQty(45)
                 .status(ReceivingNoteStatus.PENDING)
                 .build();
         n102.addLine(ReceivingNoteLineEntity.builder()
-                .lineId(10L).productId(4L).productLot("LOT-P-2001").productCode("P-2001").productName("스페이서").productImgUrl("/img/p2001")
+                .productId(4L).productLot("LOT-P-2001").productCode("P-2001").productName("스페이서").productImgUrl("/img/p2001")
                 .orderedQty(20).inspectedQty(0).status(ReceivingLineStatus.PENDING).build());
         n102.addLine(ReceivingNoteLineEntity.builder()
-                .lineId(11L).productId(5L).productLot("LOT-P-2002").productCode("P-2002").productName("클립").productImgUrl("/img/p2002")
+                .productId(5L).productLot("LOT-P-2002").productCode("P-2002").productName("클립").productImgUrl("/img/p2002")
                 .orderedQty(25).inspectedQty(0).status(ReceivingLineStatus.PENDING).build());
-        jpa.save(n102);
+        n102 = jpa.save(n102);
+        this.n102Id = n102.getNoteId();
+        this.n102_lineProd4Id = n102.getLines().stream().filter(l -> l.getProductId().equals(4L)).findFirst().get().getLineId();
+        this.n102_lineProd5Id = n102.getLines().stream().filter(l -> l.getProductId().equals(5L)).findFirst().get().getLineId();
 
-        // noteId=201 (COMPLETED_OK)
+        // COMPLETED_OK note
         var n201 = ReceivingNoteEntity.builder()
-                .noteId(201L)
                 .supplierName("ABC Supply")
                 .itemKindsNumber(1)
                 .totalQty(10)
                 .status(ReceivingNoteStatus.COMPLETED_OK)
                 .build();
         n201.addLine(ReceivingNoteLineEntity.builder()
-                .lineId(20L).productId(6L).productLot("LOT-P-3001").productCode("P-3001").productName("가스켓").productImgUrl("/img/p3001")
+                .productId(6L).productLot("LOT-P-3001").productCode("P-3001").productName("가스켓").productImgUrl("/img/p3001")
                 .orderedQty(10).inspectedQty(10).status(ReceivingLineStatus.ACCEPTED).build());
-        jpa.save(n201);
+        n201 = jpa.save(n201);
+        this.n201Id = n201.getNoteId();
     }
 
     @Test
     @DisplayName("updateLine: hasIssue=false이면 ACCEPTED로 전이하고 note는 IN_PROGRESS")
     void updateLine_doneOk_success() {
-        // given noteId=102 (PENDING), lineId=10 (PENDING, ordered=20)
-        var resp = service.updateLine(102L, 10L, new ReceivingUpdateLineRequest(18, false));
+        var resp = service.updateLine(n102Id, n102_lineProd4Id, new ReceivingUpdateLineRequest(18, false));
         assertEquals("IN_PROGRESS", resp.status());
-        var line = findLine(resp, 10L);
+        var line = findLineById(resp, n102_lineProd4Id);
         assertEquals(18, line.inspectedQty());
         assertEquals("ACCEPTED", line.status());
     }
@@ -99,10 +115,9 @@ class ReceivingServiceImplTest {
     @Test
     @DisplayName("updateLine: hasIssue=true이면 REJECTED로 전이하고 issueQty=ordered-inspected")
     void updateLine_doneIssue_success() {
-        // given noteId=102 (PENDING), lineId=11 (PENDING, ordered=25)
-        var resp = service.updateLine(102L, 11L, new ReceivingUpdateLineRequest(20, true));
+        var resp = service.updateLine(n102Id, n102_lineProd5Id, new ReceivingUpdateLineRequest(20, true));
         assertEquals("IN_PROGRESS", resp.status());
-        var line = findLine(resp, 11L);
+        var line = findLineById(resp, n102_lineProd5Id);
         assertEquals(20, line.inspectedQty());
         assertEquals("REJECTED", line.status());
     }
@@ -110,28 +125,29 @@ class ReceivingServiceImplTest {
     @Test
     @DisplayName("updateLine: inspectedQty > orderedQty면 400 BadRequest")
     void updateLine_validationError_inspectedExceedsOrdered() {
-        assertThrows(BadRequestException.class, () -> service.updateLine(101L, 3L, new ReceivingUpdateLineRequest(1000, false)));
+        assertThrows(BadRequestException.class, () -> service.updateLine(n101Id, n101_linePendingId, new ReceivingUpdateLineRequest(1000, false)));
     }
 
     @Test
     @DisplayName("updateLine: 완료 라인 재수정 시 409 Conflict")
     void updateLine_conflict_whenLineAlreadyDone() {
-        assertThrows(ConflictException.class, () -> service.updateLine(101L, 2L, new ReceivingUpdateLineRequest(40, false)));
+        assertThrows(ConflictException.class, () -> service.updateLine(n101Id, n101_lineAcceptedId, new ReceivingUpdateLineRequest(40, false)));
     }
 
     @Test
     @DisplayName("updateLine: 완료 전표(201)에서 수정 시 409 Conflict")
     void updateLine_conflict_whenNoteAlreadyDone() {
-        assertThrows(ConflictException.class, () -> service.updateLine(201L, 20L, new ReceivingUpdateLineRequest(10, false)));
+        // use any line of the completed note n201
+        assertThrows(ConflictException.class, () -> service.updateLine(n201Id, Long.MAX_VALUE, new ReceivingUpdateLineRequest(10, false)));
     }
 
     @Test
     @DisplayName("updateLine: 존재하지 않는 lineId면 404 NotFound")
     void updateLine_notFound_whenLineMissing() {
-        assertThrows(NotFoundException.class, () -> service.updateLine(102L, 999L, new ReceivingUpdateLineRequest(1, false)));
+        assertThrows(NotFoundException.class, () -> service.updateLine(n102Id, Long.MAX_VALUE, new ReceivingUpdateLineRequest(1, false)));
     }
 
-    private ReceivingNoteLineResponse findLine(ReceivingNoteDetailResponse resp, Long lineId) {
+    private ReceivingNoteLineResponse findLineById(ReceivingNoteDetailResponse resp, Long lineId) {
         return resp.lines().stream().filter(l -> l.lineId().equals(lineId)).findFirst().orElseThrow();
     }
 }

@@ -43,7 +43,6 @@ class ReceivingServiceInventoryCallsTest {
         jpa.deleteAll();
         // Seed one note with warehouseCode + inspector present so completion precondition passes
         var note = ReceivingNoteEntity.builder()
-                .noteId(777L)
                 .supplierName("Supplier-X")
                 .warehouseCode("WH-T")
                 .itemKindsNumber(2)
@@ -57,7 +56,6 @@ class ReceivingServiceInventoryCallsTest {
         acceptedPartId = 1001L;
         acceptedOrderedQty = 20;
         note.addLine(ReceivingNoteLineEntity.builder()
-                .lineId(1L)
                 .productId(acceptedPartId)
                 .productLot("LOT-A")
                 .productCode("P-A")
@@ -70,7 +68,6 @@ class ReceivingServiceInventoryCallsTest {
         // REJECTED line
         rejectedPartId = 1002L;
         note.addLine(ReceivingNoteLineEntity.builder()
-                .lineId(2L)
                 .productId(rejectedPartId)
                 .productLot("LOT-B")
                 .productCode("P-B")
@@ -119,7 +116,6 @@ class ReceivingServiceInventoryCallsTest {
     void complete_conflict_whenNotAllDone_noIncrease() {
         // seed another PENDING note with one PENDING line (so not all decided)
         var n = ReceivingNoteEntity.builder()
-                .noteId(778L)
                 .supplierName("Supplier-Y")
                 .warehouseCode("WH-T")
                 .itemKindsNumber(1)
@@ -130,11 +126,12 @@ class ReceivingServiceInventoryCallsTest {
                 .inspectorPhone("N/A")
                 .build();
         n.addLine(ReceivingNoteLineEntity.builder()
-                .lineId(10L).productId(2001L).productLot("LOT-X").productCode("P-X").productName("부품X").productImgUrl("/img/X")
+                .productId(2001L).productLot("LOT-X").productCode("P-X").productName("부품X").productImgUrl("/img/X")
                 .orderedQty(5).inspectedQty(0).status(ReceivingLineStatus.PENDING).build());
-        jpa.save(n);
+        n = jpa.save(n);
+        Long anotherId = n.getNoteId();
 
-        assertThrows(ConflictException.class, () -> service.complete(778L));
+        assertThrows(ConflictException.class, () -> service.complete(anotherId));
         verify(inventory, never()).increase(any(), any(), anyInt());
     }
 }
