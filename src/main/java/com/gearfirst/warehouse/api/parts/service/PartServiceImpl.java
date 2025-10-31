@@ -5,6 +5,7 @@ import com.gearfirst.warehouse.api.parts.dto.PartDtos.CreatePartRequest;
 import com.gearfirst.warehouse.api.parts.dto.PartDtos.PartDetailResponse;
 import com.gearfirst.warehouse.api.parts.dto.PartDtos.PartSummaryResponse;
 import com.gearfirst.warehouse.api.parts.dto.PartDtos.UpdatePartRequest;
+import com.gearfirst.warehouse.api.parts.dto.PartDto;
 import com.gearfirst.warehouse.api.parts.persistence.PartCategoryJpaRepository;
 import com.gearfirst.warehouse.api.parts.persistence.PartJpaRepository;
 import com.gearfirst.warehouse.api.parts.persistence.entity.PartCategoryEntity;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,7 @@ public class PartServiceImpl implements PartService {
     private final PartJpaRepository partRepo;
     private final PartCategoryJpaRepository categoryRepo;
     private final PartCarModelReader partCarModelReader;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Override
     @Transactional(readOnly = true)
@@ -109,6 +112,7 @@ public class PartServiceImpl implements PartService {
         if (partRepo.existsByCodeIgnoreCase(req.code())) {
             throw new ConflictException(ErrorStatus.PART_CODE_ALREADY_EXISTS);
         }
+
         var saved = partRepo.save(PartEntity.builder()
                 .code(req.code().trim())
                 .name(req.name().trim())
@@ -117,6 +121,21 @@ public class PartServiceImpl implements PartService {
                 .imageUrl(req.imageUrl())
                 .enabled(true)
                 .build());
+
+        String topic = "create-part";
+        String categoryName = categoryRepo.findById(saved.getCategoryId())
+                .orElseThrow(() -> new NotFoundException("Category not found: " + req.categoryId())).getName();
+
+        PartDto dto = PartDto.builder()
+                .id(saved.getId())
+                .category(categoryName)
+                .partCode(saved.getCode())
+                .partName(saved.getName())
+                .supplierName(saved.getSupplierName())
+                .build();
+
+        kafkaTemplate.send(topic, dto);
+
         return toDetail(saved);
     }
 
