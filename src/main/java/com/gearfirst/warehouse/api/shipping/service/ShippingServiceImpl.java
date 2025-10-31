@@ -34,21 +34,34 @@ public class ShippingServiceImpl implements ShippingService {
     private final ShippingNoteRepository repository;
     private final OnHandProvider onHandProvider;
     private final InventoryService inventoryService;
+    private final com.gearfirst.warehouse.common.sequence.NoteNumberGenerator noteNumberGenerator;
 
     @org.springframework.beans.factory.annotation.Autowired
+    public ShippingServiceImpl(ShippingNoteRepository repository,
+                               OnHandProvider onHandProvider,
+                               InventoryService inventoryService,
+                               com.gearfirst.warehouse.common.sequence.NoteNumberGenerator noteNumberGenerator) {
+        this.repository = repository;
+        this.onHandProvider = onHandProvider;
+        this.inventoryService = inventoryService;
+        this.noteNumberGenerator = noteNumberGenerator;
+    }
+
+    // Backward-compatible ctors for tests
+    public ShippingServiceImpl(ShippingNoteRepository repository, OnHandProvider onHandProvider) {
+        this.repository = repository;
+        this.onHandProvider = onHandProvider;
+        this.inventoryService = new NoOpInventoryService();
+        this.noteNumberGenerator = null;
+    }
+
     public ShippingServiceImpl(ShippingNoteRepository repository,
                                OnHandProvider onHandProvider,
                                InventoryService inventoryService) {
         this.repository = repository;
         this.onHandProvider = onHandProvider;
         this.inventoryService = inventoryService;
-    }
-
-    // Backward-compatible ctor for tests that don't provide InventoryService
-    public ShippingServiceImpl(ShippingNoteRepository repository, OnHandProvider onHandProvider) {
-        this.repository = repository;
-        this.onHandProvider = onHandProvider;
-        this.inventoryService = new NoOpInventoryService();
+        this.noteNumberGenerator = null;
     }
 
     @Override
@@ -275,7 +288,15 @@ public class ShippingServiceImpl implements ShippingService {
         }
         String shippingNo = (request == null ? null : request.shippingNo());
         if (shippingNo == null || shippingNo.isBlank()) {
-            throw new BadRequestException(ErrorStatus.SHIPPING_NO_INVALID);
+            if (this.noteNumberGenerator != null) {
+                // Auto-generate OUT number using warehouseCode + requestedAt
+                var reqAtOd = OffsetDateTime.parse(requestedAt);
+                shippingNo = noteNumberGenerator.generateShippingNo(
+                        request == null ? null : request.warehouseCode(), reqAtOd);
+            } else {
+                // In tests constructed without generator, keep strict validation
+                throw new BadRequestException(ErrorStatus.SHIPPING_NO_INVALID);
+            }
         }
 
         var note = ShippingNote.builder()

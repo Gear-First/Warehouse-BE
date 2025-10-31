@@ -2,6 +2,7 @@ package com.gearfirst.warehouse.api.receiving.dto;
 
 public record ReceivingNoteSummaryResponse(
         Long noteId,
+        String receivingNo,
         String supplierName,
         int itemKindsNumber,
         int totalQty,

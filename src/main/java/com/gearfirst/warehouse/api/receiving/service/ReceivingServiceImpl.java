@@ -36,6 +36,7 @@ public class ReceivingServiceImpl implements ReceivingService {
 
     private final ReceivingNoteRepository repository;
     private final com.gearfirst.warehouse.api.inventory.service.InventoryService inventoryService;
+    private final com.gearfirst.warehouse.common.sequence.NoteNumberGenerator noteNumberGenerator;
 
     @Override
     public List<ReceivingNoteSummaryResponse> getNotDone(String date) {
@@ -195,7 +196,11 @@ public class ReceivingServiceImpl implements ReceivingService {
         builder.receivedAt(null);
         String receivingNo = (request == null ? null : request.receivingNo());
         if (receivingNo == null || receivingNo.isBlank()) {
-            throw new BadRequestException(ErrorStatus.RECEIVING_NO_INVALID);
+            // Auto-generate IN number using warehouseCode + requestedAt (UTC)
+            if (builder.build().getWarehouseCode() == null || builder.build().getWarehouseCode().isBlank()) {
+                throw new BadRequestException(ErrorStatus.RECEIVING_NO_INVALID);
+            }
+            receivingNo = noteNumberGenerator.generateReceivingNo(builder.build().getWarehouseCode(), reqAt);
         }
         builder.receivingNo(receivingNo);
         // Inspector info is set during inspection process, keep null on create
@@ -215,11 +220,22 @@ public class ReceivingServiceImpl implements ReceivingService {
                 if (rl.productId() != null) {
                     productIds.add(rl.productId());
                 }
+                // Determine productCode snapshot and LOT
+                String productCode = rl.productId() == null ? null : ("P-" + rl.productId());
+                String lot = rl.lotNo();
+                if (lot == null || lot.isBlank()) {
+                    // Generate LOT: factoryName(=supplierName) - (requestedAt-7d yyyyMMdd) - partCode
+                    String factoryName = request == null ? null : request.supplierName();
+                    java.time.LocalDate prodDate = reqAt.minusDays(7).toLocalDate();
+                    String ymd = prodDate.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+                    lot = (factoryName == null ? "" : factoryName) + "-" + ymd + "-" + (productCode == null ? "" : productCode);
+                }
+
                 var line = ReceivingNoteLineEntity.builder()
                         .lineId(lineId)
                         .productId(rl.productId())
-                        .productLot(rl.lotNo())
-                        .productCode(null)
+                        .productLot(lot)
+                        .productCode(productCode)
                         .productName(null)
                         .productImgUrl(null)
                         .orderedQty(ordered)
@@ -261,6 +277,7 @@ public class ReceivingServiceImpl implements ReceivingService {
         String completedAt = n.getCompletedAt() != null ? n.getCompletedAt().toString() : null;
         return new ReceivingNoteSummaryResponse(
                 n.getNoteId(),
+                n.getReceivingNo(),
                 n.getSupplierName(),
                 n.getItemKindsNumber(),
                 n.getTotalQty(),
