@@ -25,9 +25,15 @@ public class InMemoryShippingNoteRepository implements ShippingNoteRepository {
                 .status(NoteStatus.IN_PROGRESS)
                 .completedAt(null)
                 .lines(List.of(
-                        ShippingNoteLine.builder().lineId(1L).productId(1001L).productLot("LOT-S-1001").productSerial("S-1001").productName("볼트").productImgUrl("/img/s1001").orderedQty(30).pickedQty(15).status(LineStatus.PENDING).build(),
-                        ShippingNoteLine.builder().lineId(2L).productId(1002L).productLot("LOT-S-1002").productSerial("S-1002").productName("너트").productImgUrl("/img/s1002").orderedQty(30).pickedQty(30).status(LineStatus.READY).build(),
-                        ShippingNoteLine.builder().lineId(3L).productId(1003L).productLot("LOT-S-1003").productSerial("S-1003").productName("와셔").productImgUrl("/img/s1003").orderedQty(30).pickedQty(25).status(LineStatus.SHORTAGE).build()
+                        ShippingNoteLine.builder().lineId(1L).productId(1001L).productLot("LOT-S-1001")
+                                .productSerial("S-1001").productName("볼트").productImgUrl("/img/s1001").orderedQty(30)
+                                .pickedQty(15).status(LineStatus.PENDING).build(),
+                        ShippingNoteLine.builder().lineId(2L).productId(1002L).productLot("LOT-S-1002")
+                                .productSerial("S-1002").productName("너트").productImgUrl("/img/s1002").orderedQty(30)
+                                .pickedQty(30).status(LineStatus.READY).build(),
+                        ShippingNoteLine.builder().lineId(3L).productId(1003L).productLot("LOT-S-1003")
+                                .productSerial("S-1003").productName("와셔").productImgUrl("/img/s1003").orderedQty(30)
+                                .pickedQty(25).status(LineStatus.SHORTAGE).build()
                 ))
                 .build());
         // noteId=502 (PENDING)
@@ -39,8 +45,12 @@ public class InMemoryShippingNoteRepository implements ShippingNoteRepository {
                 .status(NoteStatus.PENDING)
                 .completedAt(null)
                 .lines(List.of(
-                        ShippingNoteLine.builder().lineId(10L).productId(2001L).productLot("LOT-S-2001").productSerial("S-2001").productName("스페이서").productImgUrl("/img/s2001").orderedQty(20).pickedQty(0).status(LineStatus.PENDING).build(),
-                        ShippingNoteLine.builder().lineId(11L).productId(2002L).productLot("LOT-S-2002").productSerial("S-2002").productName("클립").productImgUrl("/img/s2002").orderedQty(20).pickedQty(0).status(LineStatus.PENDING).build()
+                        ShippingNoteLine.builder().lineId(10L).productId(2001L).productLot("LOT-S-2001")
+                                .productSerial("S-2001").productName("스페이서").productImgUrl("/img/s2001").orderedQty(20)
+                                .pickedQty(0).status(LineStatus.PENDING).build(),
+                        ShippingNoteLine.builder().lineId(11L).productId(2002L).productLot("LOT-S-2002")
+                                .productSerial("S-2002").productName("클립").productImgUrl("/img/s2002").orderedQty(20)
+                                .pickedQty(0).status(LineStatus.PENDING).build()
                 ))
                 .build());
         // noteId=601 (COMPLETED)
@@ -55,7 +65,9 @@ public class InMemoryShippingNoteRepository implements ShippingNoteRepository {
                 .assigneeDept("DEFAULT")
                 .assigneePhone("N/A")
                 .lines(List.of(
-                        ShippingNoteLine.builder().lineId(20L).productId(3001L).productLot("LOT-S-3001").productSerial("S-3001").productName("가스켓").productImgUrl("/img/s3001").orderedQty(10).pickedQty(10).status(LineStatus.READY).build()
+                        ShippingNoteLine.builder().lineId(20L).productId(3001L).productLot("LOT-S-3001")
+                                .productSerial("S-3001").productName("가스켓").productImgUrl("/img/s3001").orderedQty(10)
+                                .pickedQty(10).status(LineStatus.READY).build()
                 ))
                 .build());
         // noteId=602 (DELAYED)
@@ -70,7 +82,9 @@ public class InMemoryShippingNoteRepository implements ShippingNoteRepository {
                 .assigneeDept("DEFAULT")
                 .assigneePhone("N/A")
                 .lines(List.of(
-                        ShippingNoteLine.builder().lineId(21L).productId(3002L).productLot("LOT-S-3002").productSerial("S-3002").productName("와이어A").productImgUrl("/img/s3002").orderedQty(10).pickedQty(8).status(LineStatus.SHORTAGE).build()
+                        ShippingNoteLine.builder().lineId(21L).productId(3002L).productLot("LOT-S-3002")
+                                .productSerial("S-3002").productName("와이어A").productImgUrl("/img/s3002").orderedQty(10)
+                                .pickedQty(8).status(LineStatus.SHORTAGE).build()
                 ))
                 .build());
     }

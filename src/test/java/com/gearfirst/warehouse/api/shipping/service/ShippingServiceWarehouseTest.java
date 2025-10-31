@@ -77,12 +77,12 @@ class ShippingServiceWarehouseTest {
         var resp = service.complete(8001L);
 
         // then: WH1 becomes 0, WH2 remains 10
-        var wh1 = inventory.listOnHand("1", null, null, null, null, 0, 100, java.util.List.of()).getItems().stream()
+        var wh1 = inventory.listOnHand("1", null, null, null, null, 0, 100, java.util.List.of()).items().stream()
                 .filter(i -> i.part().id().equals(1001L))
                 .findFirst().orElseThrow();
         assertEquals(0, wh1.onHandQty());
 
-        var wh2 = inventory.listOnHand("2", null, null, null, null, 0, 100, java.util.List.of()).getItems().stream()
+        var wh2 = inventory.listOnHand("2", null, null, null, null, 0, 100, java.util.List.of()).items().stream()
                 .filter(i -> i.part().id().equals(1001L))
                 .findFirst().orElseThrow();
         assertEquals(10, wh2.onHandQty());
@@ -134,7 +134,7 @@ class ShippingServiceWarehouseTest {
             implements OnHandProvider {
         @Override public int getOnHandQty(Long productId) {
             // Sum across all warehouses for simplicity in status derivation (not used in these tests)
-            return inventory.listOnHand(null, null, null, null, null, 0, 100, java.util.List.of()).getItems().stream()
+            return inventory.listOnHand(null, null, null, null, null, 0, 100, java.util.List.of()).items().stream()
                     .filter(i -> i.part().id().equals(productId))
                     .mapToInt(i -> i.onHandQty()).sum();
         }

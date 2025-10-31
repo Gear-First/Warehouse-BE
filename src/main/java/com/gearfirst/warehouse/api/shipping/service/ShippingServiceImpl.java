@@ -26,7 +26,6 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -50,19 +49,6 @@ public class ShippingServiceImpl implements ShippingService {
         this.repository = repository;
         this.onHandProvider = onHandProvider;
         this.inventoryService = new NoOpInventoryService();
-    }
-
-    private static final class NoOpInventoryService implements InventoryService {
-        @Override
-        public PageEnvelope<OnHandSummary> listOnHand(
-                String warehouseCode, String partKeyword, String supplierName, Integer minQty, Integer maxQty,
-                int page, int size, List<String> sort) {
-            return PageEnvelope.of(List.of(), page, size, 0);
-        }
-        @Override
-        public void increase(String warehouseCode, Long partId, int qty) { /* no-op */ }
-        @Override
-        public void decrease(String warehouseCode, Long partId, int qty) { /* no-op */ }
     }
 
     @Override
@@ -107,13 +93,15 @@ public class ShippingServiceImpl implements ShippingService {
 
     @Override
     public ShippingNoteDetailResponse getDetail(Long noteId) {
-        var note = repository.findById(noteId).orElseThrow(() -> new NotFoundException("Shipping note not found: " + noteId));
+        var note = repository.findById(noteId)
+                .orElseThrow(() -> new NotFoundException("Shipping note not found: " + noteId));
         return toDetail(note);
     }
 
     @Override
     public ShippingNoteDetailResponse updateLine(Long noteId, Long lineId, ShippingUpdateLineRequest request) {
-        var note = repository.findById(noteId).orElseThrow(() -> new NotFoundException("Shipping note not found: " + noteId));
+        var note = repository.findById(noteId)
+                .orElseThrow(() -> new NotFoundException("Shipping note not found: " + noteId));
 
         // DELAYED/COMPLETED 상태에서는 수정 차단 (409)
         if (note.getStatus() == NoteStatus.DELAYED || note.getStatus() == NoteStatus.COMPLETED) {
@@ -201,7 +189,8 @@ public class ShippingServiceImpl implements ShippingService {
 
     @Override
     public ShippingCompleteResponse complete(Long noteId) {
-        var note = repository.findById(noteId).orElseThrow(() -> new NotFoundException("Shipping note not found: " + noteId));
+        var note = repository.findById(noteId)
+                .orElseThrow(() -> new NotFoundException("Shipping note not found: " + noteId));
         // Require handler info before completion processing
         if (note.getAssigneeName() == null || note.getAssigneeName().isBlank()) {
             throw new BadRequestException(ErrorStatus.SHIPPING_HANDLER_INFO_REQUIRED);
@@ -224,7 +213,8 @@ public class ShippingServiceImpl implements ShippingService {
                 if (l.getStatus() == LineStatus.READY) {
                     int shipped = l.getPickedQty();
                     totalShipped += shipped;
-                    inventoryService.decrease(note.getWarehouseCode() == null ? null : note.getWarehouseCode(), l.getProductId(), shipped);
+                    inventoryService.decrease(note.getWarehouseCode() == null ? null : note.getWarehouseCode(),
+                            l.getProductId(), shipped);
                 }
             }
         }
@@ -240,7 +230,8 @@ public class ShippingServiceImpl implements ShippingService {
                 .build();
         repository.save(updated);
 
-        return new ShippingCompleteResponse(completedAt, finalStatus == NoteStatus.COMPLETED ? totalShipped : note.getTotalQty());
+        return new ShippingCompleteResponse(completedAt,
+                finalStatus == NoteStatus.COMPLETED ? totalShipped : note.getTotalQty());
     }
 
     @Override
@@ -256,7 +247,9 @@ public class ShippingServiceImpl implements ShippingService {
                 long lineId = noteId + (++i);
                 int ordered = rl.orderedQty() == null ? 0 : rl.orderedQty();
                 totalQty += ordered;
-                if (rl.productId() != null) productIds.add(rl.productId());
+                if (rl.productId() != null) {
+                    productIds.add(rl.productId());
+                }
                 lines.add(ShippingNoteLine.builder()
                         .lineId(lineId)
                         .productId(rl.productId())
@@ -340,11 +333,27 @@ public class ShippingServiceImpl implements ShippingService {
                 note.getRemark(),
                 note.getLines().stream().map(l -> new ShippingNoteLineResponse(
                         l.getLineId(),
-                        new ShippingProductResponse(l.getProductId(), l.getProductLot(), l.getProductSerial(), l.getProductName(), l.getProductImgUrl()),
+                        new ShippingProductResponse(l.getProductId(), l.getProductLot(), l.getProductSerial(),
+                                l.getProductName(), l.getProductImgUrl()),
                         l.getOrderedQty(),
                         l.getPickedQty(),
                         l.getStatus().name()
                 )).toList()
         );
+    }
+
+    private static final class NoOpInventoryService implements InventoryService {
+        @Override
+        public PageEnvelope<OnHandSummary> listOnHand(
+                String warehouseCode, String partKeyword, String supplierName, Integer minQty, Integer maxQty,
+                int page, int size, List<String> sort) {
+            return PageEnvelope.of(List.of(), page, size, 0);
+        }
+
+        @Override
+        public void increase(String warehouseCode, Long partId, int qty) { /* no-op */ }
+
+        @Override
+        public void decrease(String warehouseCode, Long partId, int qty) { /* no-op */ }
     }
 }

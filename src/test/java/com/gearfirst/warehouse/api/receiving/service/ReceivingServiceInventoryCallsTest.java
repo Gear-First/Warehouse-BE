@@ -1,9 +1,17 @@
 package com.gearfirst.warehouse.api.receiving.service;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+
 import com.gearfirst.warehouse.api.inventory.service.InventoryService;
 import com.gearfirst.warehouse.api.receiving.domain.ReceivingLineStatus;
 import com.gearfirst.warehouse.api.receiving.domain.ReceivingNoteStatus;
-import com.gearfirst.warehouse.api.receiving.dto.ReceivingUpdateLineRequest;
 import com.gearfirst.warehouse.api.receiving.persistence.ReceivingNoteJpaRepository;
 import com.gearfirst.warehouse.api.receiving.persistence.entity.ReceivingNoteEntity;
 import com.gearfirst.warehouse.api.receiving.persistence.entity.ReceivingNoteLineEntity;
@@ -16,9 +24,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.transaction.annotation.Transactional;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.*;
 
 @SpringBootTest
 @Transactional

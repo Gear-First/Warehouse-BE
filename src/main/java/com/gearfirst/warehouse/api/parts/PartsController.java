@@ -11,15 +11,13 @@ import com.gearfirst.warehouse.api.parts.dto.PartDtos.UpdatePartRequest;
 import com.gearfirst.warehouse.api.parts.service.PartCategoryService;
 import com.gearfirst.warehouse.api.parts.service.PartService;
 import com.gearfirst.warehouse.common.response.ApiResponse;
-import com.gearfirst.warehouse.common.response.SuccessStatus;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
+import com.gearfirst.warehouse.common.response.SuccessStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -44,7 +42,8 @@ public class PartsController {
     // Categories
     @Operation(summary = "부품 카테고리 목록", description = "키워드로 카테고리를 검색합니다. (임시) 전체 리스트 반환 후 필터 적용")
     @GetMapping("/categories")
-    public ResponseEntity<ApiResponse<List<CategorySummaryResponse>>> listCategories(@RequestParam(required = false) String keyword) {
+    public ResponseEntity<ApiResponse<List<CategorySummaryResponse>>> listCategories(
+            @RequestParam(required = false) String keyword) {
         String kw = (keyword == null) ? "" : keyword;
         return ApiResponse.success(SuccessStatus.SEND_PART_CATEGORY_LIST_SUCCESS, categoryService.list(kw));
     }
@@ -57,13 +56,15 @@ public class PartsController {
 
     @Operation(summary = "부품 카테고리 생성", description = "이름 중복 시 409를 반환합니다.")
     @PostMapping("/categories")
-    public ResponseEntity<ApiResponse<CategoryDetailResponse>> createCategory(@RequestBody @Valid CreateCategoryRequest req) {
+    public ResponseEntity<ApiResponse<CategoryDetailResponse>> createCategory(
+            @RequestBody @Valid CreateCategoryRequest req) {
         return ApiResponse.success(SuccessStatus.SEND_PART_CATEGORY_CREATE_SUCCESS, categoryService.create(req));
     }
 
     @Operation(summary = "부품 카테고리 수정", description = "이름 변경 시 중복 검사합니다.")
     @PatchMapping("/categories/{id}")
-    public ResponseEntity<ApiResponse<CategoryDetailResponse>> updateCategory(@PathVariable Long id, @RequestBody @Valid UpdateCategoryRequest req) {
+    public ResponseEntity<ApiResponse<CategoryDetailResponse>> updateCategory(@PathVariable Long id,
+                                                                              @RequestBody @Valid UpdateCategoryRequest req) {
         return ApiResponse.success(SuccessStatus.SEND_PART_CATEGORY_UPDATE_SUCCESS, categoryService.update(id, req));
     }
 
@@ -72,7 +73,7 @@ public class PartsController {
     public ResponseEntity<ApiResponse<Map<String, Boolean>>> deleteCategory(@PathVariable Long id) {
         categoryService.delete(id);
         return ApiResponse.success(SuccessStatus.SEND_PART_CATEGORY_DELETE_SUCCESS, java.util.Map.of("deleted", true));
-        }
+    }
 
     // Parts
     @Operation(summary = "부품 목록", description = "code/name/categoryId로 필터하고 서버사이드 페이지네이션/정렬로 조회합니다. 기본 정렬: name,asc → code,asc")
@@ -105,7 +106,8 @@ public class PartsController {
 
     @Operation(summary = "부품 수정", description = "code 변경 시 중복 검사, enabled는 soft delete 대용")
     @PatchMapping("/{id}")
-    public ResponseEntity<ApiResponse<PartDetailResponse>> updatePart(@PathVariable Long id, @RequestBody @Valid UpdatePartRequest req) {
+    public ResponseEntity<ApiResponse<PartDetailResponse>> updatePart(@PathVariable Long id,
+                                                                      @RequestBody @Valid UpdatePartRequest req) {
         return ApiResponse.success(SuccessStatus.SEND_PART_UPDATE_SUCCESS, partService.update(id, req));
     }
 

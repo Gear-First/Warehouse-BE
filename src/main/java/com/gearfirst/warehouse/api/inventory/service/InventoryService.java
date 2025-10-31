@@ -17,9 +17,13 @@ public interface InventoryService {
             List<String> sort
     );
 
-    /** Increase on-hand by qty for the given warehouse/part. */
+    /**
+     * Increase on-hand by qty for the given warehouse/part.
+     */
     void increase(String warehouseCode, Long partId, int qty);
 
-    /** Decrease on-hand by qty; must not go below zero (throws ConflictException on insufficient). */
+    /**
+     * Decrease on-hand by qty; must not go below zero (throws ConflictException on insufficient).
+     */
     void decrease(String warehouseCode, Long partId, int qty);
 }

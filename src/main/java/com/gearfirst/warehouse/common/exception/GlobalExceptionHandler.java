@@ -49,7 +49,8 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.fail(status));
     }
 
-    @ExceptionHandler({MethodArgumentNotValidException.class, MethodArgumentTypeMismatchException.class, HttpMessageNotReadableException.class})
+    @ExceptionHandler({MethodArgumentNotValidException.class, MethodArgumentTypeMismatchException.class,
+            HttpMessageNotReadableException.class})
     public ResponseEntity<ApiResponse<?>> handleValidationExceptions(Exception ex) {
         var status = ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION;
         return ResponseEntity.status(status.getHttpStatus())

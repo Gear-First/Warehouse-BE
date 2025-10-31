@@ -153,25 +153,33 @@ public class ShippingController {
                     : service.getNotDone(date, warehouseCode);
         }
         // Apply date range filter (requestedAt) if dateFrom/dateTo provided (range wins), else apply single date if provided
-        java.time.LocalDate from = (dateFrom == null || dateFrom.isBlank()) ? null : java.time.LocalDate.parse(dateFrom);
+        java.time.LocalDate from =
+                (dateFrom == null || dateFrom.isBlank()) ? null : java.time.LocalDate.parse(dateFrom);
         java.time.LocalDate to = (dateTo == null || dateTo.isBlank()) ? null : java.time.LocalDate.parse(dateTo);
         if (from != null || to != null || (date != null && !date.isBlank())) {
             if (from == null && to == null && date != null && !date.isBlank()) {
                 var d = java.time.LocalDate.parse(date);
-                from = d; to = d;
+                from = d;
+                to = d;
             }
             final java.time.LocalDate fFrom = from;
             final java.time.LocalDate fTo = to;
             list = list.stream().filter(it -> {
                 String ra = it.requestedAt();
-                if (ra == null || ra.isBlank()) return false;
+                if (ra == null || ra.isBlank()) {
+                    return false;
+                }
                 java.time.LocalDate d;
                 try {
-                    d = (ra.length() > 10) ? java.time.OffsetDateTime.parse(ra).toLocalDate() : java.time.LocalDate.parse(ra);
-                } catch (Exception e) { return false; }
-                if (fFrom != null && d.isBefore(fFrom)) return false;
-                if (fTo != null && d.isAfter(fTo)) return false;
-                return true;
+                    d = (ra.length() > 10) ? java.time.OffsetDateTime.parse(ra).toLocalDate()
+                            : java.time.LocalDate.parse(ra);
+                } catch (Exception e) {
+                    return false;
+                }
+                if (fFrom != null && d.isBefore(fFrom)) {
+                    return false;
+                }
+                return fTo == null || !d.isAfter(fTo);
             }).toList();
         }
         var sorted = list.stream().sorted(java.util.Comparator.comparing(ShippingNoteSummaryResponse::noteId)).toList();

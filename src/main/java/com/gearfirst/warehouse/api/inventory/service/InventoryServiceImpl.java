@@ -70,10 +70,12 @@ public class InventoryServiceImpl implements InventoryService {
                         || containsIgnoreCase(i.part().code(), partKeyword)
                         || containsIgnoreCase(i.part().name(), partKeyword))
                 .filter(i -> {
-                    if (supplierName == null || supplierName.isBlank()) return true;
+                    if (supplierName == null || supplierName.isBlank()) {
+                        return true;
+                    }
                     var pe = partMap.get(i.part().id());
                     var sname = (pe == null ? null : pe.getSupplierName());
-                    return sname != null && containsIgnoreCase(sname, supplierName);
+                    return containsIgnoreCase(sname, supplierName);
                 })
                 .filter(i -> minQty == null || i.onHandQty() >= minQty)
                 .filter(i -> maxQty == null || i.onHandQty() <= maxQty)
@@ -81,8 +83,10 @@ public class InventoryServiceImpl implements InventoryService {
 
         // Sorting whitelist
         Comparator<OnHandSummary> cmp = Comparator
-                .comparing((OnHandSummary s) -> s.part().name() == null ? "" : s.part().name(), String::compareToIgnoreCase)
-                .thenComparing((OnHandSummary s) -> s.part().code() == null ? "" : s.part().code(), String::compareToIgnoreCase);
+                .comparing((OnHandSummary s) -> s.part().name() == null ? "" : s.part().name(),
+                        String::compareToIgnoreCase)
+                .thenComparing((OnHandSummary s) -> s.part().code() == null ? "" : s.part().code(),
+                        String::compareToIgnoreCase);
         if (sort != null && !sort.isEmpty()) {
             cmp = buildComparator(sort, cmp);
         }
@@ -97,19 +101,26 @@ public class InventoryServiceImpl implements InventoryService {
     private Comparator<OnHandSummary> buildComparator(List<String> sort, Comparator<OnHandSummary> defaultCmp) {
         Comparator<OnHandSummary> cmp = null;
         for (String s : sort) {
-            if (s == null || s.isBlank()) continue;
+            if (s == null || s.isBlank()) {
+                continue;
+            }
             var parts = s.split(",");
             String field = parts[0].trim();
             String dir = parts.length > 1 ? parts[1].trim().toLowerCase(java.util.Locale.ROOT) : "asc";
             Comparator<OnHandSummary> c;
             switch (field) {
-                case "partName" -> c = Comparator.comparing(i -> i.part().name() == null ? "" : i.part().name(), String::compareToIgnoreCase);
-                case "partCode" -> c = Comparator.comparing(i -> i.part().code() == null ? "" : i.part().code(), String::compareToIgnoreCase);
+                case "partName" -> c = Comparator.comparing(i -> i.part().name() == null ? "" : i.part().name(),
+                        String::compareToIgnoreCase);
+                case "partCode" -> c = Comparator.comparing(i -> i.part().code() == null ? "" : i.part().code(),
+                        String::compareToIgnoreCase);
                 case "onHandQty" -> c = Comparator.comparingInt(OnHandSummary::onHandQty);
-                case "lastUpdatedAt" -> c = Comparator.comparing(i -> i.lastUpdatedAt() == null ? "" : i.lastUpdatedAt());
+                case "lastUpdatedAt" ->
+                        c = Comparator.comparing(i -> i.lastUpdatedAt() == null ? "" : i.lastUpdatedAt());
                 default -> throw new BadRequestException(ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
             }
-            if ("desc".equals(dir)) c = c.reversed();
+            if ("desc".equals(dir)) {
+                c = c.reversed();
+            }
             cmp = (cmp == null) ? c : cmp.thenComparing(c);
         }
         return cmp == null ? defaultCmp : cmp;
@@ -118,7 +129,9 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     @Transactional
     public void increase(String warehouseCode, Long partId, int qty) {
-        if (qty <= 0 || partId == null) return;
+        if (qty <= 0 || partId == null) {
+            return;
+        }
         var now = OffsetDateTime.now(ZoneOffset.UTC);
         var entity = repo.findByWarehouseCodeAndPartId(warehouseCode, partId)
                 .orElseGet(() -> InventoryOnHandEntity.builder()
@@ -134,7 +147,9 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     @Transactional
     public void decrease(String warehouseCode, Long partId, int qty) {
-        if (qty <= 0 || partId == null) return;
+        if (qty <= 0 || partId == null) {
+            return;
+        }
         var entity = repo.findByWarehouseCodeAndPartId(warehouseCode, partId)
                 .orElseGet(() -> InventoryOnHandEntity.builder()
                         .warehouseCode(warehouseCode)
@@ -151,7 +166,9 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     private boolean containsIgnoreCase(String text, String kw) {
-        if (text == null) return false;
+        if (text == null) {
+            return false;
+        }
         return text.toLowerCase(java.util.Locale.ROOT).contains(kw.toLowerCase(java.util.Locale.ROOT));
     }
 }

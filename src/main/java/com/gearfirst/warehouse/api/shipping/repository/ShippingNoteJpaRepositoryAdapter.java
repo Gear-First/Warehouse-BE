@@ -6,7 +6,6 @@ import com.gearfirst.warehouse.api.shipping.domain.ShippingNoteLine;
 import com.gearfirst.warehouse.api.shipping.persistence.ShippingNoteJpaRepository;
 import com.gearfirst.warehouse.api.shipping.persistence.entity.ShippingNoteEntity;
 import com.gearfirst.warehouse.api.shipping.persistence.entity.ShippingNoteLineEntity;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +41,8 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
                 done = done.stream()
                         .filter(e -> e.getCreatedAt() != null && e.getCreatedAt().toLocalDate().isEqual(target))
                         .toList();
-            } catch (Exception ignored) { }
+            } catch (Exception ignored) {
+            }
         }
         return done.stream().map(this::toDomain).toList();
     }
@@ -133,7 +133,9 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
     }
 
     private java.time.OffsetDateTime parseOffsetDateTime(String text) {
-        if (text == null || text.isBlank()) return null;
+        if (text == null || text.isBlank()) {
+            return null;
+        }
         try {
             return java.time.OffsetDateTime.parse(text);
         } catch (Exception e) {

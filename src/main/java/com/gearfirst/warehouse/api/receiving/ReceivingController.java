@@ -9,8 +9,8 @@ import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteSummaryResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingUpdateLineRequest;
 import com.gearfirst.warehouse.api.receiving.service.ReceivingService;
 import com.gearfirst.warehouse.common.response.ApiResponse;
-import com.gearfirst.warehouse.common.response.SuccessStatus;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
+import com.gearfirst.warehouse.common.response.SuccessStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import java.util.Comparator;
@@ -151,7 +151,8 @@ public class ReceivingController {
                     : service.getNotDone(date, warehouseCode);
         }
         // Apply date range filter (requestedAt) if dateFrom/dateTo provided (range wins), else apply single date if provided
-        java.time.LocalDate from = (dateFrom == null || dateFrom.isBlank()) ? null : java.time.LocalDate.parse(dateFrom);
+        java.time.LocalDate from =
+                (dateFrom == null || dateFrom.isBlank()) ? null : java.time.LocalDate.parse(dateFrom);
         java.time.LocalDate to = (dateTo == null || dateTo.isBlank()) ? null : java.time.LocalDate.parse(dateTo);
         if (from != null || to != null || (date != null && !date.isBlank())) {
             if (from == null && to == null && date != null && !date.isBlank()) {
@@ -163,18 +164,27 @@ public class ReceivingController {
             final java.time.LocalDate fTo = to;
             list = list.stream().filter(it -> {
                 String ra = it.requestedAt();
-                if (ra == null || ra.isBlank()) return false;
+                if (ra == null || ra.isBlank()) {
+                    return false;
+                }
                 java.time.LocalDate d;
                 try {
-                    if (ra.length() > 10) d = java.time.OffsetDateTime.parse(ra).toLocalDate();
-                    else d = java.time.LocalDate.parse(ra);
-                } catch (Exception e) { return false; }
-                if (fFrom != null && d.isBefore(fFrom)) return false;
-                if (fTo != null && d.isAfter(fTo)) return false;
-                return true;
+                    if (ra.length() > 10) {
+                        d = java.time.OffsetDateTime.parse(ra).toLocalDate();
+                    } else {
+                        d = java.time.LocalDate.parse(ra);
+                    }
+                } catch (Exception e) {
+                    return false;
+                }
+                if (fFrom != null && d.isBefore(fFrom)) {
+                    return false;
+                }
+                return fTo == null || !d.isAfter(fTo);
             }).toList();
         }
-        var sorted = list.stream().sorted(java.util.Comparator.comparing(ReceivingNoteSummaryResponse::noteId)).toList();
+        var sorted = list.stream().sorted(java.util.Comparator.comparing(ReceivingNoteSummaryResponse::noteId))
+                .toList();
         long total = sorted.size();
         int fromIdx = Math.min(p * s, (int) total);
         int toIdx = Math.min(fromIdx + s, (int) total);

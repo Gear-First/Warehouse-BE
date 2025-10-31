@@ -14,7 +14,6 @@ import com.gearfirst.warehouse.common.exception.ConflictException;
 import com.gearfirst.warehouse.common.exception.NotFoundException;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,7 +37,8 @@ public class PartServiceImpl implements PartService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageEnvelope<PartSummaryResponse> list(String code, String name, Long categoryId, int page, int size, java.util.List<String> sortParams) {
+    public PageEnvelope<PartSummaryResponse> list(String code, String name, Long categoryId, int page, int size,
+                                                  java.util.List<String> sortParams) {
         String c = code == null ? "" : code;
         String n = name == null ? "" : name;
         int p = Math.max(0, page);
@@ -50,7 +50,8 @@ public class PartServiceImpl implements PartService {
         if (categoryId == null) {
             pageData = partRepo.findByEnabledTrueAndCodeContainingIgnoreCaseAndNameContainingIgnoreCase(c, n, pageable);
         } else {
-            pageData = partRepo.findByEnabledTrueAndCodeContainingIgnoreCaseAndNameContainingIgnoreCaseAndCategoryId(c, n, categoryId, pageable);
+            pageData = partRepo.findByEnabledTrueAndCodeContainingIgnoreCaseAndNameContainingIgnoreCaseAndCategoryId(c,
+                    n, categoryId, pageable);
         }
 
         List<PartEntity> parts = pageData.getContent();
@@ -70,7 +71,9 @@ public class PartServiceImpl implements PartService {
     private Sort buildSort(java.util.List<String> sortParams) {
         // default: name,asc → code,asc
         Sort defaultSort = Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.asc("code").ignoreCase());
-        if (sortParams == null || sortParams.isEmpty()) return defaultSort;
+        if (sortParams == null || sortParams.isEmpty()) {
+            return defaultSort;
+        }
         try {
             List<Sort.Order> orders = sortParams.stream()
                     .map(s -> {
@@ -81,7 +84,9 @@ public class PartServiceImpl implements PartService {
                         return o.ignoreCase();
                     })
                     .toList();
-            if (orders.isEmpty()) return defaultSort;
+            if (orders.isEmpty()) {
+                return defaultSort;
+            }
             return Sort.by(orders);
         } catch (Exception e) {
             return defaultSort;
@@ -122,15 +127,20 @@ public class PartServiceImpl implements PartService {
         if (!categoryRepo.existsById(req.categoryId())) {
             throw new NotFoundException("Category not found: " + req.categoryId());
         }
-        if (req.code() != null && !req.code().equalsIgnoreCase(p.getCode()) && partRepo.existsByCodeIgnoreCase(req.code())) {
+        if (req.code() != null && !req.code().equalsIgnoreCase(p.getCode()) && partRepo.existsByCodeIgnoreCase(
+                req.code())) {
             throw new ConflictException(ErrorStatus.PART_CODE_ALREADY_EXISTS);
         }
-        if (req.code() != null && !req.code().isBlank()) p.setCode(req.code().trim());
+        if (req.code() != null && !req.code().isBlank()) {
+            p.setCode(req.code().trim());
+        }
         p.setName(req.name().trim());
         p.setPrice(req.price());
         p.setCategoryId(req.categoryId());
         p.setImageUrl(req.imageUrl());
-        if (req.enabled() != null) p.setEnabled(req.enabled());
+        if (req.enabled() != null) {
+            p.setEnabled(req.enabled());
+        }
         partRepo.save(p);
         return toDetail(p);
     }
@@ -149,19 +159,39 @@ public class PartServiceImpl implements PartService {
     }
 
     private void validateCreate(CreatePartRequest req) {
-        if (req == null) throw new BadRequestException(ErrorStatus.PART_NAME_INVALID);
-        if (req.code() == null || req.code().isBlank()) throw new BadRequestException(ErrorStatus.PART_CODE_INVALID);
-        if (req.name() == null || req.name().trim().length() < 2 || req.name().length() > 100) throw new BadRequestException(ErrorStatus.PART_NAME_INVALID);
-        if (req.price() == null || req.price() < 0) throw new BadRequestException(ErrorStatus.PART_PRICE_INVALID);
-        if (req.categoryId() == null) throw new BadRequestException(ErrorStatus.PART_CATEGORY_NAME_INVALID);
+        if (req == null) {
+            throw new BadRequestException(ErrorStatus.PART_NAME_INVALID);
+        }
+        if (req.code() == null || req.code().isBlank()) {
+            throw new BadRequestException(ErrorStatus.PART_CODE_INVALID);
+        }
+        if (req.name() == null || req.name().trim().length() < 2 || req.name().length() > 100) {
+            throw new BadRequestException(ErrorStatus.PART_NAME_INVALID);
+        }
+        if (req.price() == null || req.price() < 0) {
+            throw new BadRequestException(ErrorStatus.PART_PRICE_INVALID);
+        }
+        if (req.categoryId() == null) {
+            throw new BadRequestException(ErrorStatus.PART_CATEGORY_NAME_INVALID);
+        }
     }
 
     private void validateUpdate(UpdatePartRequest req) {
-        if (req == null) throw new BadRequestException(ErrorStatus.PART_NAME_INVALID);
-        if (req.name() == null || req.name().trim().length() < 2 || req.name().length() > 100) throw new BadRequestException(ErrorStatus.PART_NAME_INVALID);
-        if (req.price() == null || req.price() < 0) throw new BadRequestException(ErrorStatus.PART_PRICE_INVALID);
-        if (req.categoryId() == null) throw new BadRequestException(ErrorStatus.PART_CATEGORY_NAME_INVALID);
-        if (req.code() != null && req.code().isBlank()) throw new BadRequestException(ErrorStatus.PART_CODE_INVALID);
+        if (req == null) {
+            throw new BadRequestException(ErrorStatus.PART_NAME_INVALID);
+        }
+        if (req.name() == null || req.name().trim().length() < 2 || req.name().length() > 100) {
+            throw new BadRequestException(ErrorStatus.PART_NAME_INVALID);
+        }
+        if (req.price() == null || req.price() < 0) {
+            throw new BadRequestException(ErrorStatus.PART_PRICE_INVALID);
+        }
+        if (req.categoryId() == null) {
+            throw new BadRequestException(ErrorStatus.PART_CATEGORY_NAME_INVALID);
+        }
+        if (req.code() != null && req.code().isBlank()) {
+            throw new BadRequestException(ErrorStatus.PART_CODE_INVALID);
+        }
     }
 
     private PartDetailResponse toDetail(PartEntity p) {

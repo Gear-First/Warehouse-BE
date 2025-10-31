@@ -1,5 +1,10 @@
 package com.gearfirst.warehouse.api.receiving.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.gearfirst.warehouse.api.inventory.persistence.InventoryOnHandJpaRepository;
 import com.gearfirst.warehouse.api.inventory.persistence.entity.InventoryOnHandEntity;
 import com.gearfirst.warehouse.api.receiving.domain.ReceivingLineStatus;
@@ -8,18 +13,14 @@ import com.gearfirst.warehouse.api.receiving.persistence.ReceivingNoteJpaReposit
 import com.gearfirst.warehouse.api.receiving.persistence.entity.ReceivingNoteEntity;
 import com.gearfirst.warehouse.api.receiving.persistence.entity.ReceivingNoteLineEntity;
 import com.gearfirst.warehouse.common.exception.ConflictException;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Transactional
@@ -57,13 +58,16 @@ class ReceivingInventoryIntegrationTest {
         note = noteRepo.save(note);
         // attach lines (new entities with null ids)
         note.addLine(ReceivingNoteLineEntity.builder()
-                .productId(501L).productLot("LOT-501").productCode("P-501").productName("품목501").productImgUrl("/img/501")
+                .productId(501L).productLot("LOT-501").productCode("P-501").productName("품목501")
+                .productImgUrl("/img/501")
                 .orderedQty(5).inspectedQty(5).status(ReceivingLineStatus.ACCEPTED).build());
         note.addLine(ReceivingNoteLineEntity.builder()
-                .productId(502L).productLot("LOT-502").productCode("P-502").productName("품목502").productImgUrl("/img/502")
+                .productId(502L).productLot("LOT-502").productCode("P-502").productName("품목502")
+                .productImgUrl("/img/502")
                 .orderedQty(7).inspectedQty(7).status(ReceivingLineStatus.ACCEPTED).build());
         note.addLine(ReceivingNoteLineEntity.builder()
-                .productId(503L).productLot("LOT-503").productCode("P-503").productName("품목503").productImgUrl("/img/503")
+                .productId(503L).productLot("LOT-503").productCode("P-503").productName("품목503")
+                .productImgUrl("/img/503")
                 .orderedQty(8).inspectedQty(0).status(ReceivingLineStatus.REJECTED).build());
         note = noteRepo.save(note);
         this.noteId = note.getNoteId();
@@ -92,14 +96,18 @@ class ReceivingInventoryIntegrationTest {
     void complete_idempotency_inventoryNotDoubled() {
         // first completion
         service.complete(noteId);
-        var before501 = onHandRepo.findByWarehouseCodeAndPartId("WHPG", 501L).map(InventoryOnHandEntity::getOnHandQty).orElse(0);
-        var before502 = onHandRepo.findByWarehouseCodeAndPartId("WHPG", 502L).map(InventoryOnHandEntity::getOnHandQty).orElse(0);
+        var before501 = onHandRepo.findByWarehouseCodeAndPartId("WHPG", 501L).map(InventoryOnHandEntity::getOnHandQty)
+                .orElse(0);
+        var before502 = onHandRepo.findByWarehouseCodeAndPartId("WHPG", 502L).map(InventoryOnHandEntity::getOnHandQty)
+                .orElse(0);
         assertEquals(5, before501);
         assertEquals(7, before502);
         // second completion must 409 and quantities unchanged
         assertThrows(ConflictException.class, () -> service.complete(noteId));
-        var after501 = onHandRepo.findByWarehouseCodeAndPartId("WHPG", 501L).map(InventoryOnHandEntity::getOnHandQty).orElse(0);
-        var after502 = onHandRepo.findByWarehouseCodeAndPartId("WHPG", 502L).map(InventoryOnHandEntity::getOnHandQty).orElse(0);
+        var after501 = onHandRepo.findByWarehouseCodeAndPartId("WHPG", 501L).map(InventoryOnHandEntity::getOnHandQty)
+                .orElse(0);
+        var after502 = onHandRepo.findByWarehouseCodeAndPartId("WHPG", 502L).map(InventoryOnHandEntity::getOnHandQty)
+                .orElse(0);
         assertEquals(before501, after501);
         assertEquals(before502, after502);
     }

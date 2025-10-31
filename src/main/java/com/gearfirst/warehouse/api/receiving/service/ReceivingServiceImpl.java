@@ -31,7 +31,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ReceivingServiceImpl implements ReceivingService {
 
-    private static final List<ReceivingNoteStatus> DONE_STATUSES = List.of(ReceivingNoteStatus.COMPLETED_OK, ReceivingNoteStatus.COMPLETED_ISSUE);
+    private static final List<ReceivingNoteStatus> DONE_STATUSES = List.of(ReceivingNoteStatus.COMPLETED_OK,
+            ReceivingNoteStatus.COMPLETED_ISSUE);
 
     private final ReceivingNoteRepository repository;
     private final com.gearfirst.warehouse.api.inventory.service.InventoryService inventoryService;
@@ -78,13 +79,15 @@ public class ReceivingServiceImpl implements ReceivingService {
 
     @Override
     public ReceivingNoteDetailResponse getDetail(Long noteId) {
-        var note = repository.findById(noteId).orElseThrow(() -> new NotFoundException("Receiving note not found: " + noteId));
+        var note = repository.findById(noteId)
+                .orElseThrow(() -> new NotFoundException("Receiving note not found: " + noteId));
         return toDetail(note);
     }
 
     @Override
     public ReceivingNoteDetailResponse updateLine(Long noteId, Long lineId, ReceivingUpdateLineRequest request) {
-        var note = repository.findById(noteId).orElseThrow(() -> new NotFoundException("Receiving note not found: " + noteId));
+        var note = repository.findById(noteId)
+                .orElseThrow(() -> new NotFoundException("Receiving note not found: " + noteId));
 
         // Block when note already completed
         if (isDoneStatus(note.getStatus())) {
@@ -127,7 +130,8 @@ public class ReceivingServiceImpl implements ReceivingService {
 
     @Override
     public ReceivingCompleteResponse complete(Long noteId) {
-        var note = repository.findById(noteId).orElseThrow(() -> new NotFoundException("Receiving note not found: " + noteId));
+        var note = repository.findById(noteId)
+                .orElseThrow(() -> new NotFoundException("Receiving note not found: " + noteId));
         // Require handler/inspector info before completion
         if (note.getInspectorName() == null || note.getInspectorName().isBlank()) {
             throw new BadRequestException(ErrorStatus.RECEIVING_HANDLER_INFO_REQUIRED);
@@ -138,7 +142,8 @@ public class ReceivingServiceImpl implements ReceivingService {
         }
         // All lines must be ACCEPTED/REJECTED
         boolean allFinal = note.getLines().stream()
-                .allMatch(l -> l.getStatus() == ReceivingLineStatus.ACCEPTED || l.getStatus() == ReceivingLineStatus.REJECTED);
+                .allMatch(l -> l.getStatus() == ReceivingLineStatus.ACCEPTED
+                        || l.getStatus() == ReceivingLineStatus.REJECTED);
         if (!allFinal) {
             throw new ConflictException(ErrorStatus.CONFLICT_RECEIVING_CANNOT_COMPLETE_WHEN_NOT_DONE);
         }
@@ -155,7 +160,8 @@ public class ReceivingServiceImpl implements ReceivingService {
                 .forEach(l -> inventoryService.increase(whCode, l.getProductId(), l.getOrderedQty()));
 
         boolean hasRejected = note.getLines().stream().anyMatch(l -> l.getStatus() == ReceivingLineStatus.REJECTED);
-        ReceivingNoteStatus finalStatus = hasRejected ? ReceivingNoteStatus.COMPLETED_ISSUE : ReceivingNoteStatus.COMPLETED_OK;
+        ReceivingNoteStatus finalStatus =
+                hasRejected ? ReceivingNoteStatus.COMPLETED_ISSUE : ReceivingNoteStatus.COMPLETED_OK;
         var completedAt = OffsetDateTime.now(ZoneOffset.UTC);
 
         note.setStatus(finalStatus);
@@ -181,7 +187,9 @@ public class ReceivingServiceImpl implements ReceivingService {
             throw new BadRequestException(ErrorStatus.RECEIVING_REQUESTED_AT_INVALID);
         }
         OffsetDateTime expAt = parseOffsetDateTime(request == null ? null : request.expectedReceiveDate());
-        if (expAt == null) expAt = reqAt.plusDays(2);
+        if (expAt == null) {
+            expAt = reqAt.plusDays(2);
+        }
         builder.requestedAt(reqAt);
         builder.expectedReceiveDate(expAt);
         builder.receivedAt(null);
@@ -204,7 +212,9 @@ public class ReceivingServiceImpl implements ReceivingService {
                 long lineId = noteId + (++i);
                 int ordered = rl.orderedQty() == null ? 0 : rl.orderedQty();
                 totalQty += ordered;
-                if (rl.productId() != null) productIds.add(rl.productId());
+                if (rl.productId() != null) {
+                    productIds.add(rl.productId());
+                }
                 var line = ReceivingNoteLineEntity.builder()
                         .lineId(lineId)
                         .productId(rl.productId())
@@ -233,7 +243,9 @@ public class ReceivingServiceImpl implements ReceivingService {
     }
 
     private OffsetDateTime parseOffsetDateTime(String text) {
-        if (text == null || text.isBlank()) return null;
+        if (text == null || text.isBlank()) {
+            return null;
+        }
         try {
             return OffsetDateTime.parse(text);
         } catch (Exception e) {
@@ -263,7 +275,8 @@ public class ReceivingServiceImpl implements ReceivingService {
         String completedAt = n.getCompletedAt() != null ? n.getCompletedAt().toString() : null;
         var lines = n.getLines().stream().map(l -> new ReceivingNoteLineResponse(
                 l.getLineId(),
-                new ReceivingProductResponse(l.getProductId(), l.getProductLot(), l.getProductCode(), l.getProductName(), l.getProductImgUrl()),
+                new ReceivingProductResponse(l.getProductId(), l.getProductLot(), l.getProductCode(),
+                        l.getProductName(), l.getProductImgUrl()),
                 l.getOrderedQty(),
                 l.getInspectedQty(),
                 l.getStatus().name()

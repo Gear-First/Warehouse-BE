@@ -8,8 +8,10 @@ import org.springframework.http.HttpStatus;
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public enum SuccessStatus {
-    /** 200 SUCCESS */
-    SEND_HEALTH_SUCCESS(HttpStatus.OK,"서버 상태 OK"),
+    /**
+     * 200 SUCCESS
+     */
+    SEND_HEALTH_SUCCESS(HttpStatus.OK, "서버 상태 OK"),
     SEND_RECEIVING_NOTE_LIST_SUCCESS(HttpStatus.OK, "입고요청서 목록 조회 성공"),
     SEND_RECEIVING_NOTE_DETAIL_SUCCESS(HttpStatus.OK, "입고요청서 상세 조회 성공"),
     SEND_RECEIVING_COMPLETE_SUCCESS(HttpStatus.OK, "입고 완료 처리 성공"),

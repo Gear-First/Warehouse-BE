@@ -46,13 +46,17 @@ public class InventoryOnHandEntity extends BaseTimeEntity {
     private OffsetDateTime lastUpdatedAt;
 
     public void increase(int qty, OffsetDateTime now) {
-        if (qty <= 0) return;
+        if (qty <= 0) {
+            return;
+        }
         this.onHandQty = (this.onHandQty == null ? 0 : this.onHandQty) + qty;
         this.lastUpdatedAt = now;
     }
 
     public void decrease(int qty, OffsetDateTime now) {
-        if (qty <= 0) return;
+        if (qty <= 0) {
+            return;
+        }
         int current = this.onHandQty == null ? 0 : this.onHandQty;
         this.onHandQty = Math.max(0, current - qty);
         this.lastUpdatedAt = now;
