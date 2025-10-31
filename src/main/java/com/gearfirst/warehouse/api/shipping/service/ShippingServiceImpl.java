@@ -25,7 +25,10 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -36,7 +39,7 @@ public class ShippingServiceImpl implements ShippingService {
     private final InventoryService inventoryService;
     private final com.gearfirst.warehouse.common.sequence.NoteNumberGenerator noteNumberGenerator;
 
-    @org.springframework.beans.factory.annotation.Autowired
+    @Autowired
     public ShippingServiceImpl(ShippingNoteRepository repository,
                                OnHandProvider onHandProvider,
                                InventoryService inventoryService,
@@ -250,21 +253,19 @@ public class ShippingServiceImpl implements ShippingService {
     @Override
     public ShippingNoteDetailResponse create(ShippingCreateNoteRequest request) {
         // Generate simple ids (temporary). In real system, use sequence/UUID.
-        long noteId = System.currentTimeMillis();
-        List<ShippingNoteLine> lines = new java.util.ArrayList<>();
+        List<ShippingNoteLine> lines = new ArrayList<>();
         int totalQty = 0;
-        java.util.Set<Long> productIds = new java.util.HashSet<>();
+        Set<Long> productIds = new HashSet<>();
         if (request != null && request.lines() != null) {
             int i = 0;
             for (var rl : request.lines()) {
-                long lineId = noteId + (++i);
                 int ordered = rl.orderedQty() == null ? 0 : rl.orderedQty();
                 totalQty += ordered;
                 if (rl.productId() != null) {
                     productIds.add(rl.productId());
                 }
                 lines.add(ShippingNoteLine.builder()
-                        .lineId(lineId)
+                        .lineId(null)
                         .productId(rl.productId())
                         .productLot(null)
                         .productSerial(null)
@@ -300,7 +301,7 @@ public class ShippingServiceImpl implements ShippingService {
         }
 
         var note = ShippingNote.builder()
-                .noteId(noteId)
+                .noteId(null) // let JPA generate note id
                 .branchName(request == null ? null : request.branchName())
                 .itemKindsNumber(itemKinds)
                 .totalQty(totalQty)
