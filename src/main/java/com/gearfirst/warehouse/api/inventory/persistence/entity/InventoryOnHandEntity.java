@@ -8,6 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import java.time.OffsetDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -19,7 +20,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "inventory_onhand",
         indexes = {
-                @Index(name = "IDX_onhand_wh_part", columnList = "warehouseId,partId"),
+                @Index(name = "IDX_onhand_wh_part", columnList = "warehouseCode,partId"),
                 @Index(name = "IDX_onhand_part", columnList = "partId")
         })
 @Getter
@@ -33,8 +34,8 @@ public class InventoryOnHandEntity extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Nullable for MVP single-warehouse scenarios
-    private Long warehouseId;
+    @NotNull
+    private String warehouseCode;
 
     @Column(nullable = false)
     private Long partId;
@@ -45,13 +46,17 @@ public class InventoryOnHandEntity extends BaseTimeEntity {
     private OffsetDateTime lastUpdatedAt;
 
     public void increase(int qty, OffsetDateTime now) {
-        if (qty <= 0) return;
+        if (qty <= 0) {
+            return;
+        }
         this.onHandQty = (this.onHandQty == null ? 0 : this.onHandQty) + qty;
         this.lastUpdatedAt = now;
     }
 
     public void decrease(int qty, OffsetDateTime now) {
-        if (qty <= 0) return;
+        if (qty <= 0) {
+            return;
+        }
         int current = this.onHandQty == null ? 0 : this.onHandQty;
         this.onHandQty = Math.max(0, current - qty);
         this.lastUpdatedAt = now;

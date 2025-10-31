@@ -10,11 +10,13 @@
 ## Policy
 
 - 라인 업데이트 입력은 수량만을 받으며, 상태는 서버가 도출한다.
-  - 입력: `allocatedQty`(할당 수량), `pickedQty`(피킹 수량)
-  - 제약: `0 ≤ pickedQty ≤ allocatedQty ≤ orderedQty`
-- 상태 판정(서버 도출):
-  - 조건 충족 시 `READY` (출고 준비 완료)
-  - 부족 판단 시 `SHORTAGE` (출고 지연)
+  - 입력: `pickedQty`(피킹 수량)
+  - 제약: `0 ≤ pickedQty ≤ orderedQty`
+- 상태 판정(서버 도출, allocation 제거 모델):
+  - `remainingNeeded = orderedQty − pickedQty`
+  - `remainingNeeded > onHand` → `SHORTAGE`
+  - `pickedQty == orderedQty` → `READY`
+  - 그 외 → `PENDING`
 - 노트 지연 전이(즉시):
   - 어떤 라인이든 `SHORTAGE`가 되는 순간 Note = `DELAYED`로 즉시 전이
   - `DELAYED` 이후에는 라인/노트 변경 및 완료 요청을 409로 거부한다

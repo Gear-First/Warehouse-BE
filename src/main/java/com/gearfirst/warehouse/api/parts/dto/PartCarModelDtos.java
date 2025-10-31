@@ -8,12 +8,14 @@ public class PartCarModelDtos {
             Long carModelId,
             @Size(max = 200) String note,
             Boolean enabled
-    ) {}
+    ) {
+    }
 
     public record UpdateMappingRequest(
             @Size(max = 200) String note,
             Boolean enabled
-    ) {}
+    ) {
+    }
 
     public record PartCarModelDetail(
             Long partId,
@@ -22,5 +24,6 @@ public class PartCarModelDtos {
             boolean enabled,
             String createdAt,
             String updatedAt
-    ) {}
+    ) {
+    }
 }

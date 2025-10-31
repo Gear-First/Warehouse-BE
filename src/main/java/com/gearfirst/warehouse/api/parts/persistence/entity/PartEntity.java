@@ -34,6 +34,9 @@ public class PartEntity extends BaseTimeEntity {
     @Column(nullable = false, length = 100)
     private String name;
 
+    // Optional supplier attribution for inventory filtering (nullable)
+    private String supplierName;
+
     @Column(nullable = false)
     private Integer price;
 

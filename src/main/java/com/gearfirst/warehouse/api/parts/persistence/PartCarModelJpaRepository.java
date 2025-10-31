@@ -7,9 +7,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PartCarModelJpaRepository extends JpaRepository<PartCarModelEntity, Long> {
     long countByPartIdAndEnabledTrue(Long partId);
+
     long countByCarModelIdAndEnabledTrue(Long carModelId);
+
     List<PartCarModelEntity> findByPartIdAndEnabledTrue(Long partId);
+
     List<PartCarModelEntity> findByCarModelIdAndEnabledTrue(Long carModelId);
+
     boolean existsByPartIdAndCarModelId(Long partId, Long carModelId);
+
     Optional<PartCarModelEntity> findByPartIdAndCarModelId(Long partId, Long carModelId);
 }

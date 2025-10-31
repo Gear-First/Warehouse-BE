@@ -14,8 +14,10 @@ public class ApiResponse<T> {
     private final String message;
     private T data;
 
-    /** SUCCESS */
-    public static <T>ResponseEntity<ApiResponse<T>> success(SuccessStatus status, T data) {
+    /**
+     * SUCCESS
+     */
+    public static <T> ResponseEntity<ApiResponse<T>> success(SuccessStatus status, T data) {
         ApiResponse<T> response = ApiResponse.<T>builder()
                 .status(status.getStatusCode())
                 .success(true)
@@ -25,7 +27,9 @@ public class ApiResponse<T> {
         return ResponseEntity.status(status.getStatusCode()).body(response);
     }
 
-    /** SUCCESS ONLY */
+    /**
+     * SUCCESS ONLY
+     */
     public static ResponseEntity<ApiResponse<Void>> success_only(SuccessStatus status) {
         ApiResponse<Void> response = ApiResponse.<Void>builder()
                 .status(status.getStatusCode())
@@ -35,7 +39,9 @@ public class ApiResponse<T> {
         return ResponseEntity.status(status.getStatusCode()).body(response);
     }
 
-    /** FAIL */
+    /**
+     * FAIL
+     */
     public static ApiResponse<Void> fail(int status, String message) {
         return ApiResponse.<Void>builder()
                 .status(status)
@@ -43,6 +49,7 @@ public class ApiResponse<T> {
                 .message(message)
                 .build();
     }
+
     public static ApiResponse<Void> fail(ErrorStatus status) {
         return ApiResponse.<Void>builder()
                 .status(status.getStatusCode())
@@ -51,7 +58,9 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    /** FAIL ONLY */
+    /**
+     * FAIL ONLY
+     */
     public static ApiResponse<Void> fail_only(ErrorStatus status) {
         return ApiResponse.<Void>builder()
                 .status(status.getStatusCode())

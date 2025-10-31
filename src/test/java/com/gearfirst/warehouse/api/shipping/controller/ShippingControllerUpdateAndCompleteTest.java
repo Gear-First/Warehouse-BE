@@ -41,10 +41,10 @@ class ShippingControllerUpdateAndCompleteTest {
     @DisplayName("PATCH /api/v1/shipping/{noteId}/lines/{lineId} - 성공적으로 라인을 업데이트한다")
     void updateLine_success() throws Exception {
         // given
-        var req = new ShippingUpdateLineRequest(10, 8);
+        var req = new ShippingUpdateLineRequest(10);
         var lines = List.of(new ShippingNoteLineResponse(1L,
                 new ShippingProductResponse(11L, "LOT-A", "S-01", "볼트", "/img"),
-                10, 10, 8, "READY"));
+                10, 10, "READY"));
         var detail = new ShippingNoteDetailResponse(4001L, "ACME", 1, 10, "IN_PROGRESS", null,
                         null, null, null, null, null, null, null, null, null,
                         lines);
@@ -61,23 +61,23 @@ class ShippingControllerUpdateAndCompleteTest {
                 .andExpect(jsonPath("$.data.lines[0].status", is("READY")));
     }
 
-    @Test
-    @DisplayName("PATCH /api/v1/shipping/{noteId}/lines/{lineId} - pickedQty > allocatedQty면 422를 반환한다")
-    void updateLine_validationError() throws Exception {
-        // given
-        var req = new ShippingUpdateLineRequest(5, 8);
-        when(shippingService.updateLine(eq(4002L), eq(1L), ArgumentMatchers.any(ShippingUpdateLineRequest.class)))
-                .thenThrow(new BadRequestException(ErrorStatus.SHIPPING_PICKED_QTY_EXCEEDS_ALLOCATED_QTY));
-
-        // when & then
-        mockMvc.perform(patch("/api/v1/shipping/{noteId}/lines/{lineId}", 4002L, 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().is(ErrorStatus.SHIPPING_PICKED_QTY_EXCEEDS_ALLOCATED_QTY.getStatusCode()))
-                .andExpect(jsonPath("$.success", is(false)))
-                .andExpect(jsonPath("$.status", is(ErrorStatus.SHIPPING_PICKED_QTY_EXCEEDS_ALLOCATED_QTY.getStatusCode())))
-                .andExpect(jsonPath("$.message", is(ErrorStatus.SHIPPING_PICKED_QTY_EXCEEDS_ALLOCATED_QTY.getMessage())));
-    }
+//    @Test
+//    @DisplayName("PATCH /api/v1/shipping/{noteId}/lines/{lineId} - pickedQty > allocatedQty면 422를 반환한다")
+//    void updateLine_validationError() throws Exception {
+//        // given
+//        var req = new ShippingUpdateLineRequest(5, 8);
+//        when(shippingService.updateLine(eq(4002L), eq(1L), ArgumentMatchers.any(ShippingUpdateLineRequest.class)))
+//                .thenThrow(new BadRequestException(ErrorStatus.SHIPPING_PICKED_QTY_EXCEEDS_ALLOCATED_QTY));
+//
+//        // when & then
+//        mockMvc.perform(patch("/api/v1/shipping/{noteId}/lines/{lineId}", 4002L, 1L)
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content(objectMapper.writeValueAsString(req)))
+//                .andExpect(status().is(ErrorStatus.SHIPPING_PICKED_QTY_EXCEEDS_ALLOCATED_QTY.getStatusCode()))
+//                .andExpect(jsonPath("$.success", is(false)))
+//                .andExpect(jsonPath("$.status", is(ErrorStatus.SHIPPING_PICKED_QTY_EXCEEDS_ALLOCATED_QTY.getStatusCode())))
+//                .andExpect(jsonPath("$.message", is(ErrorStatus.SHIPPING_PICKED_QTY_EXCEEDS_ALLOCATED_QTY.getMessage())));
+//    }
 
     @Test
     @DisplayName("POST /api/v1/shipping/{noteId}:complete - READY만 있으면 COMPLETED와 completedAt 반환 (ApiResponse 래핑)")

@@ -12,24 +12,22 @@
 
 ## 수량(Quantities)
 - orderedQty: 지시/주문 수량(>0)
-- receivedQty: 실제 도착 수량(입고)
 - inspectedQty: 검수 통과 수량(입고)
 - acceptedQty: 입고 수용 수량(재고 반영 기준; MVP: ACCEPTED→orderedQty, REJECTED→0)
-- allocatedQty: 출고 할당 수량(출고)
 - pickedQty: 집품/피킹 수량(출고)
 - shippedQty: 실제 출고 수량(출고)
 - backorderQty: 파생, max(0, orderedQty − shippedQty)
-- returnedQty: 반품/거부 수량(REJECTED 라인은 orderedQty)
-- issueQty: 불량/파손 수량(현 단계 REJECTED면 orderedQty)
+- returnedQty: 반품/거부 수량(참고: REJECTED 라인은 재고 증가 0)
 
 ## 식별자(Identifiers)
 - shippingNo: OUT/<warehouse>/<yyyymmdd>/<seq>
 - receivingNo: IN/<warehouse>/<yyyymmdd>/<seq>
-- warehouseId: 창고 식별자(멀티 창고 도입 보류, 문서 표기만)
+- warehouseCode: 창고 코드(문자열)
 
 ## 기타 용어
 - branchName: 납품처(대리점) 명칭(Shipping)
-- supplierName: 공급업체/공장 명칭(Receiving)
+- supplierName: 공급업체/공장 명칭(Receiving/Inventory 검색용)
+- partKeyword: Inventory 목록에서 부품 코드/이름(둘 중 하나)에 대한 검색어(대소문자 무시, contains)
 - PageEnvelope: 목록 응답 래퍼 { items, page, size, total }
 
 ## 참고

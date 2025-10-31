@@ -13,11 +13,11 @@
 
 ## Filters
 - date: YYYY-MM-DD (기본: 오늘)
-- warehouseId: 창고 식별자(멀티 창고 적용)
+- warehouseCode: 창고 코드(문자열)
 
 ## I/O (페이지네이션 스케치)
 
-- GET `/v1/receiving/completed?date=YYYY-MM-DD&warehouseId=WH1&page=0&size=20`
+- GET `/v1/receiving/completed?date=YYYY-MM-DD&warehouseCode=WH1&page=0&size=20`
 - Response
 ```
 {
@@ -41,3 +41,36 @@
 ## References
 - Policy: [receiving-inspection.md](../../policy/receiving-inspection.md)
 - ADR: [ADR-05-Use-Cases-are-Non-Authoritative.md](../../adr/ADR-05-Use-Cases-are-Non-Authoritative.md)
+
+
+
+### Update (2025-10-30)
+- Planned additional query parameters to align with feedback and context docs:
+  - dateFrom?, dateTo? (UTC closed interval; when both date and range are provided, the range wins)
+  - receivingNo? (partial, case-insensitive)
+  - supplierName? (partial, case-insensitive)
+  - sort? (baseline allowed fields: noteId, completedAt, status; default noteId asc)
+  - Optional warehouse filter remains: warehouseCode?
+- New "all" endpoint to be introduced: GET `/v1/receiving/all` with the same pagination and filters. This UC remains focused on done; `/all` will be covered in a new UC or an extension note.
+- Response shape remains `ApiResponse<PageEnvelope<ReceivingNoteSummaryResponse>>`.
+
+
+#### Update (2025-10-30 — timestamps on list items)
+- Each list item now includes two timestamps:
+  - `requestedAt` (UTC ISO-8601): when HQ registered the request.
+  - `completedAt` (UTC ISO-8601): completion time; populated for done items.
+- Example item snippet:
+```json
+{
+  "noteId": 201,
+  "receivingNo": "IN/WH1/20251030/001",
+  "supplierName": "ABC공장",
+  "itemKinds": 2,
+  "totalQty": 80,
+  "status": "COMPLETED_OK",
+  "warehouseCode": "WH1",
+  "requestedAt": "2025-10-29T23:50:00Z",
+  "completedAt": "2025-10-30T03:10:00Z"
+}
+```
+- Filtering (phase 1): `date`/`dateFrom`/`dateTo` apply to `requestedAt` by default (range wins; closed interval; UTC). A later PR may add `dateField` to switch to `completedAt`.

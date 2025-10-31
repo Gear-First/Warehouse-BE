@@ -8,7 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PartJpaRepository extends JpaRepository<PartEntity, Long> {
     boolean existsByCodeIgnoreCase(String code);
+
     long countByCategoryId(Long categoryId);
+
     List<PartEntity> findByCategoryId(Long categoryId);
 
     // Server-side pagination & filtering for list API

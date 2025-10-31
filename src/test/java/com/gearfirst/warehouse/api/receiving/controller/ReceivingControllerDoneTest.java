@@ -37,8 +37,8 @@ class ReceivingControllerDoneTest {
     @DisplayName("GET /api/v1/receiving/done - COMPLETED_* 만 반환 (ApiResponse 래핑)")
     void getDone_success() throws Exception {
         var list = List.of(
-                new ReceivingNoteSummaryResponse(201L, "ABC Supply", 1, 10, "COMPLETED_OK", "2025-10-20T10:00:00Z"),
-                new ReceivingNoteSummaryResponse(202L, "ABC Supply", 1, 10, "COMPLETED_ISSUE", "2025-10-20T15:00:00Z")
+                new ReceivingNoteSummaryResponse(201L, "IN-WH1-20251020-010", "ABC Supply", 1, 10, "COMPLETED_OK", "WH1", null, "2025-10-20T10:00:00Z"),
+                new ReceivingNoteSummaryResponse(202L, "IN-WH1-20251020-011", "ABC Supply", 1, 10, "COMPLETED_ISSUE", "WH1", null, "2025-10-20T15:00:00Z")
         );
         when(receivingService.getDone(any())).thenReturn(list);
 

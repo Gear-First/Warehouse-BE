@@ -1,93 +1,58 @@
-# Sample Data (Parts Domain)
+# Sample Data (CSV)
 
-- Status: Draft
-- Date: 2025-10-28
+This folder contains mock CSVs for local testing and demos. Each table has at least 5 rows and preserves basic relationships across notes, lines, parts, and inventory.
 
-This folder provides ready-to-import CSV datasets for the Parts domain. The data satisfies the requirement:
-- Categories: ≥ 4 (we provide 5)
-- Parts: ≥ 20 (we provide 24)
-- Car Models: ≥ 20 (Hyundai/Kia representative models, no trims/years)
-- Part–CarModel mappings: ≥ 20 (we provide 66), no duplicate (partId,carModelId)
+Important:
+- Headers now match the provided DDL exactly (snake_case and column names as in DDL). Column order in these CSVs follows the DDL shared in this sprint.
+- Timestamps:
+  - `with time zone` columns use ISO‑8601 UTC (e.g., 2025-10-27T02:00:00Z).
+  - `without time zone` columns use `YYYY-MM-DD HH:MM:SS`.
+- IDs are chosen for readability; adjust if your DB uses sequences/UUIDs.
 
-## Files
-- part_categories.csv: id,name,description,enabled,createdAt,updatedAt
-- parts.csv: id,code,name,price,categoryId,imageUrl,enabled,createdAt,updatedAt
-- car_models.csv: id,name,enabled,createdAt,updatedAt
-- part_car_models.csv: id,partId,carModelId,note,enabled,createdAt,updatedAt
+Provided files:
+- part_category.csv — Seed categories used by parts (DDL-aligned headers)
+- car_model.csv — Car models master (unique name)
+- part.csv — Parts master data (enabled mix; category_id FK)
+- part_car_model.csv — Mapping table between part and car model (unique part_id+car_model_id)
+- inventory_onhand.csv — On‑hand quantities across two warehouses (1 and 2)
+- receiving_note.csv — Receiving note headers (various statuses)
+- receiving_note_line.csv — Receiving note lines; references `note_id` and `product_id`
+- shipping_note.csv — Shipping note headers (various statuses)
+- shipping_note_line.csv — Shipping note lines; references `note_id` and `product_id`
 
-All timestamps are ISO8601 UTC strings (e.g., 2025-10-28T00:00:00Z).
+Entity mapping reference (current code → CSV headers):
+- Parts
+  - part_category → `PartCategoryEntity` → CSV: enabled, created_at, id, updated_at, name, description
+  - part → `PartEntity` → CSV: enabled, price, category_id, created_at, id, updated_at, name, code, image_url
+  - car_model → `CarModelEntity` → CSV: enabled, created_at, id, updated_at, name
+  - part_car_model → `PartCarModelEntity` → CSV: enabled, car_model_id, created_at, id, part_id, updated_at, note
+- Inventory
+  - inventory_onhand → `InventoryOnHandEntity` → CSV: id, warehouseId, partId, onHandQty, lastUpdatedAt (unchanged in this step)
+- Receiving
+  - receiving_note → `ReceivingNoteEntity` → CSV: item_kinds_number, total_qty, completed_at, created_at, expected_receive_date, note_id, received_at, requested_at, updated_at, warehouse_id, inspector_dept, inspector_name, inspector_phone, receiving_no, remark, status, supplier_name
+  - receiving_note_line → `ReceivingNoteLineEntity` → CSV: inspected_qty, issue_qty, ordered_qty, created_at, line_id, note_id, product_id, updated_at, product_code, product_img_url, product_lot, product_name, remark, status
+- Shipping
+  - shipping_note → `ShippingNoteEntity` → CSV: item_kinds_number, total_qty, completed_at, created_at, expected_ship_date, note_id, requested_at, shipped_at, updated_at, warehouse_id, assignee_dept, assignee_name, assignee_phone, customer_name, remark, shipping_no, status
+  - shipping_note_line → `ShippingNoteLineEntity` → CSV: allocated_qty, ordered_qty, picked_qty, line_id, note_id, product_id, product_img_url, product_lot, product_name, product_serial, status
 
-## Import Order
-1. part_categories.csv  (FK target for parts.categoryId)
-2. parts.csv            (FK source for mappings.partId)
-3. car_models.csv       (FK target for mappings.carModelId)
-4. part_car_models.csv  (composite uniqueness on partId+carModelId implied by docs)
+Notes on consistency:
+- All `receiving_note_line.note_id` values exist in receiving_note.csv.
+- All `shipping_note_line.note_id` values exist in shipping_note.csv.
+- All line rows use `product_id` values present in part.csv.
+- Status vs quantities are coherent (examples):
+  - Receiving ACCEPTED lines have `issue_qty=0`; REJECTED lines have `issue_qty=ordered_qty-inspected_qty`.
+  - Shipping READY lines have `picked_qty<=allocated_qty<=ordered_qty`; SHORTAGE has `picked_qty<allocated_qty`.
+- Inventory numbers are plausible relative to shipping/receiving examples but not enforced.
 
-## PostgreSQL (local) examples
-```sql
-\copy part_category(id,name,description,enabled,created_at,updated_at)
-FROM 'docs/sample-data/part_categories.csv' WITH (FORMAT csv, HEADER true);
+Load order recommendation:
+1) part_category.csv
+2) car_model.csv
+3) part.csv
+4) receiving_note.csv
+5) receiving_note_line.csv
+6) shipping_note.csv
+7) shipping_note_line.csv
+8) part_car_model.csv
 
-\copy part(id,code,name,price,category_id,image_url,enabled,created_at,updated_at)
-FROM 'docs/sample-data/parts.csv' WITH (FORMAT csv, HEADER true);
-
-\copy car_model(id,name,enabled,created_at,updated_at)
-FROM 'docs/sample-data/car_models.csv' WITH (FORMAT csv, HEADER true);
-
-\copy part_car_model(id,part_id,car_model_id,note,enabled,created_at,updated_at)
-FROM 'docs/sample-data/part_car_models.csv' WITH (FORMAT csv, HEADER true);
-```
-Notes:
-- Adjust table/column names to your actual DDL if they differ from JPA defaults.
-- If you rely on identity/auto-increment, ensure sequences are set ≥ max(id) after import.
-
-## H2 (local) examples
-```sql
--- H2 does not support \copy; use RUNSCRIPT or a client tool.
--- Sample approach in JDBC URL: INIT=\'RUNSCRIPT FROM \'docs/sample-data/import-h2.sql\'\'
-```
-
-## MySQL examples
-```sql
-LOAD DATA LOCAL INFILE 'docs/sample-data/part_categories.csv'
-INTO TABLE part_category
-FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 LINES
-(id,name,description,enabled,created_at,updated_at);
-
-LOAD DATA LOCAL INFILE 'docs/sample-data/parts.csv'
-INTO TABLE part
-FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 LINES
-(id,code,name,price,category_id,image_url,enabled,created_at,updated_at);
-
-LOAD DATA LOCAL INFILE 'docs/sample-data/car_models.csv'
-INTO TABLE car_model
-FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 LINES
-(id,name,enabled,created_at,updated_at);
-
-LOAD DATA LOCAL INFILE 'docs/sample-data/part_car_models.csv'
-INTO TABLE part_car_model
-FIELDS TERMINATED BY ',' ENCLOSED BY '"' LINES TERMINATED BY '\n' IGNORE 1 LINES
-(id,part_id,car_model_id,note,enabled,created_at,updated_at);
-```
-
-## Integrity & Constraints Checklist
-- part.code is unique (UQ_part_code)
-- car_model.name is unique (UQ_carmodel_name)
-- (part_id,car_model_id) has a unique constraint (UQ_part_car_model)
-- FKs: parts.category_id exists; mappings.part_id and mappings.car_model_id exist
-
-## What’s Included
-- 5 categories (Filter/Brake/Engine/Electrical/Suspension)
-- 24 parts with realistic pricing and images
-- 20 car models (Hyundai/Kia representatives): Avante, Sonata, Grandeur, Tucson, Santa Fe, Kona, Venue, Ioniq 5, Palisade, Casper, K3, K5, K7, K8, Sportage, Sorento, Carnival, Seltos, Telluride, Ray
-- 66 part–car model mappings with simple notes and enabled=true
-
-## After Import: Quick Smoke Checks
-- GET /api/v1/parts → should list 20+ items with pagination
-- Optional: Verify a few category names appear in PartSummaryResponse.category.name
-- If Part deletion guard uses PCM counts, deleting a mapped Part should return 409
-
-## Defered (Next PR)
-- Receiving/Shipping sample datasets
-- Optional CommandLineRunner-based loader (profile gated)
-- Swagger sample examples referencing these datasets
+Note:
+- Production DB column order may still differ; importers should map by column name if possible.

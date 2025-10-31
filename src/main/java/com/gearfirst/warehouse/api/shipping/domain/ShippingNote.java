@@ -10,10 +10,10 @@ import lombok.Getter;
 @AllArgsConstructor
 public class ShippingNote {
     private Long noteId;
-    private String customerName;
+    private String branchName;
     private int itemKindsNumber;
     private int totalQty;
-    private Long warehouseId; // nullable for MVP
+    private String warehouseCode; // nullable for MVP
     // Additive metadata (nullable)
     private String shippingNo;
     private String requestedAt;      // ISO8601 or null

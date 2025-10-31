@@ -12,9 +12,8 @@ import org.springframework.util.backoff.FixedBackOff;
 public class KafkaConfig {
 
     /**
-     * (4) DLQ (Dead Letter Queue)를 위한 에러 핸들러를 Bean으로 등록합니다.
-     * 이 핸들러는 메시지 처리에 실패하면, 지정된 횟수(3번)만큼 재시도하고,
-     * 그래도 실패하면 해당 메시지를 DLQ(Dead Letter Topic)로 자동 전송합니다.
+     * (4) DLQ (Dead Letter Queue)를 위한 에러 핸들러를 Bean으로 등록합니다. 이 핸들러는 메시지 처리에 실패하면, 지정된 횟수(3번)만큼 재시도하고, 그래도 실패하면 해당 메시지를
+     * DLQ(Dead Letter Topic)로 자동 전송합니다.
      */
     @Bean
     public DefaultErrorHandler errorHandler(KafkaTemplate<String, Object> template) {

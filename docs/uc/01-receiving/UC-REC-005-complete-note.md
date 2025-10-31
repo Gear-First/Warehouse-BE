@@ -9,6 +9,7 @@
 
 ## Policy
 
+- 완료는 반드시 엔드포인트를 통해서만 수행한다: `POST /api/v1/receiving/{noteId}:complete` (라인 업데이트만으로 자동 완료 금지)
 - **All-or-Nothing per Product**: 라인에 문제가 한 건이라도 있으면 **그 라인은 `REJECTED`** (재고 증가 0)
 - **`ACCEPTED` 라인만** 재고 증가 대상
 

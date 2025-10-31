@@ -12,7 +12,8 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class ReceivingNoteJpaRepositoryAdapter implements ReceivingNoteRepository {
 
-    private static final List<ReceivingNoteStatus> DONE_STATUSES = List.of(ReceivingNoteStatus.COMPLETED_OK, ReceivingNoteStatus.COMPLETED_ISSUE);
+    private static final List<ReceivingNoteStatus> DONE_STATUSES = List.of(ReceivingNoteStatus.COMPLETED_OK,
+            ReceivingNoteStatus.COMPLETED_ISSUE);
 
     private final ReceivingNoteJpaRepository jpa;
 
@@ -25,7 +26,8 @@ public class ReceivingNoteJpaRepositoryAdapter implements ReceivingNoteRepositor
                 list = list.stream()
                         .filter(e -> e.getCreatedAt() != null && e.getCreatedAt().toLocalDate().isEqual(target))
                         .toList();
-            } catch (Exception ignored) { }
+            } catch (Exception ignored) {
+            }
         }
         return list;
     }
@@ -39,7 +41,8 @@ public class ReceivingNoteJpaRepositoryAdapter implements ReceivingNoteRepositor
                 list = list.stream()
                         .filter(e -> e.getCreatedAt() != null && e.getCreatedAt().toLocalDate().isEqual(target))
                         .toList();
-            } catch (Exception ignored) { }
+            } catch (Exception ignored) {
+            }
         }
         return list;
     }

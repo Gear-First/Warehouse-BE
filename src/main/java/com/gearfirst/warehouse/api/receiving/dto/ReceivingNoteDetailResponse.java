@@ -11,7 +11,7 @@ public record ReceivingNoteDetailResponse(
         String completedAt,   // ISO8601 string or null
         // Additive, nullable metadata fields (may be null until modeled)
         String receivingNo,
-        Long warehouseId,
+        String warehouseCode,
         String requestedAt,
         String expectedReceiveDate,
         String receivedAt,

@@ -1,6 +1,7 @@
 package com.gearfirst.warehouse.common.config.kafka;
 
 import com.gearfirst.warehouse.api.dto.TestDto;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
@@ -9,8 +10,6 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
-
-import java.util.Map;
 
 @Configuration
 @RequiredArgsConstructor

@@ -6,7 +6,6 @@ import com.gearfirst.warehouse.api.shipping.domain.ShippingNoteLine;
 import com.gearfirst.warehouse.api.shipping.persistence.ShippingNoteJpaRepository;
 import com.gearfirst.warehouse.api.shipping.persistence.entity.ShippingNoteEntity;
 import com.gearfirst.warehouse.api.shipping.persistence.entity.ShippingNoteLineEntity;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +41,8 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
                 done = done.stream()
                         .filter(e -> e.getCreatedAt() != null && e.getCreatedAt().toLocalDate().isEqual(target))
                         .toList();
-            } catch (Exception ignored) { }
+            } catch (Exception ignored) {
+            }
         }
         return done.stream().map(this::toDomain).toList();
     }
@@ -62,10 +62,10 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
     private ShippingNote toDomain(ShippingNoteEntity e) {
         return ShippingNote.builder()
                 .noteId(e.getNoteId())
-                .customerName(e.getCustomerName())
+                .branchName(e.getBranchName())
                 .itemKindsNumber(e.getItemKindsNumber())
                 .totalQty(e.getTotalQty())
-                .warehouseId(e.getWarehouseId())
+                .warehouseCode(e.getWarehouseCode())
                 .shippingNo(e.getShippingNo())
                 .requestedAt(e.getRequestedAt() == null ? null : e.getRequestedAt().toString())
                 .expectedShipDate(e.getExpectedShipDate() == null ? null : e.getExpectedShipDate().toString())
@@ -89,7 +89,6 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
                 .productName(le.getProductName())
                 .productImgUrl(le.getProductImgUrl())
                 .orderedQty(le.getOrderedQty())
-                .allocatedQty(le.getAllocatedQty())
                 .pickedQty(le.getPickedQty())
                 .status(le.getStatus())
                 .build();
@@ -98,10 +97,10 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
     private ShippingNoteEntity toEntity(ShippingNote d) {
         var builder = ShippingNoteEntity.builder()
                 .noteId(d.getNoteId())
-                .customerName(d.getCustomerName())
+                .branchName(d.getBranchName())
                 .itemKindsNumber(d.getItemKindsNumber())
                 .totalQty(d.getTotalQty())
-                .warehouseId(d.getWarehouseId())
+                .warehouseCode(d.getWarehouseCode())
                 .shippingNo(d.getShippingNo())
                 .requestedAt(parseOffsetDateTime(d.getRequestedAt()))
                 .expectedShipDate(parseOffsetDateTime(d.getExpectedShipDate()))
@@ -123,7 +122,6 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
                         .productName(dl.getProductName())
                         .productImgUrl(dl.getProductImgUrl())
                         .orderedQty(dl.getOrderedQty())
-                        .allocatedQty(dl.getAllocatedQty())
                         .pickedQty(dl.getPickedQty())
                         .status(dl.getStatus())
                         .note(entity)
@@ -135,7 +133,9 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
     }
 
     private java.time.OffsetDateTime parseOffsetDateTime(String text) {
-        if (text == null || text.isBlank()) return null;
+        if (text == null || text.isBlank()) {
+            return null;
+        }
         try {
             return java.time.OffsetDateTime.parse(text);
         } catch (Exception e) {

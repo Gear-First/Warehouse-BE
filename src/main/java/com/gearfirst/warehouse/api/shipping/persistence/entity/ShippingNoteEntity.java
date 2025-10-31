@@ -7,6 +7,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -30,16 +32,17 @@ import lombok.Setter;
 public class ShippingNoteEntity extends BaseTimeEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long noteId;
 
-    private String customerName;
+    private String branchName;
 
     private int itemKindsNumber;
 
     private int totalQty;
 
     // Nullable for MVP; multi-warehouse adoption
-    private Long warehouseId;
+    private String warehouseCode;
 
     // Additive metadata
     private String shippingNo;

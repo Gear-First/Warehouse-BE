@@ -51,18 +51,17 @@ class ShippingServiceImplTest {
     @DisplayName("updateLine: PENDING 노트는 IN_PROGRESS로 전이되고 라인 값이 반영된다")
     void updateLine_transitionsAndUpdates() {
         // noteId=502 (PENDING), lineId=10 존재
-        var updated = service.updateLine(502L, 10L, new ShippingUpdateLineRequest(5, 3));
+        var updated = service.updateLine(502L, 10L, new ShippingUpdateLineRequest(3));
         assertEquals("IN_PROGRESS", updated.status());
         var line = updated.lines().stream().filter(l -> l.lineId().equals(10L)).findFirst().orElseThrow();
-        assertEquals(5, line.allocatedQty());
         assertEquals(3, line.pickedQty());
         assertEquals("PENDING", line.status());
     }
 
     @Test
-    @DisplayName("updateLine: pickedQty > allocatedQty면 BadRequestException")
+    @DisplayName("updateLine: pickedQty > orderedQty면 BadRequestException")
     void updateLine_ruleViolation() {
-        assertThrows(BadRequestException.class, () -> service.updateLine(501L, 1L, new ShippingUpdateLineRequest(2, 3)));
+        assertThrows(BadRequestException.class, () -> service.updateLine(501L, 1L, new ShippingUpdateLineRequest(999)));
     }
 
     @Test
@@ -87,16 +86,19 @@ class ShippingServiceImplTest {
         // 임시 노트 생성: READY + PENDING (SHORTAGE 없음)
         var temp = ShippingNote.builder()
                 .noteId(9001L)
-                .customerName("Temp")
+                .branchName("Temp")
                 .itemKindsNumber(2)
                 .totalQty(20)
+                .assigneeName("WAREHOUSE")
+                .assigneeDept("DEFAULT")
+                .assigneePhone("N/A")
                 .status(NoteStatus.IN_PROGRESS)
                 .completedAt(null)
                 .lines(List.of(
                         ShippingNoteLine.builder().lineId(900101L).productId(1L).productLot("L").productSerial("S").productName("A").productImgUrl("/")
-                                .orderedQty(10).allocatedQty(10).pickedQty(10).status(LineStatus.READY).build(),
+                                .orderedQty(10).pickedQty(10).status(LineStatus.READY).build(),
                         ShippingNoteLine.builder().lineId(900102L).productId(2L).productLot("L").productSerial("S").productName("B").productImgUrl("/")
-                                .orderedQty(10).allocatedQty(10).pickedQty(0).status(LineStatus.PENDING).build()
+                                .orderedQty(10).pickedQty(0).status(LineStatus.PENDING).build()
                 ))
                 .build();
         repo.save(temp);
@@ -105,22 +107,15 @@ class ShippingServiceImplTest {
     }
 
     @Test
-    @DisplayName("updateLine: allocatedQty가 orderedQty를 초과하면 BadRequestException")
-    void updateLine_allocatedExceedsOrdered() {
-        // noteId=502 lineId=10 ordered=20
-        assertThrows(BadRequestException.class, () -> service.updateLine(502L, 10L, new ShippingUpdateLineRequest(21, 0)));
-    }
-
-    @Test
     @DisplayName("updateLine: pickedQty가 orderedQty를 초과하면 BadRequestException")
     void updateLine_pickedExceedsOrdered() {
-        // picked>ordered(20) & picked>allocated(20) 둘 다 위반되므로 400을 기대
-        assertThrows(BadRequestException.class, () -> service.updateLine(502L, 10L, new ShippingUpdateLineRequest(20, 21)));
+        // picked>ordered(20) 위반이므로 400을 기대
+        assertThrows(BadRequestException.class, () -> service.updateLine(502L, 10L, new ShippingUpdateLineRequest(999)));
     }
 
     @Test
     @DisplayName("updateLine: 존재하지 않는 lineId면 NotFoundException")
     void updateLine_lineNotFound() {
-        assertThrows(NotFoundException.class, () -> service.updateLine(502L, 999L, new ShippingUpdateLineRequest(1, 1)));
+        assertThrows(NotFoundException.class, () -> service.updateLine(502L, 999L, new ShippingUpdateLineRequest(1)));
     }
 }
