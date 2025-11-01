@@ -6,6 +6,7 @@ public record ShippingNoteSummaryResponse(
         int itemKindsNumber,
         int totalQty,
         String status,       // PENDING | IN_PROGRESS | DELAYED | COMPLETED
+        String requestedAt,  // ISO8601 string or null
         String completedAt   // ISO8601 string or null
 ) {
 }

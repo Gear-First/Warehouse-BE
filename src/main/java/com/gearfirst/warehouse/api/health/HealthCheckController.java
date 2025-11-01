@@ -2,7 +2,7 @@ package com.gearfirst.warehouse.api.health;
 
 
 import com.gearfirst.warehouse.common.exception.BadRequestException;
-import com.gearfirst.warehouse.common.response.ApiResponse;
+import com.gearfirst.warehouse.common.response.CommonApiResponse;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,8 +25,8 @@ public class HealthCheckController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "정상 응답")
     })
     @GetMapping("")
-    public ResponseEntity<ApiResponse<Void>> healthCheck() {
-        return ApiResponse.success_only(SuccessStatus.SEND_HEALTH_SUCCESS);
+    public ResponseEntity<CommonApiResponse<Void>> healthCheck() {
+        return CommonApiResponse.success_only(SuccessStatus.SEND_HEALTH_SUCCESS);
     }
 
     // 응답 시 데이터 반환 과 함께 응답코드, 응답 메세지를 보낼때
@@ -35,8 +35,8 @@ public class HealthCheckController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "정상 응답")
     })
     @GetMapping("/check-data")
-    public ResponseEntity<ApiResponse<String>> healthCheckData() {
-        return ApiResponse.success(SuccessStatus.SEND_HEALTH_SUCCESS, "OK");
+    public ResponseEntity<CommonApiResponse<String>> healthCheckData() {
+        return CommonApiResponse.success(SuccessStatus.SEND_HEALTH_SUCCESS, "OK");
     }
 
 
@@ -47,13 +47,13 @@ public class HealthCheckController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "예외 발생")
     })
     @GetMapping("/exception-test/{data}")
-    public ResponseEntity<ApiResponse<Void>> healthCheckData(@PathVariable("data") String data) {
+    public ResponseEntity<CommonApiResponse<Void>> healthCheckData(@PathVariable("data") String data) {
 
         if (data.equals("run")){
             // 커스텀 예외처리(BadRequstException) 사용방법 및 ErrorStatus 사용방법
             throw new BadRequestException(ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION.getMessage());
         }
 
-        return ApiResponse.success_only(SuccessStatus.SEND_HEALTH_SUCCESS);
+        return CommonApiResponse.success_only(SuccessStatus.SEND_HEALTH_SUCCESS);
     }
 }

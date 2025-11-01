@@ -1,5 +1,6 @@
 package com.gearfirst.warehouse.api.receiving.service;
 
+import com.gearfirst.warehouse.api.inventory.service.InventoryService;
 import com.gearfirst.warehouse.api.receiving.domain.ReceivingLineStatus;
 import com.gearfirst.warehouse.api.receiving.domain.ReceivingNoteStatus;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingCompleteResponse;
@@ -33,7 +34,7 @@ public class ReceivingServiceImpl implements ReceivingService {
     private static final List<ReceivingNoteStatus> DONE_STATUSES = List.of(ReceivingNoteStatus.COMPLETED_OK, ReceivingNoteStatus.COMPLETED_ISSUE);
 
     private final ReceivingNoteRepository repository;
-    private final com.gearfirst.warehouse.api.inventory.service.InventoryService inventoryService;
+    private final InventoryService inventoryService;
 
     @Override
     public List<ReceivingNoteSummaryResponse> getNotDone(String date) {
@@ -242,6 +243,7 @@ public class ReceivingServiceImpl implements ReceivingService {
                 n.getItemKindsNumber(),
                 n.getTotalQty(),
                 n.getStatus().name(),
+                n.getRequestedAt() == null ? null : n.getRequestedAt().toString(),
                 completedAt
         );
     }

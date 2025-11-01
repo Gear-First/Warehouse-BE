@@ -11,19 +11,24 @@ public interface ShippingService {
     List<ShippingNoteSummaryResponse> getNotDone(String date);
     List<ShippingNoteSummaryResponse> getDone(String date);
 
-    // Overloads with optional warehouse filter
+    // Overloads with optional warehouse filter (legacy id-based)
     default List<ShippingNoteSummaryResponse> getNotDone(String date, Long warehouseId) {
         var list = getNotDone(date);
         if (warehouseId == null) return list;
-        return list.stream().filter(s -> {
-            // Summary does not carry warehouseId; filter will be applied in impl where available
-            return true;
-        }).toList();
+        return list; // impl override may handle id-based filtering
     }
     default List<ShippingNoteSummaryResponse> getDone(String date, Long warehouseId) {
         var list = getDone(date);
         if (warehouseId == null) return list;
-        return list; // impl override will handle
+        return list; // impl override may handle id-based filtering
+    }
+
+    // Overloads with warehouseCode (string) used by controllers
+    default List<ShippingNoteSummaryResponse> getNotDone(String date, String warehouseCode) {
+        return getNotDone(date);
+    }
+    default List<ShippingNoteSummaryResponse> getDone(String date, String warehouseCode) {
+        return getDone(date);
     }
 
     ShippingNoteDetailResponse getDetail(Long noteId);

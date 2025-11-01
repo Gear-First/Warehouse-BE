@@ -2,11 +2,16 @@ package com.gearfirst.warehouse.api.inventory;
 
 import com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.OnHandSummary;
 import com.gearfirst.warehouse.api.inventory.service.InventoryService;
-import com.gearfirst.warehouse.common.response.ApiResponse;
+import com.gearfirst.warehouse.common.response.CommonApiResponse;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -22,15 +27,33 @@ public class InventoryController {
 
     private final InventoryService service;
 
-    @Operation(summary = "재고 현황(On-hand) 목록", description = "창고/부품 키워드로 On-hand 목록을 조회합니다. 필터: warehouseId, keyword (부분 일치). 페이지/사이즈 기본값: page=0, size=20. 주의: Inventory의 Create/Update/Delete 엔드포인트는 일반 운영에서 사용하지 않습니다.")
+    @Operation(summary = "재고 현황(On-hand) 목록", description = "창고/부품 키워드로 On-hand 목록을 조회합니다. 필터는 AND로 결합됩니다. partKeyword/supplierName은 대소문자 무시 contains. 수량 범위는 minQty ≤ onHandQty ≤ maxQty. 페이지/사이즈 기본값: page=0, size=20. 정렬 허용 필드: partName, partCode, onHandQty, lastUpdatedAt. 잘못된 정렬 키 또는 잘못된 범위는 400.")
+    @Parameters({
+            @Parameter(name = "warehouseCode", description = "창고 코드(예: 서울)"),
+            @Parameter(name = "partKeyword", description = "부품 코드/이름 키워드 (대소문자 무시 contains)"),
+            @Parameter(name = "supplierName", description = "공급업체 이름 (대소문자 무시 contains)"),
+            @Parameter(name = "minQty", description = "최소 수량"),
+            @Parameter(name = "maxQty", description = "최대 수량"),
+            @Parameter(name = "page", description = "페이지(기본 0, 최소 0)"),
+            @Parameter(name = "size", description = "페이지 크기(기본 20, 1..100)"),
+            @Parameter(name = "sort", description = "정렬 필드(허용: partName,partCode,onHandQty,lastUpdatedAt)")
+    })
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "On-hand 목록 조회 성공"),
+            @ApiResponse(responseCode = "400", description = "검증 실패 (정렬 키/범위 등)")
+    })
     @GetMapping("/onhand")
-    public ResponseEntity<ApiResponse<PageEnvelope<OnHandSummary>>> listOnHand(
-            @RequestParam(required = false) Long warehouseId,
-            @RequestParam(required = false) String keyword,
+    public ResponseEntity<CommonApiResponse<PageEnvelope<OnHandSummary>>> listOnHand(
+            @RequestParam(required = false) String warehouseCode,
+            @RequestParam(required = false) String partKeyword,
+            @RequestParam(required = false) String supplierName,
+            @RequestParam(required = false) Integer minQty,
+            @RequestParam(required = false) Integer maxQty,
             @RequestParam(required = false, defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "20") Integer size
+            @RequestParam(required = false, defaultValue = "20") Integer size,
+            @RequestParam(required = false) List<String> sort
     ) {
-        var envelope = service.listOnHand(warehouseId, keyword, page, size);
-        return ApiResponse.success(SuccessStatus.SEND_INVENTORY_ONHAND_LIST_SUCCESS, envelope);
+        var envelope = service.listOnHand(warehouseCode, partKeyword, supplierName, minQty, maxQty, page, size, sort);
+        return CommonApiResponse.success(SuccessStatus.SEND_INVENTORY_ONHAND_LIST_SUCCESS, envelope);
     }
 }

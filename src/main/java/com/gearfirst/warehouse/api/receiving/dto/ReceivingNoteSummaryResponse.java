@@ -6,6 +6,7 @@ public record ReceivingNoteSummaryResponse(
         int itemKindsNumber,
         int totalQty,
         String status,       // PENDING | IN_PROGRESS | COMPLETED_OK | COMPLETED_ISSUE
+        String requestedAt,  // ISO8601 string or null
         String completedAt   // ISO8601 string or null
 ) {
 }

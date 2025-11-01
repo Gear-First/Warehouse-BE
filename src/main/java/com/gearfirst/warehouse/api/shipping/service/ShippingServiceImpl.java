@@ -290,6 +290,7 @@ public class ShippingServiceImpl implements ShippingService {
                 note.getItemKindsNumber(),
                 note.getTotalQty(),
                 note.getStatus().name(),
+                note.getRequestedAt(),
                 note.getCompletedAt()
         );
     }
