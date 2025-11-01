@@ -66,4 +66,27 @@ class InventoryControllerTest {
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.status", is(400)));
     }
+
+    @Test
+    @DisplayName("GET /api/v1/inventory/onhand - 잘못된 sort 키면 400")
+    void listOnHand_invalidSort_badRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/inventory/onhand")
+                        .param("sort", "unknown,asc")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.status", is(400)));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/inventory/onhand - minQty>maxQty면 400")
+    void listOnHand_minGreaterThanMax_badRequest() throws Exception {
+        mockMvc.perform(get("/api/v1/inventory/onhand")
+                        .param("minQty", "10")
+                        .param("maxQty", "5")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.status", is(400)));
+    }
 }

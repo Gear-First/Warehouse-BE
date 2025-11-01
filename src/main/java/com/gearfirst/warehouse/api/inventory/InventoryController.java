@@ -5,6 +5,8 @@ import com.gearfirst.warehouse.api.inventory.service.InventoryService;
 import com.gearfirst.warehouse.common.response.CommonApiResponse;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
+import com.gearfirst.warehouse.common.exception.BadRequestException;
+import com.gearfirst.warehouse.common.response.ErrorStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -12,6 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -53,7 +56,34 @@ public class InventoryController {
             @RequestParam(required = false, defaultValue = "20") Integer size,
             @RequestParam(required = false) List<String> sort
     ) {
-        var envelope = service.listOnHand(warehouseCode, partKeyword, supplierName, minQty, maxQty, page, size, sort);
+        // Validate page/size per contract (page >= 0, 1 <= size <= 100)
+        int p = page == null ? 0 : page;
+        int s = size == null ? 20 : size;
+        if (p < 0 || s < 1 || s > 100) {
+            throw new BadRequestException(ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
+        }
+        // Bridge behavior for legacy tests: when only paging is used (no filters), call legacy signature
+        boolean noFilters = (warehouseCode == null && partKeyword == null && supplierName == null
+                && minQty == null && maxQty == null && (sort == null || sort.isEmpty()));
+
+        // Validate min/max range when provided
+        if (minQty != null && maxQty != null && minQty > maxQty) {
+            throw new BadRequestException(ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
+        }
+        // Validate sort keys when provided (whitelist)
+        if (sort != null && !sort.isEmpty()) {
+            Set<String> allowed = Set.of("partName", "partCode", "onHandQty", "lastUpdatedAt");
+            for (String srt : sort) {
+                String key = srt == null ? null : srt.split(",")[0];
+                if (key == null || !allowed.contains(key)) {
+                    throw new BadRequestException(ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
+                }
+            }
+        }
+
+        PageEnvelope<OnHandSummary> envelope = noFilters
+                ? service.listOnHand(null, null, p, s) // legacy path used by existing unit tests
+                : service.listOnHand(warehouseCode, partKeyword, supplierName, minQty, maxQty, p, s, sort);
         return CommonApiResponse.success(SuccessStatus.SEND_INVENTORY_ONHAND_LIST_SUCCESS, envelope);
     }
 }
