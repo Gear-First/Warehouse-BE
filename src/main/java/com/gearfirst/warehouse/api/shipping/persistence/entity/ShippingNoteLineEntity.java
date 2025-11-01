@@ -5,6 +5,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -26,6 +28,7 @@ import lombok.Setter;
 public class ShippingNoteLineEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long lineId;
 
     private Long productId;
@@ -35,7 +38,6 @@ public class ShippingNoteLineEntity {
     private String productImgUrl;
 
     private int orderedQty;
-    private int allocatedQty;
     private int pickedQty;
 
     @Enumerated(EnumType.STRING)

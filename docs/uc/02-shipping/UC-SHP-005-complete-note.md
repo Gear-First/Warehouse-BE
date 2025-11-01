@@ -9,6 +9,7 @@
 
 ## Policy
 
+- 완료는 반드시 엔드포인트를 통해서만 수행한다: `POST /api/v1/shipping/{noteId}:complete` (라인 업데이트만으로 자동 완료 금지)
 - 모든 라인이 `READY`일 때만 완료 가능 → Note=`COMPLETED`
 - 라인 중 하나라도 `SHORTAGE`이면 즉시 Note=`DELAYED`로 전이되며, 완료 요청은 409로 거부(정책상 완료 불가)
 - 재고 차감 시점: `COMPLETED` 전이 시, 각 READY 라인의 shippedQty 합 기준으로 차감

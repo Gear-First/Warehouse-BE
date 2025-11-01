@@ -20,9 +20,9 @@
 
 ## Main Flow
 
-1) 클라이언트는 `{ inspectedQty, hasIssue }`를 전송
+1) 클라이언트는 `{ inspectedQty, rejected }`를 전송
 2) 노트는 첫 갱신이라면 `PENDING → IN_PROGRESS`로 전이
-3) 라인은 `hasIssue==true` → `REJECTED`, 아니면 `ACCEPTED`로 전이
+3) 라인은 `rejected==true` → `REJECTED`, 아니면 `ACCEPTED`로 전이
 4) 저장 후 갱신 스냅샷을 반환
 
 ## Acceptance

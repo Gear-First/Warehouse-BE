@@ -250,4 +250,5 @@ public class ReceivingController {
         var envelope = PageEnvelope.of(sorted.subList(fromIdx, toIdx), p, s, total);
         return CommonApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_LIST_SUCCESS, envelope);
     }
+
 }

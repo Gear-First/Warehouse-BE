@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface InventoryOnHandJpaRepository extends JpaRepository<InventoryOnHandEntity, Long> {
-    Optional<InventoryOnHandEntity> findByWarehouseIdAndPartId(Long warehouseId, Long partId);
-    List<InventoryOnHandEntity> findAllByWarehouseId(Long warehouseId);
+    Optional<InventoryOnHandEntity> findByWarehouseCodeAndPartId(String warehouseCode, Long partId);
+
+    List<InventoryOnHandEntity> findAllByWarehouseCode(String warehouseCode);
 }

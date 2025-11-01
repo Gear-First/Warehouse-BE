@@ -30,7 +30,8 @@ public class PartCategoryServiceImpl implements PartCategoryService {
         var all = categoryRepo.findAll();
         return all.stream()
                 .filter(c -> c.isEnabled())
-                .filter(c -> keyword == null || keyword.isBlank() || c.getName().toLowerCase().contains(keyword.toLowerCase()))
+                .filter(c -> keyword == null || keyword.isBlank() || c.getName().toLowerCase()
+                        .contains(keyword.toLowerCase()))
                 .map(c -> new CategorySummaryResponse(c.getId(), c.getName(), c.getDescription()))
                 .toList();
     }

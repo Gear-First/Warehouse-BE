@@ -1,13 +1,14 @@
 package com.gearfirst.warehouse.api.parts.service;
 
 import com.gearfirst.warehouse.api.parts.dto.CarModelDtos.CarModelSummary;
-import com.gearfirst.warehouse.api.parts.dto.PartDtos.CategoryRef;
-import com.gearfirst.warehouse.api.parts.dto.PartDtos.PartSummaryResponse;
 import com.gearfirst.warehouse.api.parts.dto.PartCarModelDtos.CreateMappingRequest;
 import com.gearfirst.warehouse.api.parts.dto.PartCarModelDtos.PartCarModelDetail;
 import com.gearfirst.warehouse.api.parts.dto.PartCarModelDtos.UpdateMappingRequest;
+import com.gearfirst.warehouse.api.parts.dto.PartDtos.CategoryRef;
+import com.gearfirst.warehouse.api.parts.dto.PartDtos.PartSummaryResponse;
 import com.gearfirst.warehouse.api.parts.persistence.CarModelJpaRepository;
 import com.gearfirst.warehouse.api.parts.persistence.PartCarModelJpaRepository;
+import com.gearfirst.warehouse.api.parts.persistence.PartCategoryJpaRepository;
 import com.gearfirst.warehouse.api.parts.persistence.PartJpaRepository;
 import com.gearfirst.warehouse.api.parts.persistence.entity.PartCarModelEntity;
 import com.gearfirst.warehouse.api.parts.persistence.entity.PartCategoryEntity;
@@ -24,7 +25,6 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.gearfirst.warehouse.api.parts.persistence.PartCategoryJpaRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -43,7 +43,9 @@ public class PartCarModelServiceImpl implements PartCarModelService {
         }
         String kw = name == null ? "" : name;
         var mappings = pcmRepo.findByPartIdAndEnabledTrue(partId);
-        if (mappings.isEmpty()) return List.of();
+        if (mappings.isEmpty()) {
+            return List.of();
+        }
         Set<Long> carModelIds = mappings.stream().map(m -> m.getCarModelId()).collect(Collectors.toSet());
         var carModels = carModelRepo.findAllById(carModelIds).stream()
                 .filter(cm -> cm.isEnabled())
@@ -62,7 +64,9 @@ public class PartCarModelServiceImpl implements PartCarModelService {
         String c = code == null ? "" : code;
         String n = name == null ? "" : name;
         var mappings = pcmRepo.findByCarModelIdAndEnabledTrue(carModelId);
-        if (mappings.isEmpty()) return List.of();
+        if (mappings.isEmpty()) {
+            return List.of();
+        }
         Set<Long> partIds = mappings.stream().map(m -> m.getPartId()).collect(Collectors.toSet());
         List<PartEntity> parts = partRepo.findAllById(partIds).stream()
                 .filter(p -> p.isEnabled())
@@ -94,7 +98,7 @@ public class PartCarModelServiceImpl implements PartCarModelService {
             throw new NotFoundException("CarModel not found: " + (request == null ? null : request.carModelId()));
         }
         Optional<PartCarModelEntity> existingOpt = pcmRepo.findByPartIdAndCarModelId(partId, request.carModelId());
-        boolean enableVal = request.enabled() == null ? true : request.enabled();
+        boolean enableVal = request.enabled() == null || request.enabled();
         if (existingOpt.isPresent()) {
             var existing = existingOpt.get();
             if (existing.isEnabled()) {
@@ -123,8 +127,12 @@ public class PartCarModelServiceImpl implements PartCarModelService {
                 .filter(PartCarModelEntity::isEnabled)
                 .orElseThrow(() -> new NotFoundException(ErrorStatus.PCM_NOT_FOUND.getMessage()));
         if (request != null) {
-            if (request.note() != null) pcm.setNote(request.note());
-            if (request.enabled() != null) pcm.setEnabled(request.enabled());
+            if (request.note() != null) {
+                pcm.setNote(request.note());
+            }
+            if (request.enabled() != null) {
+                pcm.setEnabled(request.enabled());
+            }
         }
         var saved = pcmRepo.save(pcm);
         return toDetail(saved);
@@ -143,6 +151,7 @@ public class PartCarModelServiceImpl implements PartCarModelService {
     private PartCarModelDetail toDetail(PartCarModelEntity e) {
         String createdAt = e.getCreatedAt() != null ? e.getCreatedAt().toString() : null;
         String updatedAt = e.getUpdatedAt() != null ? e.getUpdatedAt().toString() : null;
-        return new PartCarModelDetail(e.getPartId(), e.getCarModelId(), e.getNote(), e.isEnabled(), createdAt, updatedAt);
+        return new PartCarModelDetail(e.getPartId(), e.getCarModelId(), e.getNote(), e.isEnabled(), createdAt,
+                updatedAt);
     }
 }

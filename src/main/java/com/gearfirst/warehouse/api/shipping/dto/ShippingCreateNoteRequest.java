@@ -3,13 +3,13 @@ package com.gearfirst.warehouse.api.shipping.dto;
 import java.util.List;
 
 /**
- * Shipping note creation request (MVP).
- * NOTE: Business validations and shippingNo generation are intentionally omitted for now.
+ * Shipping note creation request (MVP). NOTE: Business validations and shippingNo generation are intentionally omitted
+ * for now.
  * TODO: Add value validations and shippingNo generation when rules are finalized.
  */
 public record ShippingCreateNoteRequest(
-        String customerName,
-        Long warehouseId,
+        String branchName,
+        String warehouseCode,
         String shippingNo,
         String requestedAt,
         String expectedShipDate,
@@ -20,5 +20,6 @@ public record ShippingCreateNoteRequest(
             Long productId,
             Integer orderedQty,
             String lineRemark
-    ) {}
+    ) {
+    }
 }

@@ -14,7 +14,9 @@ public class PartCarModelJpaReader implements PartCarModelReader {
 
     @Override
     public long countByPartId(Long partId) {
-        if (partId == null) return 0L;
+        if (partId == null) {
+            return 0L;
+        }
         return repo.countByPartIdAndEnabledTrue(partId);
     }
 }

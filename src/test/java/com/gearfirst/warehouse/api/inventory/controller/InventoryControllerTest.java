@@ -40,9 +40,9 @@ class InventoryControllerTest {
     @Test
     @DisplayName("GET /api/v1/inventory/onhand - 목록 성공(ApiResponse<PageEnvelope>)")
     void listOnHand_success() throws Exception {
-        var items = List.of(new OnHandSummary(1L, new PartRef(1001L, "P-1001", "오일필터"), 128, "2025-10-27T00:00:00Z"));
+        var items = List.of(new OnHandSummary("1", new PartRef(1001L, "P-1001", "오일필터"), 128, "2025-10-27T00:00:00Z"));
         var envelope = PageEnvelope.of(items, 0, 20, 1);
-        when(inventoryService.listOnHand(any(), any(), anyInt(), anyInt())).thenReturn(envelope);
+        when(inventoryService.listOnHand(any(), any(), any(), any(), any(), anyInt(), anyInt(), any())).thenReturn(envelope);
 
         mockMvc.perform(get("/api/v1/inventory/onhand")
                         .accept(MediaType.APPLICATION_JSON))
@@ -56,7 +56,7 @@ class InventoryControllerTest {
     @Test
     @DisplayName("GET /api/v1/inventory/onhand - 잘못된 page/size면 400")
     void listOnHand_badRequest() throws Exception {
-        when(inventoryService.listOnHand(any(), any(), eq(-1), anyInt()))
+        when(inventoryService.listOnHand(any(), any(), any(), any(), any(), eq(-1), anyInt(), any()))
                 .thenThrow(new BadRequestException(ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION));
 
         mockMvc.perform(get("/api/v1/inventory/onhand")

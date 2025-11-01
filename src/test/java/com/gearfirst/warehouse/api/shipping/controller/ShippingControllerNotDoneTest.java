@@ -34,8 +34,8 @@ class ShippingControllerNotDoneTest {
     void getNotDone_success() throws Exception {
         // given
         var list = List.of(
-                new ShippingNoteSummaryResponse(1001L, "ACME", 2, 30, "PENDING", null, null),
-                new ShippingNoteSummaryResponse(1002L, "BETA", 1, 10, "IN_PROGRESS", null, null)
+                new ShippingNoteSummaryResponse(1001L, null, "ACME", 2, 30, "PENDING", null, null, null),
+                new ShippingNoteSummaryResponse(1002L, null, "BETA", 1, 10, "IN_PROGRESS", null, null, null)
         );
         when(shippingService.getNotDone(any())).thenReturn(list);
 

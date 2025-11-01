@@ -37,8 +37,8 @@ class ReceivingControllerNotDoneTest {
     @DisplayName("GET /api/v1/receiving/not-done - PENDING/IN_PROGRESS만 반환 (ApiResponse 래핑)")
     void getNotDone_success() throws Exception {
         var list = List.of(
-                new ReceivingNoteSummaryResponse(101L, "ABC Supply", 3, 120, "PENDING", null, null),
-                new ReceivingNoteSummaryResponse(102L, "BCD Parts", 2, 45, "IN_PROGRESS", null, null)
+                new ReceivingNoteSummaryResponse(101L, "IN-WH1-20251020-001", "ABC Supply", 3, 120, "PENDING", "WH1", "2025-10-20T09:00:00Z", null),
+                new ReceivingNoteSummaryResponse(102L, "IN-WH1-20251020-002", "BCD Parts", 2, 45, "IN_PROGRESS", "WH1", "2025-10-20T09:05:00Z", null)
         );
         when(receivingService.getNotDone(any())).thenReturn(list);
 

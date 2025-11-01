@@ -6,7 +6,10 @@ import java.util.Optional;
 
 public interface ShippingNoteRepository {
     List<ShippingNote> findNotDone(String date);
+
     List<ShippingNote> findDone(String date);
+
     Optional<ShippingNote> findById(Long noteId);
+
     ShippingNote save(ShippingNote note);
 }

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,9 +32,11 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ReceivingServiceImpl implements ReceivingService {
 
-    private static final List<ReceivingNoteStatus> DONE_STATUSES = List.of(ReceivingNoteStatus.COMPLETED_OK, ReceivingNoteStatus.COMPLETED_ISSUE);
+    private static final List<ReceivingNoteStatus> DONE_STATUSES = List.of(ReceivingNoteStatus.COMPLETED_OK,
+            ReceivingNoteStatus.COMPLETED_ISSUE);
 
     private final ReceivingNoteRepository repository;
+    private final com.gearfirst.warehouse.common.sequence.NoteNumberGenerator noteNumberGenerator;
     private final InventoryService inventoryService;
 
     @Override
@@ -44,11 +47,11 @@ public class ReceivingServiceImpl implements ReceivingService {
                 .toList();
     }
 
-    // Overload with optional warehouse filter
-    public List<ReceivingNoteSummaryResponse> getNotDone(String date, Long warehouseId) {
+    // Overload with optional warehouse filter (warehouseCode)
+    public List<ReceivingNoteSummaryResponse> getNotDone(String date, String warehouseCode) {
         var list = repository.findNotDone(date);
-        if (warehouseId != null) {
-            list = list.stream().filter(n -> java.util.Objects.equals(n.getWarehouseId(), warehouseId)).toList();
+        if (warehouseCode != null && !warehouseCode.isBlank()) {
+            list = list.stream().filter(n -> Objects.equals(n.getWarehouseCode(), warehouseCode)).toList();
         }
         return list.stream()
                 .sorted(Comparator.comparing(ReceivingNoteEntity::getNoteId))
@@ -64,11 +67,11 @@ public class ReceivingServiceImpl implements ReceivingService {
                 .toList();
     }
 
-    // Overload with optional warehouse filter
-    public List<ReceivingNoteSummaryResponse> getDone(String date, Long warehouseId) {
+    // Overload with optional warehouse filter (warehouseCode)
+    public List<ReceivingNoteSummaryResponse> getDone(String date, String warehouseCode) {
         var list = repository.findDone(date);
-        if (warehouseId != null) {
-            list = list.stream().filter(n -> java.util.Objects.equals(n.getWarehouseId(), warehouseId)).toList();
+        if (warehouseCode != null && !warehouseCode.isBlank()) {
+            list = list.stream().filter(n -> Objects.equals(n.getWarehouseCode(), warehouseCode)).toList();
         }
         return list.stream()
                 .sorted(Comparator.comparing(ReceivingNoteEntity::getNoteId))
@@ -78,13 +81,15 @@ public class ReceivingServiceImpl implements ReceivingService {
 
     @Override
     public ReceivingNoteDetailResponse getDetail(Long noteId) {
-        var note = repository.findById(noteId).orElseThrow(() -> new NotFoundException("Receiving note not found: " + noteId));
+        var note = repository.findById(noteId)
+                .orElseThrow(() -> new NotFoundException("Receiving note not found: " + noteId));
         return toDetail(note);
     }
 
     @Override
     public ReceivingNoteDetailResponse updateLine(Long noteId, Long lineId, ReceivingUpdateLineRequest request) {
-        var note = repository.findById(noteId).orElseThrow(() -> new NotFoundException("Receiving note not found: " + noteId));
+        var note = repository.findById(noteId)
+                .orElseThrow(() -> new NotFoundException("Receiving note not found: " + noteId));
 
         // Block when note already completed
         if (isDoneStatus(note.getStatus())) {
@@ -109,12 +114,11 @@ public class ReceivingServiceImpl implements ReceivingService {
             throw new BadRequestException(ErrorStatus.RECEIVING_ORDERED_QTY_EXCEEDS_INSPECTED_QTY);
         }
 
-        int issueQty = Boolean.TRUE.equals(request.hasIssue()) ? Math.max(0, ordered - inspected) : 0;
-        ReceivingLineStatus newLineStatus = Boolean.TRUE.equals(request.hasIssue()) ? ReceivingLineStatus.REJECTED : ReceivingLineStatus.ACCEPTED;
+        boolean rejected = Boolean.TRUE.equals(request.rejected());
+        ReceivingLineStatus newLineStatus = rejected ? ReceivingLineStatus.REJECTED : ReceivingLineStatus.ACCEPTED;
 
         // Apply changes to line
         line.setInspectedQty(inspected);
-        line.setIssueQty(issueQty);
         line.setStatus(newLineStatus);
 
         // First update transitions PENDING -> IN_PROGRESS
@@ -128,14 +132,20 @@ public class ReceivingServiceImpl implements ReceivingService {
 
     @Override
     public ReceivingCompleteResponse complete(Long noteId) {
-        var note = repository.findById(noteId).orElseThrow(() -> new NotFoundException("Receiving note not found: " + noteId));
+        var note = repository.findById(noteId)
+                .orElseThrow(() -> new NotFoundException("Receiving note not found: " + noteId));
+        // Require handler/inspector info before completion
+        if (note.getInspectorName() == null || note.getInspectorName().isBlank()) {
+            throw new BadRequestException(ErrorStatus.RECEIVING_HANDLER_INFO_REQUIRED);
+        }
 
         if (isDoneStatus(note.getStatus())) {
             throw new ConflictException(ErrorStatus.CONFLICT_RECEIVING_NOTE_ALREADY_COMPLETED);
         }
         // All lines must be ACCEPTED/REJECTED
         boolean allFinal = note.getLines().stream()
-                .allMatch(l -> l.getStatus() == ReceivingLineStatus.ACCEPTED || l.getStatus() == ReceivingLineStatus.REJECTED);
+                .allMatch(l -> l.getStatus() == ReceivingLineStatus.ACCEPTED
+                        || l.getStatus() == ReceivingLineStatus.REJECTED);
         if (!allFinal) {
             throw new ConflictException(ErrorStatus.CONFLICT_RECEIVING_CANNOT_COMPLETE_WHEN_NOT_DONE);
         }
@@ -145,14 +155,15 @@ public class ReceivingServiceImpl implements ReceivingService {
                 .mapToInt(ReceivingNoteLineEntity::getOrderedQty)
                 .sum();
 
-        // Apply inventory increases per product (use warehouseId when available)
-        Long whId = note.getWarehouseId();
+        // Apply inventory increases per product (use warehouseCode when available)
+        String whCode = note.getWarehouseCode();
         note.getLines().stream()
                 .filter(l -> l.getStatus() == ReceivingLineStatus.ACCEPTED)
-                .forEach(l -> inventoryService.increase(whId, l.getProductId(), l.getOrderedQty()));
+                .forEach(l -> inventoryService.increase(whCode, l.getProductId(), l.getOrderedQty()));
 
         boolean hasRejected = note.getLines().stream().anyMatch(l -> l.getStatus() == ReceivingLineStatus.REJECTED);
-        ReceivingNoteStatus finalStatus = hasRejected ? ReceivingNoteStatus.COMPLETED_ISSUE : ReceivingNoteStatus.COMPLETED_OK;
+        ReceivingNoteStatus finalStatus =
+                hasRejected ? ReceivingNoteStatus.COMPLETED_ISSUE : ReceivingNoteStatus.COMPLETED_OK;
         var completedAt = OffsetDateTime.now(ZoneOffset.UTC);
 
         note.setStatus(finalStatus);
@@ -168,17 +179,31 @@ public class ReceivingServiceImpl implements ReceivingService {
         var builder = ReceivingNoteEntity.builder()
                 .noteId(noteId)
                 .supplierName(request == null ? null : request.supplierName())
-                .warehouseId(request == null ? null : request.warehouseId())
+                .warehouseCode(request == null ? null : request.warehouseCode())
                 .remark(request == null ? null : request.remark())
                 .status(ReceivingNoteStatus.PENDING)
                 .completedAt(null);
-        // parse dates if provided; ignore errors
+        // parse dates if provided; set defaults: requestedAt=now(UTC) if null; expected= requestedAt + 2 days if null
         OffsetDateTime reqAt = parseOffsetDateTime(request == null ? null : request.requestedAt());
+        if (reqAt == null) {
+            throw new BadRequestException(ErrorStatus.RECEIVING_REQUESTED_AT_INVALID);
+        }
         OffsetDateTime expAt = parseOffsetDateTime(request == null ? null : request.expectedReceiveDate());
+        if (expAt == null) {
+            expAt = reqAt.plusDays(2);
+        }
         builder.requestedAt(reqAt);
         builder.expectedReceiveDate(expAt);
         builder.receivedAt(null);
-        builder.receivingNo(request == null ? null : request.receivingNo());
+        String receivingNo = (request == null ? null : request.receivingNo());
+        if (receivingNo == null || receivingNo.isBlank()) {
+            // Auto-generate IN number using warehouseCode + requestedAt (UTC)
+            if (builder.build().getWarehouseCode() == null || builder.build().getWarehouseCode().isBlank()) {
+                throw new BadRequestException(ErrorStatus.RECEIVING_NO_INVALID);
+            }
+            receivingNo = noteNumberGenerator.generateReceivingNo(builder.build().getWarehouseCode(), reqAt);
+        }
+        builder.receivingNo(receivingNo);
         // Inspector info is set during inspection process, keep null on create
         builder.inspectorName(null);
         builder.inspectorDept(null);
@@ -193,17 +218,29 @@ public class ReceivingServiceImpl implements ReceivingService {
                 long lineId = noteId + (++i);
                 int ordered = rl.orderedQty() == null ? 0 : rl.orderedQty();
                 totalQty += ordered;
-                if (rl.productId() != null) productIds.add(rl.productId());
+                if (rl.productId() != null) {
+                    productIds.add(rl.productId());
+                }
+                // Determine productCode snapshot and LOT
+                String productCode = rl.productId() == null ? null : ("P-" + rl.productId());
+                String lot = rl.lotNo();
+                if (lot == null || lot.isBlank()) {
+                    // Generate LOT: factoryName(=supplierName) - (requestedAt-7d yyyyMMdd) - partCode
+                    String factoryName = request == null ? null : request.supplierName();
+                    java.time.LocalDate prodDate = reqAt.minusDays(7).toLocalDate();
+                    String ymd = prodDate.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+                    lot = (factoryName == null ? "" : factoryName) + "-" + ymd + "-" + (productCode == null ? "" : productCode);
+                }
+
                 var line = ReceivingNoteLineEntity.builder()
                         .lineId(lineId)
                         .productId(rl.productId())
-                        .productLot(rl.lotNo())
-                        .productCode(null)
+                        .productLot(lot)
+                        .productCode(productCode)
                         .productName(null)
                         .productImgUrl(null)
                         .orderedQty(ordered)
                         .inspectedQty(0)
-                        .issueQty(0)
                         .status(ReceivingLineStatus.PENDING)
                         .remark(rl.lineRemark())
                         .build();
@@ -223,7 +260,9 @@ public class ReceivingServiceImpl implements ReceivingService {
     }
 
     private OffsetDateTime parseOffsetDateTime(String text) {
-        if (text == null || text.isBlank()) return null;
+        if (text == null || text.isBlank()) {
+            return null;
+        }
         try {
             return OffsetDateTime.parse(text);
         } catch (Exception e) {
@@ -239,10 +278,12 @@ public class ReceivingServiceImpl implements ReceivingService {
         String completedAt = n.getCompletedAt() != null ? n.getCompletedAt().toString() : null;
         return new ReceivingNoteSummaryResponse(
                 n.getNoteId(),
+                n.getReceivingNo(),
                 n.getSupplierName(),
                 n.getItemKindsNumber(),
                 n.getTotalQty(),
                 n.getStatus().name(),
+                n.getWarehouseCode(),
                 n.getRequestedAt() == null ? null : n.getRequestedAt().toString(),
                 completedAt
         );
@@ -252,10 +293,10 @@ public class ReceivingServiceImpl implements ReceivingService {
         String completedAt = n.getCompletedAt() != null ? n.getCompletedAt().toString() : null;
         var lines = n.getLines().stream().map(l -> new ReceivingNoteLineResponse(
                 l.getLineId(),
-                new ReceivingProductResponse(l.getProductId(), l.getProductLot(), l.getProductCode(), l.getProductName(), l.getProductImgUrl()),
+                new ReceivingProductResponse(l.getProductId(), l.getProductLot(), l.getProductCode(),
+                        l.getProductName(), l.getProductImgUrl()),
                 l.getOrderedQty(),
                 l.getInspectedQty(),
-                l.getIssueQty(),
                 l.getStatus().name()
         )).toList();
         return new ReceivingNoteDetailResponse(
@@ -266,7 +307,7 @@ public class ReceivingServiceImpl implements ReceivingService {
                 n.getStatus().name(),
                 completedAt,
                 n.getReceivingNo(),
-                n.getWarehouseId(),
+                n.getWarehouseCode(),
                 n.getRequestedAt() == null ? null : n.getRequestedAt().toString(),
                 n.getExpectedReceiveDate() == null ? null : n.getExpectedReceiveDate().toString(),
                 n.getReceivedAt() == null ? null : n.getReceivedAt().toString(),

@@ -13,7 +13,8 @@ public class PartDtos {
             @NotNull @Min(0) Integer price,
             @NotNull Long categoryId,
             String imageUrl
-    ) {}
+    ) {
+    }
 
     public record UpdatePartRequest(
             String code,
@@ -22,14 +23,16 @@ public class PartDtos {
             @NotNull Long categoryId,
             String imageUrl,
             Boolean enabled
-    ) {}
+    ) {
+    }
 
     public record PartSummaryResponse(
             Long id,
             String code,
             String name,
             CategoryRef category
-    ) {}
+    ) {
+    }
 
     public record PartDetailResponse(
             Long id,
@@ -41,7 +44,9 @@ public class PartDtos {
             boolean enabled,
             String createdAt,
             String updatedAt
-    ) {}
+    ) {
+    }
 
-    public record CategoryRef(Long id, String name) {}
+    public record CategoryRef(Long id, String name) {
+    }
 }

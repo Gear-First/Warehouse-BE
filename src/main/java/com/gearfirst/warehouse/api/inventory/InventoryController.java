@@ -2,11 +2,11 @@ package com.gearfirst.warehouse.api.inventory;
 
 import com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.OnHandSummary;
 import com.gearfirst.warehouse.api.inventory.service.InventoryService;
+import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.common.response.CommonApiResponse;
+import com.gearfirst.warehouse.common.response.ErrorStatus;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
-import com.gearfirst.warehouse.common.exception.BadRequestException;
-import com.gearfirst.warehouse.common.response.ErrorStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -56,6 +56,7 @@ public class InventoryController {
             @RequestParam(required = false, defaultValue = "20") Integer size,
             @RequestParam(required = false) List<String> sort
     ) {
+
         // Validate page/size per contract (page >= 0, 1 <= size <= 100)
         int p = page == null ? 0 : page;
         int s = size == null ? 20 : size;
@@ -81,9 +82,8 @@ public class InventoryController {
             }
         }
 
-        PageEnvelope<OnHandSummary> envelope = noFilters
-                ? service.listOnHand(null, null, p, s) // legacy path used by existing unit tests
-                : service.listOnHand(warehouseCode, partKeyword, supplierName, minQty, maxQty, p, s, sort);
+        PageEnvelope<OnHandSummary> envelope = service.listOnHand(
+                warehouseCode, partKeyword, supplierName, minQty, maxQty, p, s, sort);
         return CommonApiResponse.success(SuccessStatus.SEND_INVENTORY_ONHAND_LIST_SUCCESS, envelope);
     }
 }
