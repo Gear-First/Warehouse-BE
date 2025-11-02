@@ -6,6 +6,7 @@ import com.gearfirst.warehouse.api.shipping.domain.ShippingNoteLine;
 import com.gearfirst.warehouse.api.shipping.persistence.ShippingNoteJpaRepository;
 import com.gearfirst.warehouse.api.shipping.persistence.entity.ShippingNoteEntity;
 import com.gearfirst.warehouse.api.shipping.persistence.entity.ShippingNoteLineEntity;
+import com.gearfirst.warehouse.common.util.DateTimes;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -60,6 +61,7 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
     }
 
     private ShippingNote toDomain(ShippingNoteEntity e) {
+        var lines = (e.getLines() == null) ? List.<ShippingNoteLineEntity>of() : e.getLines();
         return ShippingNote.builder()
                 .noteId(e.getNoteId())
                 .branchName(e.getBranchName())
@@ -67,16 +69,16 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
                 .totalQty(e.getTotalQty())
                 .warehouseCode(e.getWarehouseCode())
                 .shippingNo(e.getShippingNo())
-                .requestedAt(e.getRequestedAt() == null ? null : e.getRequestedAt().toString())
-                .expectedShipDate(e.getExpectedShipDate() == null ? null : e.getExpectedShipDate().toString())
-                .shippedAt(e.getShippedAt() == null ? null : e.getShippedAt().toString())
+                .requestedAt(DateTimes.toKstString(e.getRequestedAt()))
+                .expectedShipDate(DateTimes.toKstString(e.getExpectedShipDate()))
+                .shippedAt(DateTimes.toKstString(e.getShippedAt()))
                 .assigneeName(e.getAssigneeName())
                 .assigneeDept(e.getAssigneeDept())
                 .assigneePhone(e.getAssigneePhone())
                 .remark(e.getRemark())
                 .status(e.getStatus())
-                .completedAt(e.getCompletedAt() == null ? null : e.getCompletedAt().toString())
-                .lines(e.getLines().stream().map(this::toDomainLine).toList())
+                .completedAt(DateTimes.toKstString(e.getCompletedAt()))
+                .lines(lines.stream().map(this::toDomainLine).toList())
                 .build();
     }
 

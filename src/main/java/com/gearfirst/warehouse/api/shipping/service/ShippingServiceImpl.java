@@ -71,7 +71,7 @@ public class ShippingServiceImpl implements ShippingService {
     @Override
     public List<ShippingNoteSummaryResponse> getNotDone(String date) {
         return repository.findNotDone(date).stream()
-                .sorted(Comparator.comparing(ShippingNote::getNoteId))
+                .sorted(Comparator.comparing(ShippingNote::getNoteId, Comparator.nullsLast(Long::compareTo)))
                 .map(this::toSummary)
                 .toList();
     }
@@ -83,7 +83,7 @@ public class ShippingServiceImpl implements ShippingService {
             notes = notes.stream().filter(n -> java.util.Objects.equals(warehouseCode, n.getWarehouseCode())).toList();
         }
         return notes.stream()
-                .sorted(Comparator.comparing(ShippingNote::getNoteId))
+                .sorted(Comparator.comparing(ShippingNote::getNoteId, Comparator.nullsLast(Long::compareTo)))
                 .map(this::toSummary)
                 .toList();
     }
@@ -91,7 +91,7 @@ public class ShippingServiceImpl implements ShippingService {
     @Override
     public List<ShippingNoteSummaryResponse> getDone(String date) {
         return repository.findDone(date).stream()
-                .sorted(Comparator.comparing(ShippingNote::getNoteId))
+                .sorted(Comparator.comparing(ShippingNote::getNoteId, Comparator.nullsLast(Long::compareTo)))
                 .map(this::toSummary)
                 .toList();
     }
@@ -103,7 +103,7 @@ public class ShippingServiceImpl implements ShippingService {
             notes = notes.stream().filter(n -> java.util.Objects.equals(warehouseCode, n.getWarehouseCode())).toList();
         }
         return notes.stream()
-                .sorted(Comparator.comparing(ShippingNote::getNoteId))
+                .sorted(Comparator.comparing(ShippingNote::getNoteId, Comparator.nullsLast(Long::compareTo)))
                 .map(this::toSummary)
                 .toList();
     }
@@ -324,13 +324,14 @@ public class ShippingServiceImpl implements ShippingService {
     }
 
     private ShippingNoteSummaryResponse toSummary(ShippingNote note) {
+        String status = note.getStatus() == null ? "PENDING" : note.getStatus().name();
         return new ShippingNoteSummaryResponse(
                 note.getNoteId(),
                 note.getShippingNo(),
                 note.getBranchName(),
                 note.getItemKindsNumber(),
                 note.getTotalQty(),
-                note.getStatus().name(),
+                status,
                 note.getWarehouseCode(),
                 note.getRequestedAt(),
                 note.getCompletedAt()
@@ -338,12 +339,13 @@ public class ShippingServiceImpl implements ShippingService {
     }
 
     private ShippingNoteDetailResponse toDetail(ShippingNote note) {
+        String status = note.getStatus() == null ? "PENDING" : note.getStatus().name();
         return new ShippingNoteDetailResponse(
                 note.getNoteId(),
                 note.getBranchName(),
                 note.getItemKindsNumber(),
                 note.getTotalQty(),
-                note.getStatus().name(),
+                status,
                 note.getCompletedAt(),
                 note.getShippingNo(),
                 note.getWarehouseCode(),
