@@ -170,20 +170,22 @@ public class ReceivingServiceImpl implements ReceivingService {
         note.setCompletedAt(completedAt);
         repository.save(note);
 
-        return new ReceivingCompleteResponse(completedAt.toString(), appliedSum);
+        return new ReceivingCompleteResponse(
+                com.gearfirst.warehouse.common.util.DateTimes.toKstString(completedAt),
+                appliedSum
+        );
     }
 
     @Override
     public ReceivingNoteDetailResponse create(ReceivingCreateNoteRequest request) {
-        long noteId = System.currentTimeMillis();
         var builder = ReceivingNoteEntity.builder()
-                .noteId(noteId)
+                .noteId(null) // let DB generate
                 .supplierName(request == null ? null : request.supplierName())
                 .warehouseCode(request == null ? null : request.warehouseCode())
                 .remark(request == null ? null : request.remark())
                 .status(ReceivingNoteStatus.PENDING)
                 .completedAt(null);
-        // parse dates if provided; set defaults: requestedAt=now(UTC) if null; expected= requestedAt + 2 days if null
+        // parse dates if provided; set defaults: requestedAt must be provided; expected = requestedAt + 2 days if null
         OffsetDateTime reqAt = parseOffsetDateTime(request == null ? null : request.requestedAt());
         if (reqAt == null) {
             throw new BadRequestException(ErrorStatus.RECEIVING_REQUESTED_AT_INVALID);
@@ -213,9 +215,7 @@ public class ReceivingServiceImpl implements ReceivingService {
         Set<Long> productIds = new HashSet<>();
         List<ReceivingNoteLineEntity> lineEntities = new ArrayList<>();
         if (request != null && request.lines() != null) {
-            int i = 0;
             for (var rl : request.lines()) {
-                long lineId = noteId + (++i);
                 int ordered = rl.orderedQty() == null ? 0 : rl.orderedQty();
                 totalQty += ordered;
                 if (rl.productId() != null) {
@@ -233,7 +233,7 @@ public class ReceivingServiceImpl implements ReceivingService {
                 }
 
                 var line = ReceivingNoteLineEntity.builder()
-                        .lineId(lineId)
+                        .lineId(null) // let DB generate
                         .productId(rl.productId())
                         .productLot(lot)
                         .productCode(productCode)
@@ -275,7 +275,7 @@ public class ReceivingServiceImpl implements ReceivingService {
     }
 
     private ReceivingNoteSummaryResponse toSummary(ReceivingNoteEntity n) {
-        String completedAt = n.getCompletedAt() != null ? n.getCompletedAt().toString() : null;
+        String completedAt = com.gearfirst.warehouse.common.util.DateTimes.toKstString(n.getCompletedAt());
         return new ReceivingNoteSummaryResponse(
                 n.getNoteId(),
                 n.getReceivingNo(),
@@ -284,13 +284,13 @@ public class ReceivingServiceImpl implements ReceivingService {
                 n.getTotalQty(),
                 n.getStatus().name(),
                 n.getWarehouseCode(),
-                n.getRequestedAt() == null ? null : n.getRequestedAt().toString(),
+                com.gearfirst.warehouse.common.util.DateTimes.toKstString(n.getRequestedAt()),
                 completedAt
         );
     }
 
     private ReceivingNoteDetailResponse toDetail(ReceivingNoteEntity n) {
-        String completedAt = n.getCompletedAt() != null ? n.getCompletedAt().toString() : null;
+        String completedAt = com.gearfirst.warehouse.common.util.DateTimes.toKstString(n.getCompletedAt());
         var lines = n.getLines().stream().map(l -> new ReceivingNoteLineResponse(
                 l.getLineId(),
                 new ReceivingProductResponse(l.getProductId(), l.getProductLot(), l.getProductCode(),
@@ -308,9 +308,9 @@ public class ReceivingServiceImpl implements ReceivingService {
                 completedAt,
                 n.getReceivingNo(),
                 n.getWarehouseCode(),
-                n.getRequestedAt() == null ? null : n.getRequestedAt().toString(),
-                n.getExpectedReceiveDate() == null ? null : n.getExpectedReceiveDate().toString(),
-                n.getReceivedAt() == null ? null : n.getReceivedAt().toString(),
+                com.gearfirst.warehouse.common.util.DateTimes.toKstString(n.getRequestedAt()),
+                com.gearfirst.warehouse.common.util.DateTimes.toKstString(n.getExpectedReceiveDate()),
+                com.gearfirst.warehouse.common.util.DateTimes.toKstString(n.getReceivedAt()),
                 n.getInspectorName(),
                 n.getInspectorDept(),
                 n.getInspectorPhone(),

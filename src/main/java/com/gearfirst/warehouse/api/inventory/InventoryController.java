@@ -63,9 +63,6 @@ public class InventoryController {
         if (p < 0 || s < 1 || s > 100) {
             throw new BadRequestException(ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
         }
-        // Bridge behavior for legacy tests: when only paging is used (no filters), call legacy signature
-        boolean noFilters = (warehouseCode == null && partKeyword == null && supplierName == null
-                && minQty == null && maxQty == null && (sort == null || sort.isEmpty()));
 
         // Validate min/max range when provided
         if (minQty != null && maxQty != null && minQty > maxQty) {
