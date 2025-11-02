@@ -25,8 +25,12 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
         if (date != null && !date.isBlank()) {
             try {
                 var target = java.time.LocalDate.parse(date);
+                var bounds = com.gearfirst.warehouse.common.util.DateTimes.kstDayBounds(target);
+                var fromLdt = bounds.fromInclusive().toLocalDateTime();
+                var toLdt = bounds.toInclusive().toLocalDateTime();
                 notDone = notDone.stream()
-                        .filter(e -> e.getCreatedAt() != null && e.getCreatedAt().toLocalDate().isEqual(target))
+                        .filter(e -> e.getCreatedAt() != null
+                                && ( !e.getCreatedAt().isBefore(fromLdt) && !e.getCreatedAt().isAfter(toLdt) ))
                         .toList();
             } catch (Exception ignored) { /* keep unfiltered on parse error */ }
         }
@@ -39,8 +43,12 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
         if (date != null && !date.isBlank()) {
             try {
                 var target = java.time.LocalDate.parse(date);
+                var bounds = com.gearfirst.warehouse.common.util.DateTimes.kstDayBounds(target);
+                var fromLdt = bounds.fromInclusive().toLocalDateTime();
+                var toLdt = bounds.toInclusive().toLocalDateTime();
                 done = done.stream()
-                        .filter(e -> e.getCreatedAt() != null && e.getCreatedAt().toLocalDate().isEqual(target))
+                        .filter(e -> e.getCreatedAt() != null
+                                && ( !e.getCreatedAt().isBefore(fromLdt) && !e.getCreatedAt().isAfter(toLdt) ))
                         .toList();
             } catch (Exception ignored) {
             }

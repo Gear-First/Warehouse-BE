@@ -362,7 +362,7 @@ public class ShippingServiceImpl implements ShippingService {
                                 l.getProductName(), l.getProductImgUrl()),
                         l.getOrderedQty(),
                         l.getPickedQty(),
-                        l.getStatus().name()
+                        (l.getStatus() == null ? "PENDING" : l.getStatus().name())
                 )).toList()
         );
     }

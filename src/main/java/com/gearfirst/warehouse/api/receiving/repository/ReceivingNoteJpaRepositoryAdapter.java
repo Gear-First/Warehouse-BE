@@ -23,8 +23,12 @@ public class ReceivingNoteJpaRepositoryAdapter implements ReceivingNoteRepositor
         if (date != null && !date.isBlank()) {
             try {
                 var target = java.time.LocalDate.parse(date);
+                var bounds = com.gearfirst.warehouse.common.util.DateTimes.kstDayBounds(target);
+                var fromLdt = bounds.fromInclusive().toLocalDateTime();
+                var toLdt = bounds.toInclusive().toLocalDateTime();
                 list = list.stream()
-                        .filter(e -> e.getCreatedAt() != null && e.getCreatedAt().toLocalDate().isEqual(target))
+                        .filter(e -> e.getCreatedAt() != null
+                                && (!e.getCreatedAt().isBefore(fromLdt) && !e.getCreatedAt().isAfter(toLdt)))
                         .toList();
             } catch (Exception ignored) {
             }
@@ -38,8 +42,12 @@ public class ReceivingNoteJpaRepositoryAdapter implements ReceivingNoteRepositor
         if (date != null && !date.isBlank()) {
             try {
                 var target = java.time.LocalDate.parse(date);
+                var bounds = com.gearfirst.warehouse.common.util.DateTimes.kstDayBounds(target);
+                var fromLdt = bounds.fromInclusive().toLocalDateTime();
+                var toLdt = bounds.toInclusive().toLocalDateTime();
                 list = list.stream()
-                        .filter(e -> e.getCreatedAt() != null && e.getCreatedAt().toLocalDate().isEqual(target))
+                        .filter(e -> e.getCreatedAt() != null
+                                && (!e.getCreatedAt().isBefore(fromLdt) && !e.getCreatedAt().isAfter(toLdt)))
                         .toList();
             } catch (Exception ignored) {
             }
