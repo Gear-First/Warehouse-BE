@@ -14,10 +14,23 @@ public class SwaggerConfig {
         Server server = new Server();
         server.setUrl("/warehouse");
 
+        String description = """
+            Gearfirst Warehouse REST API Document\n\n
+            Timezone policy:\n
+            - API inputs/outputs use KST (+09:00) formatted ISO-8601 strings.\n
+            - Server persists and computes in UTC.\n
+            Date filter semantics:\n
+            - Parameters `date`, `dateFrom`, `dateTo` are interpreted as KST local-day(s).\n
+            - Internally they are converted to UTC inclusive bounds.\n
+            - When both `date` and a range are provided, the range takes precedence.\n
+            Response envelope:\n
+            - Success responses are wrapped with CommonApiResponse and lists use PageEnvelope<T>.\n
+            - Error payloads include code/message/detail with standard error statuses.\n            """;
+
         return new OpenAPI()
                 .info(new Info()
                         .title("Gearfirst-Warehouse")
-                        .description("Gearfirst Warehouse REST API Document")
+                        .description(description)
                         .version("1.0.0"))
                 .addServersItem(server);
     }
