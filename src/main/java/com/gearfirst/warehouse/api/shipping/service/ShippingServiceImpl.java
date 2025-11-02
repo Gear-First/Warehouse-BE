@@ -159,7 +159,7 @@ public class ShippingServiceImpl implements ShippingService {
                         .lineId(l.getLineId())
                         .productId(l.getProductId())
                         .productLot(l.getProductLot())
-                        .productSerial(l.getProductSerial())
+                        .productCode(l.getProductCode())
                         .productName(l.getProductName())
                         .productImgUrl(l.getProductImgUrl())
                         .orderedQty(l.getOrderedQty())
@@ -269,7 +269,7 @@ public class ShippingServiceImpl implements ShippingService {
                         .lineId(null)
                         .productId(rl.productId())
                         .productLot(null)
-                        .productSerial(null)
+                        .productCode(null)
                         .productName(null)
                         .productImgUrl(null)
                         .orderedQty(ordered)
@@ -356,7 +356,7 @@ public class ShippingServiceImpl implements ShippingService {
                 note.getRemark(),
                 note.getLines().stream().map(l -> new ShippingNoteLineResponse(
                         l.getLineId(),
-                        new ShippingProductResponse(l.getProductId(), l.getProductLot(), l.getProductSerial(),
+                        new ShippingProductResponse(l.getProductId(), l.getProductLot(), l.getProductCode(),
                                 l.getProductName(), l.getProductImgUrl()),
                         l.getOrderedQty(),
                         l.getPickedQty(),

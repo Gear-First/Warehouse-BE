@@ -95,9 +95,9 @@ class ShippingServiceImplTest {
                 .status(NoteStatus.IN_PROGRESS)
                 .completedAt(null)
                 .lines(List.of(
-                        ShippingNoteLine.builder().lineId(900101L).productId(1L).productLot("L").productSerial("S").productName("A").productImgUrl("/")
+                        ShippingNoteLine.builder().lineId(900101L).productId(1L).productLot("L").productCode("S").productName("A").productImgUrl("/")
                                 .orderedQty(10).pickedQty(10).status(LineStatus.READY).build(),
-                        ShippingNoteLine.builder().lineId(900102L).productId(2L).productLot("L").productSerial("S").productName("B").productImgUrl("/")
+                        ShippingNoteLine.builder().lineId(900102L).productId(2L).productLot("L").productCode("S").productName("B").productImgUrl("/")
                                 .orderedQty(10).pickedQty(0).status(LineStatus.PENDING).build()
                 ))
                 .build();

@@ -11,7 +11,7 @@ public class ShippingNoteLine {
     private Long lineId;
     private Long productId;
     private String productLot;
-    private String productSerial;
+    private String productCode;
     private String productName;
     private String productImgUrl;
 

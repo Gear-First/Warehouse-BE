@@ -1,13 +1,11 @@
 package com.gearfirst.warehouse.api.shipping.service;
 
-import com.gearfirst.warehouse.api.inventory.dto.OnHandDtos;
 import com.gearfirst.warehouse.api.inventory.service.InventoryService;
 import com.gearfirst.warehouse.api.shipping.domain.LineStatus;
 import com.gearfirst.warehouse.api.shipping.domain.NoteStatus;
 import com.gearfirst.warehouse.api.shipping.domain.ShippingNote;
 import com.gearfirst.warehouse.api.shipping.domain.ShippingNoteLine;
 import com.gearfirst.warehouse.api.shipping.repository.InMemoryShippingNoteRepository;
-import com.gearfirst.warehouse.common.response.PageEnvelope;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -56,7 +54,7 @@ class ShippingServiceNoDecreaseOnDelayedTest {
                                 .lineId(1L)
                                 .productId(7001L)
                                 .productLot("LOT")
-                                .productSerial("SER")
+                                .productCode("SER")
                                 .productName("Bolt")
                                 .productImgUrl("/img")
                                 .orderedQty(10)
