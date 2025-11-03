@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ShippingServiceImpl implements ShippingService {
@@ -262,6 +263,7 @@ public class ShippingServiceImpl implements ShippingService {
     }
 
     @Override
+    @Transactional
     public ShippingNoteDetailResponse create(ShippingCreateNoteRequest request) {
         // Generate simple ids (temporary). In real system, use sequence/UUID.
         List<ShippingNoteLine> lines = new ArrayList<>();

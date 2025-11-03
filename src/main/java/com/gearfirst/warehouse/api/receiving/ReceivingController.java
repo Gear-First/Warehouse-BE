@@ -8,7 +8,9 @@ import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteDetailResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteSummaryResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingUpdateLineRequest;
 import com.gearfirst.warehouse.api.receiving.service.ReceivingService;
+import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.common.response.CommonApiResponse;
+import com.gearfirst.warehouse.common.response.ErrorStatus;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,6 +20,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +44,9 @@ public class ReceivingController {
 
     @Operation(summary = "입고 예정 리스트 조회", description = "입고 예정된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseCode(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc. 날짜 필터는 requestedAt 기준이며, dateFrom/dateTo가 있을 경우 범위가 단일 값보다 우선합니다(경계 포함).")
     @Parameters({
-            @Parameter(name = "date", description = "단일 날짜(YYYY-MM-DD) — requestedAt 기준"),
+            @Parameter(name = "date", description = "단일 날짜(YYYY-MM-DD, KST 로컬일) — requestedAt 기준"),
+            @Parameter(name = "dateFrom", description = "시작일(YYYY-MM-DD, KST 로컬일) — 범위가 단일보다 우선"),
+            @Parameter(name = "dateTo", description = "종료일(YYYY-MM-DD, KST 로컬일) — 경계 포함"),
             @Parameter(name = "warehouseCode", description = "창고 코드(예: 서울)"),
             @Parameter(name = "page", description = "페이지(기본 0, 최소 0)"),
             @Parameter(name = "size", description = "페이지 크기(기본 20, 1..100)"),
@@ -54,6 +59,8 @@ public class ReceivingController {
     @GetMapping("/not-done")
     public ResponseEntity<CommonApiResponse<PageEnvelope<ReceivingNoteSummaryResponse>>> getPendingNotes(
             @RequestParam(required = false) String date,
+            @RequestParam(required = false) String dateFrom,
+            @RequestParam(required = false) String dateTo,
             @RequestParam(required = false) String warehouseCode,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -61,12 +68,43 @@ public class ReceivingController {
     ) {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
-        var all = (warehouseCode == null || warehouseCode.isBlank())
+        var list = (warehouseCode == null || warehouseCode.isBlank())
                 ? service.getNotDone(date)
                 : service.getNotDone(date, warehouseCode);
-        // 기본 정렬: noteId asc
-        var sorted = all.stream()
-                .sorted(Comparator.comparing(ReceivingNoteSummaryResponse::noteId))
+        // Apply date/range filter (requestedAt). Range wins, and if from>to we swap (policy). Parse errors -> 400.
+        LocalDate fromLd = null;
+        LocalDate toLd = null;
+        try {
+            fromLd = (dateFrom == null || dateFrom.isBlank()) ? null : LocalDate.parse(dateFrom);
+            toLd = (dateTo == null || dateTo.isBlank()) ? null : LocalDate.parse(dateTo);
+            if (fromLd == null && toLd == null && date != null && !date.isBlank()) {
+                var d = LocalDate.parse(date);
+                fromLd = d;
+                toLd = d;
+            }
+            if (fromLd != null && toLd != null && toLd.isBefore(fromLd)) {
+                var tmp = fromLd; fromLd = toLd; toLd = tmp;
+            }
+        } catch (Exception e) {
+            throw new com.gearfirst.warehouse.common.exception.BadRequestException(
+                    com.gearfirst.warehouse.common.response.ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
+        }
+        if (fromLd != null || toLd != null) {
+            final LocalDate fFrom = fromLd;
+            final LocalDate fTo = toLd;
+            list = list.stream().filter(it -> {
+                String ra = it.requestedAt();
+                if (ra == null || ra.isBlank()) return false;
+                LocalDate d;
+                try {
+                    d = (ra.length() > 10) ? java.time.OffsetDateTime.parse(ra).toLocalDate() : LocalDate.parse(ra);
+                } catch (Exception e) { return false; }
+                if (fFrom != null && d.isBefore(fFrom)) return false;
+                return fTo == null || !d.isAfter(fTo);
+            }).toList();
+        }
+        var sorted = list.stream()
+                .sorted(Comparator.comparing(ReceivingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
                 .toList();
         long total = sorted.size();
         int from = Math.min(p * s, (int) total);
@@ -77,7 +115,9 @@ public class ReceivingController {
 
     @Operation(summary = "입고 완료 리스트 조회", description = "입고 완료된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseCode(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc. 날짜 필터는 requestedAt 기준이며, dateFrom/dateTo가 있을 경우 범위가 단일 값보다 우선합니다(KST(+09:00) 로컬일을 UTC 경계로 변환해 포함 범위로 처리)." )
     @Parameters({
-            @Parameter(name = "date", description = "단일 날짜(YYYY-MM-DD) — requestedAt 기준"),
+            @Parameter(name = "date", description = "단일 날짜(YYYY-MM-DD, KST 로컬일) — requestedAt 기준"),
+            @Parameter(name = "dateFrom", description = "시작일(YYYY-MM-DD, KST 로컬일) — 범위가 단일보다 우선"),
+            @Parameter(name = "dateTo", description = "종료일(YYYY-MM-DD, KST 로컬일) — 경계 포함"),
             @Parameter(name = "warehouseCode", description = "창고 코드(예: 서울)"),
             @Parameter(name = "page", description = "페이지(기본 0, 최소 0)"),
             @Parameter(name = "size", description = "페이지 크기(기본 20, 1..100)"),
@@ -90,6 +130,8 @@ public class ReceivingController {
     @GetMapping("/done")
     public ResponseEntity<CommonApiResponse<PageEnvelope<ReceivingNoteSummaryResponse>>> getCompletedNotes(
             @RequestParam(required = false) String date,
+            @RequestParam(required = false) String dateFrom,
+            @RequestParam(required = false) String dateTo,
             @RequestParam(required = false) String warehouseCode,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -97,12 +139,44 @@ public class ReceivingController {
     ) {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
-        var all = (warehouseCode == null || warehouseCode.isBlank())
+        var list = (warehouseCode == null || warehouseCode.isBlank())
                 ? service.getDone(date)
                 : service.getDone(date, warehouseCode);
-        // 기본 정렬: noteId asc
-        var sorted = all.stream()
-                .sorted(comparing(ReceivingNoteSummaryResponse::noteId))
+        // Apply date/range filter (requestedAt). Range wins, and if from>to we swap (policy). Parse errors -> 400.
+        LocalDate fromLd = null;
+        LocalDate toLd = null;
+        try {
+            fromLd = (dateFrom == null || dateFrom.isBlank()) ? null : LocalDate.parse(dateFrom);
+            toLd = (dateTo == null || dateTo.isBlank()) ? null : LocalDate.parse(dateTo);
+            if (fromLd == null && toLd == null && date != null && !date.isBlank()) {
+                var d = LocalDate.parse(date);
+                fromLd = d;
+                toLd = d;
+            }
+            if (fromLd != null && toLd != null && toLd.isBefore(fromLd)) {
+                var tmp = fromLd; fromLd = toLd; toLd = tmp;
+            }
+        } catch (Exception e) {
+            throw new com.gearfirst.warehouse.common.exception.BadRequestException(
+                    com.gearfirst.warehouse.common.response.ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
+        }
+        if (fromLd != null || toLd != null) {
+            final LocalDate fFrom = fromLd;
+            final LocalDate fTo = toLd;
+            list = list.stream().filter(it -> {
+                String ra = it.requestedAt();
+                if (ra == null || ra.isBlank()) return false;
+                LocalDate d;
+                try {
+                    d = (ra.length() > 10) ? java.time.OffsetDateTime.parse(ra).toLocalDate() : LocalDate.parse(ra);
+                } catch (Exception e) { return false; }
+                if (fFrom != null && d.isBefore(fFrom)) return false;
+                return fTo == null || !d.isAfter(fTo);
+            }).toList();
+        }
+        // 기본 정렬: noteId asc (null-safe)
+        var sorted = list.stream()
+                .sorted(Comparator.comparing(ReceivingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
                 .toList();
         long total = sorted.size();
         int from = Math.min(p * s, (int) total);
@@ -163,7 +237,7 @@ public class ReceivingController {
         return CommonApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_DETAIL_SUCCESS, created);
     }
 
-    @Operation(summary = "입고 통합 리스트 조회", description = "상태 파라미터로 not-done|done|all을 선택하여 조회합니다. 날짜/창고 필터링 지원. 기본 정렬: noteId asc (phase-1: date/dateFrom/dateTo는 requestedAt에 적용). 날짜 필터는 UTC 기준이며 범위(dateFrom/dateTo)가 단일(date)보다 우선하고 경계를 포함합니다.")
+    @Operation(summary = "입고 통합 리스트 조회", description = "상태 파라미터로 not-done|done|all을 선택하여 조회합니다. 날짜/창고 필터링 지원. 기본 정렬: noteId asc (phase-1: date/dateFrom/dateTo는 requestedAt에 적용). 날짜 필터는 KST(+09:00) 로컬일을 UTC 경계로 변환해 포함 범위로 처리하며, 범위(dateFrom/dateTo)가 단일(date)보다 우선합니다.")
     @Parameters({
             @Parameter(name = "status", description = "조회 상태 (not-done|done|all). 기본값 not-done"),
             @Parameter(name = "date", description = "단일 날짜(YYYY-MM-DD) — requestedAt 기준"),
@@ -211,16 +285,25 @@ public class ReceivingController {
                     ? service.getNotDone(date)
                     : service.getNotDone(date, warehouseCode);
         }
-        // Apply date range filter (requestedAt) if dateFrom/dateTo provided (range wins), else apply single date if provided
-        LocalDate from =
-                (dateFrom == null || dateFrom.isBlank()) ? null : LocalDate.parse(dateFrom);
-        LocalDate to = (dateTo == null || dateTo.isBlank()) ? null : LocalDate.parse(dateTo);
-        if (from != null || to != null || (date != null && !date.isBlank())) {
+        // Apply date/range filter (requestedAt). Range wins, and if from>to we swap (policy). Parse errors -> 400.
+        LocalDate from = null;
+        LocalDate to = null;
+        try {
+            from = (dateFrom == null || dateFrom.isBlank()) ? null : LocalDate.parse(dateFrom);
+            to = (dateTo == null || dateTo.isBlank()) ? null : LocalDate.parse(dateTo);
             if (from == null && to == null && date != null && !date.isBlank()) {
                 var d = LocalDate.parse(date);
                 from = d;
                 to = d;
             }
+            if (from != null && to != null && to.isBefore(from)) {
+                var tmp = from; from = to; to = tmp; // swap by policy
+            }
+        } catch (Exception e) {
+            throw new BadRequestException(
+                    ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
+        }
+        if (from != null || to != null) {
             final LocalDate fFrom = from;
             final LocalDate fTo = to;
             list = list.stream().filter(it -> {
@@ -230,21 +313,15 @@ public class ReceivingController {
                 }
                 LocalDate d;
                 try {
-                    if (ra.length() > 10) {
-                        d = java.time.OffsetDateTime.parse(ra).toLocalDate();
-                    } else {
-                        d = LocalDate.parse(ra);
-                    }
+                    d = (ra.length() > 10) ? OffsetDateTime.parse(ra).toLocalDate() : LocalDate.parse(ra);
                 } catch (Exception e) {
                     return false;
                 }
-                if (fFrom != null && d.isBefore(fFrom)) {
-                    return false;
-                }
+                if (fFrom != null && d.isBefore(fFrom)) return false;
                 return fTo == null || !d.isAfter(fTo);
             }).toList();
         }
-        var sorted = list.stream().sorted(java.util.Comparator.comparing(ReceivingNoteSummaryResponse::noteId))
+        var sorted = list.stream().sorted(Comparator.comparing(ReceivingNoteSummaryResponse::noteId))
                 .toList();
         long total = sorted.size();
         int fromIdx = Math.min(p * s, (int) total);

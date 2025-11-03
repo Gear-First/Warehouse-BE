@@ -77,7 +77,7 @@ public class ShippingController {
         return CommonApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_LIST_SUCCESS, envelope);
     }
 
-    @Operation(summary = "출고 완료/지연 리스트 조회", description = "출고 완료 또는 지연된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 기본 정렬: noteId asc. 날짜 필터는 requestedAt 기준이며 UTC, 경계 포함.")
+    @Operation(summary = "출고 완료/지연 리스트 조회", description = "출고 완료 또는 지연된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 기본 정렬: noteId asc. 날짜 필터는 requestedAt 기준이며 KST(+09:00) 로컬일을 UTC 경계로 변환해 포함 범위로 처리합니다.")
     @Parameters({
             @Parameter(name = "date", description = "단일 날짜(YYYY-MM-DD) — requestedAt 기준"),
             @Parameter(name = "warehouseCode", description = "창고 코드(예: 서울)"),

@@ -2,6 +2,7 @@ package com.gearfirst.warehouse.common.exception;
 
 import com.gearfirst.warehouse.common.response.CommonApiResponse;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(BadRequestException.class)
@@ -54,5 +56,13 @@ public class GlobalExceptionHandler {
         var status = ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION;
         return ResponseEntity.status(status.getHttpStatus())
                 .body(CommonApiResponse.fail(status));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<CommonApiResponse<?>> handleAllExceptions(Exception ex) {
+        log.error("Unexpected error occurred", ex);
+        String message = "An unexpected error occurred: " + ex.getMessage();
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(CommonApiResponse.fail(HttpStatus.INTERNAL_SERVER_ERROR.value(), message));
     }
 }
