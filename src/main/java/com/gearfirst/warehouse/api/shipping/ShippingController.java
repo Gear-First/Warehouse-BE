@@ -165,7 +165,7 @@ public class ShippingController {
         return CommonApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_DETAIL_SUCCESS, created);
     }
 
-    @Operation(summary = "출고 통합 리스트 조회", description = "상태 파라미터로 not-done|done|all을 선택하여 조회합니다. 날짜/창고 필터링 지원. 기본 정렬: noteId asc (phase-1: date/dateFrom/dateTo는 requestedAt에 적용). 날짜 필터는 UTC 기준이며 범위(dateFrom/dateTo)가 단일(date)보다 우선하고 경계를 포함합니다.")
+    @Operation(summary = "출고 통합 리스트 조회", description = "상태 파라미터로 not-done|done|all을 선택하여 조회합니다. 날짜/창고 필터링 지원. 기본 정렬: noteId asc (phase-1: date/dateFrom/dateTo는 requestedAt에 적용). 날짜 필터는 KST(+09:00) 로컬일을 UTC 경계로 변환해 포함 범위로 처리하며, 범위(dateFrom/dateTo)가 단일(date)보다 우선합니다.")
     @Parameters({
             @Parameter(name = "status", description = "조회 상태 (not-done|done|all). 기본값 not-done"),
             @Parameter(name = "date", description = "단일 날짜(YYYY-MM-DD) — requestedAt 기준"),
@@ -213,16 +213,25 @@ public class ShippingController {
                     ? service.getNotDone(date)
                     : service.getNotDone(date, warehouseCode);
         }
-        // Apply date range filter (requestedAt) if dateFrom/dateTo provided (range wins), else apply single date if provided
-        LocalDate from =
-                (dateFrom == null || dateFrom.isBlank()) ? null : LocalDate.parse(dateFrom);
-        LocalDate to = (dateTo == null || dateTo.isBlank()) ? null : LocalDate.parse(dateTo);
-        if (from != null || to != null || (date != null && !date.isBlank())) {
+        // Apply date/range filter (requestedAt). Range wins, and if from>to we swap (policy).
+        LocalDate from = null;
+        LocalDate to = null;
+        try {
+            from = (dateFrom == null || dateFrom.isBlank()) ? null : LocalDate.parse(dateFrom);
+            to = (dateTo == null || dateTo.isBlank()) ? null : LocalDate.parse(dateTo);
             if (from == null && to == null && date != null && !date.isBlank()) {
                 var d = LocalDate.parse(date);
                 from = d;
                 to = d;
             }
+            if (from != null && to != null && to.isBefore(from)) {
+                var tmp = from; from = to; to = tmp; // swap by policy
+            }
+        } catch (Exception e) {
+            throw new com.gearfirst.warehouse.common.exception.BadRequestException(
+                    com.gearfirst.warehouse.common.response.ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
+        }
+        if (from != null || to != null) {
             final LocalDate fFrom = from;
             final LocalDate fTo = to;
             list = list.stream().filter(it -> {
@@ -232,14 +241,11 @@ public class ShippingController {
                 }
                 LocalDate d;
                 try {
-                    d = (ra.length() > 10) ? OffsetDateTime.parse(ra).toLocalDate()
-                            : LocalDate.parse(ra);
+                    d = (ra.length() > 10) ? OffsetDateTime.parse(ra).toLocalDate() : LocalDate.parse(ra);
                 } catch (Exception e) {
                     return false;
                 }
-                if (fFrom != null && d.isBefore(fFrom)) {
-                    return false;
-                }
+                if (fFrom != null && d.isBefore(fFrom)) return false;
                 return fTo == null || !d.isAfter(fTo);
             }).toList();
         }
