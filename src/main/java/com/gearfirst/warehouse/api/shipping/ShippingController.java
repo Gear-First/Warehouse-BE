@@ -18,6 +18,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +41,7 @@ public class ShippingController {
 
     private final ShippingService service;
 
-    @Operation(summary = "출고 예정 리스트 조회", description = "출고 예정된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseCode(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc. 날짜 필터는 requestedAt 기준이며 UTC, 경계 포함. 통합 엔드포인트(/notes) 사용을 권장합니다.")
+    @Operation(summary = "출고 예정 리스트 조회", description = "출고 예정된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseCode(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc. 날짜 필터는 requestedAt 기준이며 KST(+09:00) 로컬일을 UTC 경계로 변환해 포함 범위로 처리합니다. 통합 엔드포인트(/notes) 사용을 권장합니다.")
     @Parameters({
             @Parameter(name = "date", description = "단일 날짜(YYYY-MM-DD) — requestedAt 기준"),
             @Parameter(name = "warehouseCode", description = "창고 코드(예: 서울)"),
@@ -66,7 +68,7 @@ public class ShippingController {
                 ? service.getNotDone(date)
                 : service.getNotDone(date, warehouseCode);
         var sorted = all.stream()
-                .sorted(Comparator.comparing(ShippingNoteSummaryResponse::noteId))
+                .sorted(Comparator.comparing(ShippingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
                 .toList();
         long total = sorted.size();
         int from = Math.min(p * s, (int) total);
@@ -102,7 +104,7 @@ public class ShippingController {
                 ? service.getDone(date)
                 : service.getDone(date, warehouseCode);
         var sorted = all.stream()
-                .sorted(comparing(ShippingNoteSummaryResponse::noteId))
+                .sorted(Comparator.comparing(ShippingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
                 .toList();
         long total = sorted.size();
         int from = Math.min(p * s, (int) total);
@@ -187,11 +189,11 @@ public class ShippingController {
             @RequestParam(required = false) String warehouseCode,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) java.util.List<String> sort
+            @RequestParam(required = false) List<String> sort
     ) {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
-        java.util.List<ShippingNoteSummaryResponse> list;
+        List<ShippingNoteSummaryResponse> list;
         switch (status == null ? "not-done" : status.toLowerCase(java.util.Locale.ROOT)) {
             case "done" -> list = (warehouseCode == null || warehouseCode.isBlank())
                     ? service.getDone(date)
@@ -212,26 +214,26 @@ public class ShippingController {
                     : service.getNotDone(date, warehouseCode);
         }
         // Apply date range filter (requestedAt) if dateFrom/dateTo provided (range wins), else apply single date if provided
-        java.time.LocalDate from =
-                (dateFrom == null || dateFrom.isBlank()) ? null : java.time.LocalDate.parse(dateFrom);
-        java.time.LocalDate to = (dateTo == null || dateTo.isBlank()) ? null : java.time.LocalDate.parse(dateTo);
+        LocalDate from =
+                (dateFrom == null || dateFrom.isBlank()) ? null : LocalDate.parse(dateFrom);
+        LocalDate to = (dateTo == null || dateTo.isBlank()) ? null : LocalDate.parse(dateTo);
         if (from != null || to != null || (date != null && !date.isBlank())) {
             if (from == null && to == null && date != null && !date.isBlank()) {
-                var d = java.time.LocalDate.parse(date);
+                var d = LocalDate.parse(date);
                 from = d;
                 to = d;
             }
-            final java.time.LocalDate fFrom = from;
-            final java.time.LocalDate fTo = to;
+            final LocalDate fFrom = from;
+            final LocalDate fTo = to;
             list = list.stream().filter(it -> {
                 String ra = it.requestedAt();
                 if (ra == null || ra.isBlank()) {
                     return false;
                 }
-                java.time.LocalDate d;
+                LocalDate d;
                 try {
-                    d = (ra.length() > 10) ? java.time.OffsetDateTime.parse(ra).toLocalDate()
-                            : java.time.LocalDate.parse(ra);
+                    d = (ra.length() > 10) ? OffsetDateTime.parse(ra).toLocalDate()
+                            : LocalDate.parse(ra);
                 } catch (Exception e) {
                     return false;
                 }
@@ -241,7 +243,9 @@ public class ShippingController {
                 return fTo == null || !d.isAfter(fTo);
             }).toList();
         }
-        var sorted = list.stream().sorted(java.util.Comparator.comparing(ShippingNoteSummaryResponse::noteId)).toList();
+        var sorted = list.stream()
+                .sorted(Comparator.comparing(ShippingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
+                .toList();
         long total = sorted.size();
         int fromIdx = Math.min(p * s, (int) total);
         int toIdx = Math.min(fromIdx + s, (int) total);

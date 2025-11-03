@@ -22,6 +22,7 @@ import com.gearfirst.warehouse.common.exception.NotFoundException;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
 import com.gearfirst.warehouse.common.sequence.NoteNumberGenerator;
+import com.gearfirst.warehouse.common.util.DateTimes;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -177,7 +178,7 @@ public class ShippingServiceImpl implements ShippingService {
         String completedAt = note.getCompletedAt();
         if (hasShortage) {
             newStatus = NoteStatus.DELAYED;
-            completedAt = OffsetDateTime.now(ZoneOffset.UTC).toString();
+            completedAt = DateTimes.toKstString(OffsetDateTime.now(ZoneOffset.UTC));
         } else if (newStatus == NoteStatus.PENDING) {
             newStatus = NoteStatus.IN_PROGRESS;
         }
@@ -221,7 +222,7 @@ public class ShippingServiceImpl implements ShippingService {
         }
 
         var finalStatus = hasShortage ? NoteStatus.DELAYED : NoteStatus.COMPLETED;
-        var completedAt = OffsetDateTime.now(ZoneOffset.UTC).toString();
+        var completedAt = DateTimes.toKstString(OffsetDateTime.now(ZoneOffset.UTC));
 
         // If completing, apply inventory decreases based on shippedQty (=pickedQty) per READY line
         int totalShipped = 0;

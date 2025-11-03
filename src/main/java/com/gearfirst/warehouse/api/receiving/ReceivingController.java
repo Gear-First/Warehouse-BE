@@ -17,7 +17,9 @@ import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import java.util.Comparator;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -73,7 +75,7 @@ public class ReceivingController {
         return CommonApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_LIST_SUCCESS, envelope);
     }
 
-    @Operation(summary = "입고 완료 리스트 조회", description = "입고 완료된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseCode(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc. 날짜 필터는 requestedAt 기준이며, dateFrom/dateTo가 있을 경우 범위가 단일 값보다 우선합니다(UTC, 경계 포함).")
+    @Operation(summary = "입고 완료 리스트 조회", description = "입고 완료된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseCode(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc. 날짜 필터는 requestedAt 기준이며, dateFrom/dateTo가 있을 경우 범위가 단일 값보다 우선합니다(KST(+09:00) 로컬일을 UTC 경계로 변환해 포함 범위로 처리)." )
     @Parameters({
             @Parameter(name = "date", description = "단일 날짜(YYYY-MM-DD) — requestedAt 기준"),
             @Parameter(name = "warehouseCode", description = "창고 코드(예: 서울)"),
@@ -190,7 +192,7 @@ public class ReceivingController {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
         java.util.List<ReceivingNoteSummaryResponse> list;
-        switch (status == null ? "not-done" : status.toLowerCase(java.util.Locale.ROOT)) {
+        switch (status == null ? "not-done" : status.toLowerCase(Locale.ROOT)) {
             case "done" -> list = (warehouseCode == null || warehouseCode.isBlank())
                     ? service.getDone(date)
                     : service.getDone(date, warehouseCode);
@@ -210,28 +212,28 @@ public class ReceivingController {
                     : service.getNotDone(date, warehouseCode);
         }
         // Apply date range filter (requestedAt) if dateFrom/dateTo provided (range wins), else apply single date if provided
-        java.time.LocalDate from =
-                (dateFrom == null || dateFrom.isBlank()) ? null : java.time.LocalDate.parse(dateFrom);
-        java.time.LocalDate to = (dateTo == null || dateTo.isBlank()) ? null : java.time.LocalDate.parse(dateTo);
+        LocalDate from =
+                (dateFrom == null || dateFrom.isBlank()) ? null : LocalDate.parse(dateFrom);
+        LocalDate to = (dateTo == null || dateTo.isBlank()) ? null : LocalDate.parse(dateTo);
         if (from != null || to != null || (date != null && !date.isBlank())) {
             if (from == null && to == null && date != null && !date.isBlank()) {
-                var d = java.time.LocalDate.parse(date);
+                var d = LocalDate.parse(date);
                 from = d;
                 to = d;
             }
-            final java.time.LocalDate fFrom = from;
-            final java.time.LocalDate fTo = to;
+            final LocalDate fFrom = from;
+            final LocalDate fTo = to;
             list = list.stream().filter(it -> {
                 String ra = it.requestedAt();
                 if (ra == null || ra.isBlank()) {
                     return false;
                 }
-                java.time.LocalDate d;
+                LocalDate d;
                 try {
                     if (ra.length() > 10) {
                         d = java.time.OffsetDateTime.parse(ra).toLocalDate();
                     } else {
-                        d = java.time.LocalDate.parse(ra);
+                        d = LocalDate.parse(ra);
                     }
                 } catch (Exception e) {
                     return false;
