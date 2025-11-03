@@ -8,7 +8,9 @@ import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteDetailResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteSummaryResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingUpdateLineRequest;
 import com.gearfirst.warehouse.api.shipping.service.ShippingService;
+import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.common.response.CommonApiResponse;
+import com.gearfirst.warehouse.common.response.ErrorStatus;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
 import io.swagger.v3.oas.annotations.Operation;
@@ -56,6 +58,8 @@ public class ShippingController {
     @GetMapping("/not-done")
     public ResponseEntity<CommonApiResponse<PageEnvelope<ShippingNoteSummaryResponse>>> getPendingNotes(
             @RequestParam(required = false) String date,
+            @RequestParam(required = false) String dateFrom,
+            @RequestParam(required = false) String dateTo,
             @RequestParam(required = false) String warehouseCode,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -64,9 +68,30 @@ public class ShippingController {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
 
-        var all = (warehouseCode == null)
-                ? service.getNotDone(date)
-                : service.getNotDone(date, warehouseCode);
+        // Validate and normalize dates (range wins; swap when from>to)
+        LocalDate fromLd = null;
+        LocalDate toLd = null;
+        try {
+            fromLd = (dateFrom == null || dateFrom.isBlank()) ? null : LocalDate.parse(dateFrom);
+            toLd = (dateTo == null || dateTo.isBlank()) ? null : LocalDate.parse(dateTo);
+            if (fromLd == null && toLd == null && date != null && !date.isBlank()) {
+                var d = LocalDate.parse(date);
+                fromLd = d;
+                toLd = d;
+            }
+            if (fromLd != null && toLd != null && toLd.isBefore(fromLd)) {
+                var tmp = fromLd; fromLd = toLd; toLd = tmp;
+            }
+        } catch (Exception e) {
+            throw new BadRequestException(
+                    ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
+        }
+        List<ShippingNoteSummaryResponse> all;
+        if ((fromLd == null && toLd == null) && (warehouseCode == null || warehouseCode.isBlank())) {
+            all = service.getNotDone(date);
+        } else {
+            all = service.getNotDone(date, fromLd == null ? null : fromLd.toString(), toLd == null ? null : toLd.toString(), warehouseCode);
+        }
         var sorted = all.stream()
                 .sorted(Comparator.comparing(ShippingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
                 .toList();
@@ -80,6 +105,8 @@ public class ShippingController {
     @Operation(summary = "출고 완료/지연 리스트 조회", description = "출고 완료 또는 지연된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 기본 정렬: noteId asc. 날짜 필터는 requestedAt 기준이며 KST(+09:00) 로컬일을 UTC 경계로 변환해 포함 범위로 처리합니다.")
     @Parameters({
             @Parameter(name = "date", description = "단일 날짜(YYYY-MM-DD) — requestedAt 기준"),
+            @Parameter(name = "dateFrom", description = "시작일(YYYY-MM-DD, KST 로컬일) — 범위가 단일보다 우선"),
+            @Parameter(name = "dateTo", description = "종료일(YYYY-MM-DD, KST 로컬일) — 경계 포함"),
             @Parameter(name = "warehouseCode", description = "창고 코드(예: 서울)"),
             @Parameter(name = "page", description = "페이지(기본 0, 최소 0)"),
             @Parameter(name = "size", description = "페이지 크기(기본 20, 1..100)"),
@@ -92,6 +119,8 @@ public class ShippingController {
     @GetMapping("/done")
     public ResponseEntity<CommonApiResponse<PageEnvelope<ShippingNoteSummaryResponse>>> getCompletedNotes(
             @RequestParam(required = false) String date,
+            @RequestParam(required = false) String dateFrom,
+            @RequestParam(required = false) String dateTo,
             @RequestParam(required = false) String warehouseCode,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -100,9 +129,30 @@ public class ShippingController {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
 
-        var all = (warehouseCode == null)
-                ? service.getDone(date)
-                : service.getDone(date, warehouseCode);
+        // Validate and normalize dates (range wins; swap when from>to)
+        LocalDate fromLd = null;
+        LocalDate toLd = null;
+        try {
+            fromLd = (dateFrom == null || dateFrom.isBlank()) ? null : LocalDate.parse(dateFrom);
+            toLd = (dateTo == null || dateTo.isBlank()) ? null : LocalDate.parse(dateTo);
+            if (fromLd == null && toLd == null && date != null && !date.isBlank()) {
+                var d = LocalDate.parse(date);
+                fromLd = d;
+                toLd = d;
+            }
+            if (fromLd != null && toLd != null && toLd.isBefore(fromLd)) {
+                var tmp = fromLd; fromLd = toLd; toLd = tmp;
+            }
+        } catch (Exception e) {
+            throw new BadRequestException(
+                    ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
+        }
+        List<ShippingNoteSummaryResponse> all;
+        if ((fromLd == null && toLd == null) && (warehouseCode == null || warehouseCode.isBlank())) {
+            all = service.getDone(date);
+        } else {
+            all = service.getDone(date, fromLd == null ? null : fromLd.toString(), toLd == null ? null : toLd.toString(), warehouseCode);
+        }
         var sorted = all.stream()
                 .sorted(Comparator.comparing(ShippingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
                 .toList();
@@ -193,62 +243,65 @@ public class ShippingController {
     ) {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
-        List<ShippingNoteSummaryResponse> list;
-        switch (status == null ? "not-done" : status.toLowerCase(java.util.Locale.ROOT)) {
-            case "done" -> list = (warehouseCode == null || warehouseCode.isBlank())
-                    ? service.getDone(date)
-                    : service.getDone(date, warehouseCode);
-            case "all" -> {
-                var nd = (warehouseCode == null || warehouseCode.isBlank())
-                        ? service.getNotDone(date)
-                        : service.getNotDone(date, warehouseCode);
-                var dn = (warehouseCode == null || warehouseCode.isBlank())
-                        ? service.getDone(date)
-                        : service.getDone(date, warehouseCode);
-                list = new java.util.ArrayList<>(nd.size() + dn.size());
-                list.addAll(nd);
-                list.addAll(dn);
-            }
-            default -> list = (warehouseCode == null || warehouseCode.isBlank())
-                    ? service.getNotDone(date)
-                    : service.getNotDone(date, warehouseCode);
-        }
-        // Apply date/range filter (requestedAt). Range wins, and if from>to we swap (policy).
-        LocalDate from = null;
-        LocalDate to = null;
+
+        // Validate and normalize dates (range wins; swap when from>to)
+        LocalDate fromLd = null;
+        LocalDate toLd = null;
         try {
-            from = (dateFrom == null || dateFrom.isBlank()) ? null : LocalDate.parse(dateFrom);
-            to = (dateTo == null || dateTo.isBlank()) ? null : LocalDate.parse(dateTo);
-            if (from == null && to == null && date != null && !date.isBlank()) {
+            fromLd = (dateFrom == null || dateFrom.isBlank()) ? null : LocalDate.parse(dateFrom);
+            toLd = (dateTo == null || dateTo.isBlank()) ? null : LocalDate.parse(dateTo);
+            if (fromLd == null && toLd == null && date != null && !date.isBlank()) {
                 var d = LocalDate.parse(date);
-                from = d;
-                to = d;
+                fromLd = d;
+                toLd = d;
             }
-            if (from != null && to != null && to.isBefore(from)) {
-                var tmp = from; from = to; to = tmp; // swap by policy
+            if (fromLd != null && toLd != null && toLd.isBefore(fromLd)) {
+                var tmp = fromLd; fromLd = toLd; toLd = tmp;
             }
         } catch (Exception e) {
-            throw new com.gearfirst.warehouse.common.exception.BadRequestException(
-                    com.gearfirst.warehouse.common.response.ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
+            throw new BadRequestException(ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
         }
-        if (from != null || to != null) {
-            final LocalDate fFrom = from;
-            final LocalDate fTo = to;
-            list = list.stream().filter(it -> {
-                String ra = it.requestedAt();
-                if (ra == null || ra.isBlank()) {
-                    return false;
+
+        boolean hasFilters = (fromLd != null || toLd != null) || (warehouseCode != null && !warehouseCode.isBlank());
+        String df = fromLd == null ? null : fromLd.toString();
+        String dt = toLd == null ? null : toLd.toString();
+
+        List<ShippingNoteSummaryResponse> list;
+        String statusNormalized = (status == null ? "not-done" : status.toLowerCase(java.util.Locale.ROOT));
+        if (!hasFilters) {
+            switch (statusNormalized) {
+                case "done" -> list = (warehouseCode == null || warehouseCode.isBlank())
+                        ? service.getDone(date)
+                        : service.getDone(date, warehouseCode);
+                case "all" -> {
+                    var nd = (warehouseCode == null || warehouseCode.isBlank())
+                            ? service.getNotDone(date)
+                            : service.getNotDone(date, warehouseCode);
+                    var dn = (warehouseCode == null || warehouseCode.isBlank())
+                            ? service.getDone(date)
+                            : service.getDone(date, warehouseCode);
+                    list = new java.util.ArrayList<>(nd.size() + dn.size());
+                    list.addAll(nd);
+                    list.addAll(dn);
                 }
-                LocalDate d;
-                try {
-                    d = (ra.length() > 10) ? OffsetDateTime.parse(ra).toLocalDate() : LocalDate.parse(ra);
-                } catch (Exception e) {
-                    return false;
+                default -> list = (warehouseCode == null || warehouseCode.isBlank())
+                        ? service.getNotDone(date)
+                        : service.getNotDone(date, warehouseCode);
+            }
+        } else {
+            switch (statusNormalized) {
+                case "done" -> list = service.getDone(date, df, dt, warehouseCode);
+                case "all" -> {
+                    var nd = service.getNotDone(date, df, dt, warehouseCode);
+                    var dn = service.getDone(date, df, dt, warehouseCode);
+                    list = new java.util.ArrayList<>(nd.size() + dn.size());
+                    list.addAll(nd);
+                    list.addAll(dn);
                 }
-                if (fFrom != null && d.isBefore(fFrom)) return false;
-                return fTo == null || !d.isAfter(fTo);
-            }).toList();
+                default -> list = service.getNotDone(date, df, dt, warehouseCode);
+            }
         }
+
         var sorted = list.stream()
                 .sorted(Comparator.comparing(ShippingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
                 .toList();

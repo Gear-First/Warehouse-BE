@@ -27,12 +27,10 @@ public interface ReceivingService {
         return list; // impl override will handle id-based filtering when available
     }
 
-//    // Overloads with warehouseCode (string) used by controllers
-//    default List<ReceivingNoteSummaryResponse> getNotDone(String date, String warehouseCode) {
-//        // By default, ignore code and return the same list; impls may override for filtering
-//        return getNotDone(date);
-//    }
+    // New overloads for centralized filtering (range > single) and optional warehouse filter
+    List<ReceivingNoteSummaryResponse> getNotDone(String date, String dateFrom, String dateTo, String warehouseCode);
 
+    List<ReceivingNoteSummaryResponse> getDone(String date, String dateFrom, String dateTo, String warehouseCode);
 
     ReceivingNoteDetailResponse getDetail(Long noteId);
 

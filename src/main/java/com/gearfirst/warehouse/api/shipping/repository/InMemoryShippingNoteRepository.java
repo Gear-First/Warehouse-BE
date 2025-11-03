@@ -98,9 +98,27 @@ public class InMemoryShippingNoteRepository implements ShippingNoteRepository {
     }
 
     @Override
+    public List<ShippingNote> findNotDone(String date, String dateFrom, String dateTo, String warehouseCode) {
+        return NOTES.values().stream()
+                .filter(n -> n.getStatus() != NoteStatus.COMPLETED && n.getStatus() != NoteStatus.DELAYED)
+                .filter(n -> warehouseCode == null || warehouseCode.isBlank() || java.util.Objects.equals(warehouseCode, n.getWarehouseCode()))
+                .sorted(Comparator.comparing(ShippingNote::getNoteId))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<ShippingNote> findDone(String date) {
         return NOTES.values().stream()
                 .filter(n -> n.getStatus() == NoteStatus.COMPLETED || n.getStatus() == NoteStatus.DELAYED)
+                .sorted(Comparator.comparing(ShippingNote::getNoteId))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ShippingNote> findDone(String date, String dateFrom, String dateTo, String warehouseCode) {
+        return NOTES.values().stream()
+                .filter(n -> n.getStatus() == NoteStatus.COMPLETED || n.getStatus() == NoteStatus.DELAYED)
+                .filter(n -> warehouseCode == null || warehouseCode.isBlank() || java.util.Objects.equals(warehouseCode, n.getWarehouseCode()))
                 .sorted(Comparator.comparing(ShippingNote::getNoteId))
                 .collect(Collectors.toList());
     }

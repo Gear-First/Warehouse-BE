@@ -21,7 +21,7 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
     @Override
     public List<ShippingNote> findNotDone(String date) {
         var notDone = jpaRepository.findAllByStatusNotIn(List.of(NoteStatus.COMPLETED, NoteStatus.DELAYED));
-        // Optional date filter (yyyy-MM-dd) on createdAt; ignore if parsing fails or createdAt is null
+        // Optional single-day filter (yyyy-MM-dd) on requestedAt; ignore if parsing fails
         if (date != null && !date.isBlank()) {
             try {
                 var target = java.time.LocalDate.parse(date);
@@ -34,6 +34,36 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
             } catch (Exception ignored) { /* keep unfiltered on parse error */ }
         }
         return notDone.stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public List<ShippingNote> findNotDone(String date, String dateFrom, String dateTo, String warehouseCode) {
+        var list = jpaRepository.findAllByStatusNotIn(List.of(NoteStatus.COMPLETED, NoteStatus.DELAYED));
+        // Range has precedence
+        java.time.LocalDate from = null;
+        java.time.LocalDate to = null;
+        try {
+            from = (dateFrom == null || dateFrom.isBlank()) ? null : java.time.LocalDate.parse(dateFrom);
+            to = (dateTo == null || dateTo.isBlank()) ? null : java.time.LocalDate.parse(dateTo);
+            if (from == null && to == null && date != null && !date.isBlank()) {
+                var d = java.time.LocalDate.parse(date);
+                from = d; to = d;
+            }
+        } catch (Exception ignored) { /* keep as is when parse fails */ }
+        if (from != null || to != null) {
+            var bounds = DateTimes.kstRangeBounds(from, to);
+            var fromUtc = bounds.fromInclusive();
+            var toUtc = bounds.toInclusive();
+            list = list.stream()
+                    .filter(e -> e.getRequestedAt() != null
+                            && (!e.getRequestedAt().isBefore(fromUtc) && !e.getRequestedAt().isAfter(toUtc)))
+                    .toList();
+        }
+        if (warehouseCode != null && !warehouseCode.isBlank()) {
+            final String wc = warehouseCode;
+            list = list.stream().filter(e -> java.util.Objects.equals(wc, e.getWarehouseCode())).toList();
+        }
+        return list.stream().map(this::toDomain).toList();
     }
 
     @Override
@@ -52,6 +82,35 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
             }
         }
         return done.stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public List<ShippingNote> findDone(String date, String dateFrom, String dateTo, String warehouseCode) {
+        var list = jpaRepository.findAllByStatusIn(List.of(NoteStatus.COMPLETED, NoteStatus.DELAYED));
+        java.time.LocalDate from = null;
+        java.time.LocalDate to = null;
+        try {
+            from = (dateFrom == null || dateFrom.isBlank()) ? null : java.time.LocalDate.parse(dateFrom);
+            to = (dateTo == null || dateTo.isBlank()) ? null : java.time.LocalDate.parse(dateTo);
+            if (from == null && to == null && date != null && !date.isBlank()) {
+                var d = java.time.LocalDate.parse(date);
+                from = d; to = d;
+            }
+        } catch (Exception ignored) { }
+        if (from != null || to != null) {
+            var bounds = DateTimes.kstRangeBounds(from, to);
+            var fromUtc = bounds.fromInclusive();
+            var toUtc = bounds.toInclusive();
+            list = list.stream()
+                    .filter(e -> e.getRequestedAt() != null
+                            && (!e.getRequestedAt().isBefore(fromUtc) && !e.getRequestedAt().isAfter(toUtc)))
+                    .toList();
+        }
+        if (warehouseCode != null && !warehouseCode.isBlank()) {
+            final String wc = warehouseCode;
+            list = list.stream().filter(e -> java.util.Objects.equals(wc, e.getWarehouseCode())).toList();
+        }
+        return list.stream().map(this::toDomain).toList();
     }
 
     @Override

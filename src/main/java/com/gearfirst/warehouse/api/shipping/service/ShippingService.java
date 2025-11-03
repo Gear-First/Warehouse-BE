@@ -29,6 +29,11 @@ public interface ShippingService {
         return list; // impl override will handle
     }
 
+    // New overloads for centralized filtering (range > single) and optional warehouse filter
+    List<ShippingNoteSummaryResponse> getNotDone(String date, String dateFrom, String dateTo, String warehouseCode);
+
+    List<ShippingNoteSummaryResponse> getDone(String date, String dateFrom, String dateTo, String warehouseCode);
+
     ShippingNoteDetailResponse getDetail(Long noteId);
 
     ShippingNoteDetailResponse updateLine(Long noteId, Long lineId, ShippingUpdateLineRequest request);

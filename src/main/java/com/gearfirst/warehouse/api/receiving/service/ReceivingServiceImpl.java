@@ -80,6 +80,24 @@ public class ReceivingServiceImpl implements ReceivingService {
     }
 
     @Override
+    public List<ReceivingNoteSummaryResponse> getNotDone(String date, String dateFrom, String dateTo, String warehouseCode) {
+        var list = repository.findNotDone(date, dateFrom, dateTo, warehouseCode);
+        return list.stream()
+                .sorted(Comparator.comparing(ReceivingNoteEntity::getNoteId, Comparator.nullsLast(Long::compareTo)))
+                .map(this::toSummary)
+                .toList();
+    }
+
+    @Override
+    public List<ReceivingNoteSummaryResponse> getDone(String date, String dateFrom, String dateTo, String warehouseCode) {
+        var list = repository.findDone(date, dateFrom, dateTo, warehouseCode);
+        return list.stream()
+                .sorted(Comparator.comparing(ReceivingNoteEntity::getNoteId, Comparator.nullsLast(Long::compareTo)))
+                .map(this::toSummary)
+                .toList();
+    }
+
+    @Override
     public ReceivingNoteDetailResponse getDetail(Long noteId) {
         var note = repository.findById(noteId)
                 .orElseThrow(() -> new NotFoundException("Receiving note not found: " + noteId));

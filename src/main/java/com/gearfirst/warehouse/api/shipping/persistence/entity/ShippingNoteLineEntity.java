@@ -46,4 +46,5 @@ public class ShippingNoteLineEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "note_id")
     private ShippingNoteEntity note;
+    private String remark;
 }

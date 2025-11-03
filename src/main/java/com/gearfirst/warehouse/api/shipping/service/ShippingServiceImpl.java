@@ -98,6 +98,22 @@ public class ShippingServiceImpl implements ShippingService {
                 .toList();
     }
 
+    @Override
+    public List<ShippingNoteSummaryResponse> getNotDone(String date, String dateFrom, String dateTo, String warehouseCode) {
+        return repository.findNotDone(date, dateFrom, dateTo, warehouseCode).stream()
+                .sorted(Comparator.comparing(ShippingNote::getNoteId, Comparator.nullsLast(Long::compareTo)))
+                .map(this::toSummary)
+                .toList();
+    }
+
+    @Override
+    public List<ShippingNoteSummaryResponse> getDone(String date, String dateFrom, String dateTo, String warehouseCode) {
+        return repository.findDone(date, dateFrom, dateTo, warehouseCode).stream()
+                .sorted(Comparator.comparing(ShippingNote::getNoteId, Comparator.nullsLast(Long::compareTo)))
+                .map(this::toSummary)
+                .toList();
+    }
+
     // Overload with optional warehouse filter (warehouseCode)
     public List<ShippingNoteSummaryResponse> getDone(String date, String warehouseCode) {
         var notes = repository.findDone(date);

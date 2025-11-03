@@ -13,6 +13,11 @@ public interface ReceivingNoteRepository {
 
     List<ReceivingNoteEntity> findDone(String date);
 
+    // New overloads: centralized filtering (range > single) and optional warehouseCode filter
+    List<ReceivingNoteEntity> findNotDone(String date, String dateFrom, String dateTo, String warehouseCode);
+
+    List<ReceivingNoteEntity> findDone(String date, String dateFrom, String dateTo, String warehouseCode);
+
     Optional<ReceivingNoteEntity> findById(Long noteId);
 
     ReceivingNoteEntity save(ReceivingNoteEntity entity);

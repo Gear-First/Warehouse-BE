@@ -22,6 +22,7 @@ import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -64,14 +65,11 @@ public class ReceivingController {
             @RequestParam(required = false) String warehouseCode,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) java.util.List<String> sort
+            @RequestParam(required = false) List<String> sort
     ) {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
-        var list = (warehouseCode == null || warehouseCode.isBlank())
-                ? service.getNotDone(date)
-                : service.getNotDone(date, warehouseCode);
-        // Apply date/range filter (requestedAt). Range wins, and if from>to we swap (policy). Parse errors -> 400.
+        // Validate and normalize date params (range wins; swap when from>to)
         LocalDate fromLd = null;
         LocalDate toLd = null;
         try {
@@ -89,19 +87,11 @@ public class ReceivingController {
             throw new com.gearfirst.warehouse.common.exception.BadRequestException(
                     com.gearfirst.warehouse.common.response.ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
         }
-        if (fromLd != null || toLd != null) {
-            final LocalDate fFrom = fromLd;
-            final LocalDate fTo = toLd;
-            list = list.stream().filter(it -> {
-                String ra = it.requestedAt();
-                if (ra == null || ra.isBlank()) return false;
-                LocalDate d;
-                try {
-                    d = (ra.length() > 10) ? java.time.OffsetDateTime.parse(ra).toLocalDate() : LocalDate.parse(ra);
-                } catch (Exception e) { return false; }
-                if (fFrom != null && d.isBefore(fFrom)) return false;
-                return fTo == null || !d.isAfter(fTo);
-            }).toList();
+        java.util.List<com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteSummaryResponse> list;
+        if ((fromLd == null && toLd == null) && (warehouseCode == null || warehouseCode.isBlank())) {
+            list = service.getNotDone(date);
+        } else {
+            list = service.getNotDone(date, fromLd == null ? null : fromLd.toString(), toLd == null ? null : toLd.toString(), warehouseCode);
         }
         var sorted = list.stream()
                 .sorted(Comparator.comparing(ReceivingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
@@ -135,14 +125,12 @@ public class ReceivingController {
             @RequestParam(required = false) String warehouseCode,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) java.util.List<String> sort
+            @RequestParam(required = false) List<String> sort
     ) {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
-        var list = (warehouseCode == null || warehouseCode.isBlank())
-                ? service.getDone(date)
-                : service.getDone(date, warehouseCode);
-        // Apply date/range filter (requestedAt). Range wins, and if from>to we swap (policy). Parse errors -> 400.
+
+        // Validate and normalize dates (range wins; swap when from>to). Parse errors -> 400.
         LocalDate fromLd = null;
         LocalDate toLd = null;
         try {
@@ -157,23 +145,17 @@ public class ReceivingController {
                 var tmp = fromLd; fromLd = toLd; toLd = tmp;
             }
         } catch (Exception e) {
-            throw new com.gearfirst.warehouse.common.exception.BadRequestException(
-                    com.gearfirst.warehouse.common.response.ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
+            throw new BadRequestException(ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
         }
-        if (fromLd != null || toLd != null) {
-            final LocalDate fFrom = fromLd;
-            final LocalDate fTo = toLd;
-            list = list.stream().filter(it -> {
-                String ra = it.requestedAt();
-                if (ra == null || ra.isBlank()) return false;
-                LocalDate d;
-                try {
-                    d = (ra.length() > 10) ? java.time.OffsetDateTime.parse(ra).toLocalDate() : LocalDate.parse(ra);
-                } catch (Exception e) { return false; }
-                if (fFrom != null && d.isBefore(fFrom)) return false;
-                return fTo == null || !d.isAfter(fTo);
-            }).toList();
+
+        List<ReceivingNoteSummaryResponse> list;
+        boolean noFilters = (fromLd == null && toLd == null) && (warehouseCode == null || warehouseCode.isBlank());
+        if (noFilters) {
+            list = service.getDone(date);
+        } else {
+            list = service.getDone(date, fromLd == null ? null : fromLd.toString(), toLd == null ? null : toLd.toString(), warehouseCode);
         }
+
         // 기본 정렬: noteId asc (null-safe)
         var sorted = list.stream()
                 .sorted(Comparator.comparing(ReceivingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
@@ -261,67 +243,67 @@ public class ReceivingController {
             @RequestParam(required = false) String warehouseCode,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) java.util.List<String> sort
+            @RequestParam(required = false) List<String> sort
     ) {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
-        java.util.List<ReceivingNoteSummaryResponse> list;
-        switch (status == null ? "not-done" : status.toLowerCase(Locale.ROOT)) {
-            case "done" -> list = (warehouseCode == null || warehouseCode.isBlank())
-                    ? service.getDone(date)
-                    : service.getDone(date, warehouseCode);
-            case "all" -> {
-                var nd = (warehouseCode == null || warehouseCode.isBlank())
-                        ? service.getNotDone(date)
-                        : service.getNotDone(date, warehouseCode);
-                var dn = (warehouseCode == null || warehouseCode.isBlank())
-                        ? service.getDone(date)
-                        : service.getDone(date, warehouseCode);
-                list = new java.util.ArrayList<>(nd.size() + dn.size());
-                list.addAll(nd);
-                list.addAll(dn);
-            }
-            default -> list = (warehouseCode == null || warehouseCode.isBlank())
-                    ? service.getNotDone(date)
-                    : service.getNotDone(date, warehouseCode);
-        }
-        // Apply date/range filter (requestedAt). Range wins, and if from>to we swap (policy). Parse errors -> 400.
-        LocalDate from = null;
-        LocalDate to = null;
+        List<ReceivingNoteSummaryResponse> list;
+        // Validate and normalize dates (range wins; swap when from>to)
+        LocalDate fromLd = null;
+        LocalDate toLd = null;
         try {
-            from = (dateFrom == null || dateFrom.isBlank()) ? null : LocalDate.parse(dateFrom);
-            to = (dateTo == null || dateTo.isBlank()) ? null : LocalDate.parse(dateTo);
-            if (from == null && to == null && date != null && !date.isBlank()) {
+            fromLd = (dateFrom == null || dateFrom.isBlank()) ? null : LocalDate.parse(dateFrom);
+            toLd = (dateTo == null || dateTo.isBlank()) ? null : LocalDate.parse(dateTo);
+            if (fromLd == null && toLd == null && date != null && !date.isBlank()) {
                 var d = LocalDate.parse(date);
-                from = d;
-                to = d;
+                fromLd = d;
+                toLd = d;
             }
-            if (from != null && to != null && to.isBefore(from)) {
-                var tmp = from; from = to; to = tmp; // swap by policy
+            if (fromLd != null && toLd != null && toLd.isBefore(fromLd)) {
+                var tmp = fromLd; fromLd = toLd; toLd = tmp;
             }
         } catch (Exception e) {
-            throw new BadRequestException(
-                    ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
+            throw new BadRequestException(ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
         }
-        if (from != null || to != null) {
-            final LocalDate fFrom = from;
-            final LocalDate fTo = to;
-            list = list.stream().filter(it -> {
-                String ra = it.requestedAt();
-                if (ra == null || ra.isBlank()) {
-                    return false;
+        boolean hasFilters = (fromLd != null || toLd != null) || (warehouseCode != null && !warehouseCode.isBlank());
+        String df = fromLd == null ? null : fromLd.toString();
+        String dt = toLd == null ? null : toLd.toString();
+        String statusNormalized = (status == null ? "not-done" : status.toLowerCase(Locale.ROOT));
+        if (!hasFilters) {
+            switch (statusNormalized) {
+                case "done" -> list = (warehouseCode == null || warehouseCode.isBlank())
+                        ? service.getDone(date)
+                        : service.getDone(date, warehouseCode);
+                case "all" -> {
+                    var nd = (warehouseCode == null || warehouseCode.isBlank())
+                            ? service.getNotDone(date)
+                            : service.getNotDone(date, warehouseCode);
+                    var dn = (warehouseCode == null || warehouseCode.isBlank())
+                            ? service.getDone(date)
+                            : service.getDone(date, warehouseCode);
+                    list = new java.util.ArrayList<>(nd.size() + dn.size());
+                    list.addAll(nd);
+                    list.addAll(dn);
                 }
-                LocalDate d;
-                try {
-                    d = (ra.length() > 10) ? OffsetDateTime.parse(ra).toLocalDate() : LocalDate.parse(ra);
-                } catch (Exception e) {
-                    return false;
+                default -> list = (warehouseCode == null || warehouseCode.isBlank())
+                        ? service.getNotDone(date)
+                        : service.getNotDone(date, warehouseCode);
+            }
+        } else {
+            switch (statusNormalized) {
+                case "done" -> list = service.getDone(date, df, dt, warehouseCode);
+                case "all" -> {
+                    var nd = service.getNotDone(date, df, dt, warehouseCode);
+                    var dn = service.getDone(date, df, dt, warehouseCode);
+                    list = new java.util.ArrayList<>(nd.size() + dn.size());
+                    list.addAll(nd);
+                    list.addAll(dn);
                 }
-                if (fFrom != null && d.isBefore(fFrom)) return false;
-                return fTo == null || !d.isAfter(fTo);
-            }).toList();
+                default -> list = service.getNotDone(date, df, dt, warehouseCode);
+            }
         }
-        var sorted = list.stream().sorted(Comparator.comparing(ReceivingNoteSummaryResponse::noteId))
+        var sorted = list.stream()
+                .sorted(Comparator.comparing(ReceivingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
                 .toList();
         long total = sorted.size();
         int fromIdx = Math.min(p * s, (int) total);
