@@ -24,6 +24,7 @@ import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import com.gearfirst.warehouse.common.util.DateFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -69,29 +70,13 @@ public class ReceivingController {
     ) {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
-        // Validate and normalize date params (range wins; swap when from>to)
-        LocalDate fromLd = null;
-        LocalDate toLd = null;
-        try {
-            fromLd = (dateFrom == null || dateFrom.isBlank()) ? null : LocalDate.parse(dateFrom);
-            toLd = (dateTo == null || dateTo.isBlank()) ? null : LocalDate.parse(dateTo);
-            if (fromLd == null && toLd == null && date != null && !date.isBlank()) {
-                var d = LocalDate.parse(date);
-                fromLd = d;
-                toLd = d;
-            }
-            if (fromLd != null && toLd != null && toLd.isBefore(fromLd)) {
-                var tmp = fromLd; fromLd = toLd; toLd = tmp;
-            }
-        } catch (Exception e) {
-            throw new com.gearfirst.warehouse.common.exception.BadRequestException(
-                    com.gearfirst.warehouse.common.response.ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
-        }
+        // Normalize dates via DateFilter (range wins; swap when from>to)
+        DateFilter.Normalized nf = DateFilter.normalize(date, dateFrom, dateTo);
         java.util.List<com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteSummaryResponse> list;
-        if ((fromLd == null && toLd == null) && (warehouseCode == null || warehouseCode.isBlank())) {
+        if (!nf.hasRange() && (warehouseCode == null || warehouseCode.isBlank())) {
             list = service.getNotDone(date);
         } else {
-            list = service.getNotDone(date, fromLd == null ? null : fromLd.toString(), toLd == null ? null : toLd.toString(), warehouseCode);
+            list = service.getNotDone(date, nf.from(), nf.to(), warehouseCode);
         }
         var sorted = list.stream()
                 .sorted(Comparator.comparing(ReceivingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
@@ -130,30 +115,15 @@ public class ReceivingController {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
 
-        // Validate and normalize dates (range wins; swap when from>to). Parse errors -> 400.
-        LocalDate fromLd = null;
-        LocalDate toLd = null;
-        try {
-            fromLd = (dateFrom == null || dateFrom.isBlank()) ? null : LocalDate.parse(dateFrom);
-            toLd = (dateTo == null || dateTo.isBlank()) ? null : LocalDate.parse(dateTo);
-            if (fromLd == null && toLd == null && date != null && !date.isBlank()) {
-                var d = LocalDate.parse(date);
-                fromLd = d;
-                toLd = d;
-            }
-            if (fromLd != null && toLd != null && toLd.isBefore(fromLd)) {
-                var tmp = fromLd; fromLd = toLd; toLd = tmp;
-            }
-        } catch (Exception e) {
-            throw new BadRequestException(ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
-        }
+        // Normalize dates via DateFilter (range wins; swap when from>to)
+        DateFilter.Normalized nf = DateFilter.normalize(date, dateFrom, dateTo);
 
         List<ReceivingNoteSummaryResponse> list;
-        boolean noFilters = (fromLd == null && toLd == null) && (warehouseCode == null || warehouseCode.isBlank());
+        boolean noFilters = !nf.hasRange() && (warehouseCode == null || warehouseCode.isBlank());
         if (noFilters) {
             list = service.getDone(date);
         } else {
-            list = service.getDone(date, fromLd == null ? null : fromLd.toString(), toLd == null ? null : toLd.toString(), warehouseCode);
+            list = service.getDone(date, nf.from(), nf.to(), warehouseCode);
         }
 
         // 기본 정렬: noteId asc (null-safe)
@@ -248,26 +218,11 @@ public class ReceivingController {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
         List<ReceivingNoteSummaryResponse> list;
-        // Validate and normalize dates (range wins; swap when from>to)
-        LocalDate fromLd = null;
-        LocalDate toLd = null;
-        try {
-            fromLd = (dateFrom == null || dateFrom.isBlank()) ? null : LocalDate.parse(dateFrom);
-            toLd = (dateTo == null || dateTo.isBlank()) ? null : LocalDate.parse(dateTo);
-            if (fromLd == null && toLd == null && date != null && !date.isBlank()) {
-                var d = LocalDate.parse(date);
-                fromLd = d;
-                toLd = d;
-            }
-            if (fromLd != null && toLd != null && toLd.isBefore(fromLd)) {
-                var tmp = fromLd; fromLd = toLd; toLd = tmp;
-            }
-        } catch (Exception e) {
-            throw new BadRequestException(ErrorStatus.VALIDATION_REQUEST_MISSING_EXCEPTION);
-        }
-        boolean hasFilters = (fromLd != null || toLd != null) || (warehouseCode != null && !warehouseCode.isBlank());
-        String df = fromLd == null ? null : fromLd.toString();
-        String dt = toLd == null ? null : toLd.toString();
+        // Normalize dates via DateFilter (range wins; swap when from>to)
+        DateFilter.Normalized nf = DateFilter.normalize(date, dateFrom, dateTo);
+        boolean hasFilters = nf.hasRange() || (warehouseCode != null && !warehouseCode.isBlank());
+        String df = nf.from();
+        String dt = nf.to();
         String statusNormalized = (status == null ? "not-done" : status.toLowerCase(Locale.ROOT));
         if (!hasFilters) {
             switch (statusNormalized) {
