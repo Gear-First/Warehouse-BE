@@ -1,10 +1,22 @@
 package com.gearfirst.warehouse.api.receiving.controller;
 
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gearfirst.warehouse.api.receiving.ReceivingController;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteSummaryResponse;
 import com.gearfirst.warehouse.api.receiving.service.ReceivingService;
-import com.gearfirst.warehouse.common.response.PageEnvelope;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -15,12 +27,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-
-import static org.hamcrest.Matchers.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = ReceivingController.class)
 class ReceivingControllerKstNormalizationTest {
@@ -60,7 +66,8 @@ class ReceivingControllerKstNormalizationTest {
         ArgumentCaptor<String> fromCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> toCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> wcCaptor = ArgumentCaptor.forClass(String.class);
-        verify(receivingService).getNotDone(dateCaptor.capture(), fromCaptor.capture(), toCaptor.capture(), wcCaptor.capture());
+        verify(receivingService).getNotDone(dateCaptor.capture(), fromCaptor.capture(), toCaptor.capture(),
+                wcCaptor.capture());
 
         // date is ignored when range present
         // normalized range swapped: from <= to
@@ -75,7 +82,8 @@ class ReceivingControllerKstNormalizationTest {
     void notDone_singleDate_callsSingleOverload() throws Exception {
         // Arrange
         when(receivingService.getNotDone(anyString())).thenReturn(List.of(
-                new ReceivingNoteSummaryResponse(10L, "IN-001", "ACME", 1, 10, "PENDING", "서울", "2025-11-01T15:00:00Z", null)
+                new ReceivingNoteSummaryResponse(10L, "IN-001", "ACME", 1, 10, "PENDING", "서울", "2025-11-01T15:00:00Z",
+                        null)
         ));
 
         // Act
@@ -109,7 +117,8 @@ class ReceivingControllerKstNormalizationTest {
         ArgumentCaptor<String> fromCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> toCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> wcCaptor = ArgumentCaptor.forClass(String.class);
-        verify(receivingService).getNotDone(dateCaptor.capture(), fromCaptor.capture(), toCaptor.capture(), wcCaptor.capture());
+        verify(receivingService).getNotDone(dateCaptor.capture(), fromCaptor.capture(), toCaptor.capture(),
+                wcCaptor.capture());
         org.junit.jupiter.api.Assertions.assertNull(dateCaptor.getValue());
         org.junit.jupiter.api.Assertions.assertEquals("2025-11-02", fromCaptor.getValue());
         org.junit.jupiter.api.Assertions.assertNull(toCaptor.getValue());
@@ -134,7 +143,8 @@ class ReceivingControllerKstNormalizationTest {
         ArgumentCaptor<String> fromCaptor2 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> toCaptor2 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> wcCaptor2 = ArgumentCaptor.forClass(String.class);
-        verify(receivingService).getNotDone(dateCaptor2.capture(), fromCaptor2.capture(), toCaptor2.capture(), wcCaptor2.capture());
+        verify(receivingService).getNotDone(dateCaptor2.capture(), fromCaptor2.capture(), toCaptor2.capture(),
+                wcCaptor2.capture());
         org.junit.jupiter.api.Assertions.assertNull(dateCaptor2.getValue());
         org.junit.jupiter.api.Assertions.assertNull(fromCaptor2.getValue());
         org.junit.jupiter.api.Assertions.assertEquals("2025-11-03", toCaptor2.getValue());

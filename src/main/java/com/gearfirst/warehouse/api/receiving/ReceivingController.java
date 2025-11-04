@@ -1,7 +1,5 @@
 package com.gearfirst.warehouse.api.receiving;
 
-import static java.util.Comparator.comparing;
-
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingCompleteRequest;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingCompleteResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingCreateNoteRequest;
@@ -9,23 +7,19 @@ import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteDetailResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteSummaryResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingUpdateLineRequest;
 import com.gearfirst.warehouse.api.receiving.service.ReceivingService;
-import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.common.response.CommonApiResponse;
-import com.gearfirst.warehouse.common.response.ErrorStatus;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
+import com.gearfirst.warehouse.common.util.DateFilter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import com.gearfirst.warehouse.common.util.DateFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -80,17 +74,14 @@ public class ReceivingController {
             String dateArg = nf.hasRange() ? null : date;
             list = service.getNotDone(dateArg, nf.from(), nf.to(), warehouseCode);
         }
-        var sorted = list.stream()
-                .sorted(Comparator.comparing(ReceivingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
-                .toList();
-        long total = sorted.size();
+        long total = list.size();
         int from = Math.min(p * s, (int) total);
         int to = Math.min(from + s, (int) total);
-        var envelope = PageEnvelope.of(sorted.subList(from, to), p, s, total);
+        var envelope = PageEnvelope.of(list.subList(from, to), p, s, total);
         return CommonApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_LIST_SUCCESS, envelope);
     }
 
-    @Operation(summary = "입고 완료 리스트 조회", description = "입고 완료된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseCode(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc. 날짜 필터는 requestedAt 기준이며, dateFrom/dateTo가 있을 경우 범위가 단일 값보다 우선합니다(KST(+09:00) 로컬일을 UTC 경계로 변환해 포함 범위로 처리)." )
+    @Operation(summary = "입고 완료 리스트 조회", description = "입고 완료된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseCode(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc. 날짜 필터는 requestedAt 기준이며, dateFrom/dateTo가 있을 경우 범위가 단일 값보다 우선합니다(KST(+09:00) 로컬일을 UTC 경계로 변환해 포함 범위로 처리).")
     @Parameters({
             @Parameter(name = "date", description = "단일 날짜(YYYY-MM-DD, KST 로컬일) — requestedAt 기준"),
             @Parameter(name = "dateFrom", description = "시작일(YYYY-MM-DD, KST 로컬일) — 범위가 단일보다 우선"),
@@ -129,14 +120,10 @@ public class ReceivingController {
             list = service.getDone(dateArg, nf.from(), nf.to(), warehouseCode);
         }
 
-        // 기본 정렬: noteId asc (null-safe)
-        var sorted = list.stream()
-                .sorted(Comparator.comparing(ReceivingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
-                .toList();
-        long total = sorted.size();
+        long total = list.size();
         int from = Math.min(p * s, (int) total);
         int to = Math.min(from + s, (int) total);
-        var envelope = PageEnvelope.of(sorted.subList(from, to), p, s, total);
+        var envelope = PageEnvelope.of(list.subList(from, to), p, s, total);
         return CommonApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_LIST_SUCCESS, envelope);
     }
 
@@ -265,13 +252,10 @@ public class ReceivingController {
                 default -> list = service.getNotDone(dateArg, df, dt, warehouseCode);
             }
         }
-        var sorted = list.stream()
-                .sorted(Comparator.comparing(ReceivingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
-                .toList();
-        long total = sorted.size();
+        long total = list.size();
         int fromIdx = Math.min(p * s, (int) total);
         int toIdx = Math.min(fromIdx + s, (int) total);
-        var envelope = PageEnvelope.of(sorted.subList(fromIdx, toIdx), p, s, total);
+        var envelope = PageEnvelope.of(list.subList(fromIdx, toIdx), p, s, total);
         return CommonApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_LIST_SUCCESS, envelope);
     }
 

@@ -1,7 +1,5 @@
 package com.gearfirst.warehouse.api.shipping;
 
-import static java.util.Comparator.comparing;
-
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteRequest;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCreateNoteRequest;
@@ -9,11 +7,10 @@ import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteDetailResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteSummaryResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingUpdateLineRequest;
 import com.gearfirst.warehouse.api.shipping.service.ShippingService;
-import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.common.response.CommonApiResponse;
-import com.gearfirst.warehouse.common.response.ErrorStatus;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
+import com.gearfirst.warehouse.common.util.DateFilter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -21,11 +18,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
-import com.gearfirst.warehouse.common.util.DateFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -80,13 +74,10 @@ public class ShippingController {
             String dateArg = explicitRange ? null : date;
             all = service.getNotDone(dateArg, nf.from(), nf.to(), warehouseCode);
         }
-        var sorted = all.stream()
-                .sorted(Comparator.comparing(ShippingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
-                .toList();
-        long total = sorted.size();
+        long total = all.size();
         int from = Math.min(p * s, (int) total);
         int to = Math.min(from + s, (int) total);
-        var envelope = PageEnvelope.of(sorted.subList(from, to), p, s, total);
+        var envelope = PageEnvelope.of(all.subList(from, to), p, s, total);
         return CommonApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_LIST_SUCCESS, envelope);
     }
 
@@ -127,13 +118,10 @@ public class ShippingController {
             String dateArg = explicitRange ? null : date;
             all = service.getDone(dateArg, nf.from(), nf.to(), warehouseCode);
         }
-        var sorted = all.stream()
-                .sorted(Comparator.comparing(ShippingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
-                .toList();
-        long total = sorted.size();
+        long total = all.size();
         int from = Math.min(p * s, (int) total);
         int to = Math.min(from + s, (int) total);
-        var envelope = PageEnvelope.of(sorted.subList(from, to), p, s, total);
+        var envelope = PageEnvelope.of(all.subList(from, to), p, s, total);
         return CommonApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_LIST_SUCCESS, envelope);
     }
 
@@ -265,13 +253,10 @@ public class ShippingController {
             }
         }
 
-        var sorted = list.stream()
-                .sorted(Comparator.comparing(ShippingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
-                .toList();
-        long total = sorted.size();
+        long total = list.size();
         int fromIdx = Math.min(p * s, (int) total);
         int toIdx = Math.min(fromIdx + s, (int) total);
-        var envelope = PageEnvelope.of(sorted.subList(fromIdx, toIdx), p, s, total);
+        var envelope = PageEnvelope.of(list.subList(fromIdx, toIdx), p, s, total);
         return CommonApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_LIST_SUCCESS, envelope);
     }
 }

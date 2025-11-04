@@ -68,8 +68,35 @@ class ShippingServiceImplTest {
     @Test
     @DisplayName("complete: 모든 라인이 READY면 COMPLETED와 completedAt 반환")
     void complete_completed() {
-        // noteId=601 은 이미 모든 라인이 READY
-        var resp = service.complete(601L, ShippingCompleteRequest.builder().assigneeName("WAREHOUSE").assigneeDept("DEFAULT").assigneePhone("N/A").build());
+        // 비종단(IN_PROGRESS) 전표를 직접 시드: READY 라인만 존재
+        var note = ShippingNote.builder()
+                .noteId(9601L)
+                .branchName("Temp")
+                .itemKindsNumber(1)
+                .totalQty(10)
+                .warehouseCode("WH-T")
+                .assigneeName("WAREHOUSE")
+                .assigneeDept("DEFAULT")
+                .assigneePhone("N/A")
+                .status(NoteStatus.IN_PROGRESS)
+                .completedAt(null)
+                .lines(List.of(
+                        ShippingNoteLine.builder()
+                                .lineId(960101L)
+                                .productId(1234L)
+                                .productLot("LOT")
+                                .productCode("S-1234")
+                                .productName("Bolt")
+                                .productImgUrl("/img")
+                                .orderedQty(10)
+                                .pickedQty(10)
+                                .status(LineStatus.READY)
+                                .build()
+                ))
+                .build();
+        repo.save(note);
+
+        var resp = service.complete(9601L, ShippingCompleteRequest.builder().assigneeName("WAREHOUSE").assigneeDept("DEFAULT").assigneePhone("N/A").build());
         assertNotNull(resp.completedAt());
         assertEquals(10, resp.totalShippedQty());
     }
@@ -77,7 +104,35 @@ class ShippingServiceImplTest {
     @Test
     @DisplayName("complete: SHORTAGE 포함이면 DELAYED와 completedAt 반환")
     void complete_delayed() {
-        var resp = service.complete(602L, ShippingCompleteRequest.builder().assigneeName("WAREHOUSE").assigneeDept("DEFAULT").assigneePhone("N/A").build());
+        // 비종단(IN_PROGRESS) 전표를 직접 시드: SHORTAGE 라인 존재
+        var note = ShippingNote.builder()
+                .noteId(9602L)
+                .branchName("Temp")
+                .itemKindsNumber(1)
+                .totalQty(10)
+                .warehouseCode("WH-T")
+                .assigneeName("WAREHOUSE")
+                .assigneeDept("DEFAULT")
+                .assigneePhone("N/A")
+                .status(NoteStatus.IN_PROGRESS)
+                .completedAt(null)
+                .lines(List.of(
+                        ShippingNoteLine.builder()
+                                .lineId(960201L)
+                                .productId(2234L)
+                                .productLot("LOT")
+                                .productCode("S-2234")
+                                .productName("Nut")
+                                .productImgUrl("/img")
+                                .orderedQty(10)
+                                .pickedQty(5)
+                                .status(LineStatus.SHORTAGE)
+                                .build()
+                ))
+                .build();
+        repo.save(note);
+
+        var resp = service.complete(9602L, ShippingCompleteRequest.builder().assigneeName("WAREHOUSE").assigneeDept("DEFAULT").assigneePhone("N/A").build());
         assertNotNull(resp.completedAt());
     }
 
