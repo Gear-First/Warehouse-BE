@@ -1,0 +1,51 @@
+spring:
+  # Kafka 자동 구성 완전 배제 (네트워크 대기/타임아웃 방지)
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+
+  lifecycle:
+    timeout-per-shutdown-phase: 5s
+
+  datasource:
+    url: jdbc:postgresql://${TEST_DB_HOST:127.0.0.1}:${TEST_DB_PORT:5432}/${TEST_DB_NAME:warehousedb}
+    username: ${TEST_DB_USER:postgres}
+    password: ${TEST_DB_PASSWORD:1234}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 4
+      minimum-idle: 1
+      connection-timeout: 20000
+      validation-timeout: 5000
+      pool-name: HikariTestPool
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: create-drop   # 테스트 실행마다 격리된 스키마
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc.time_zone: UTC
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  sql:
+    init:
+      mode: never  # JPA/Hibernate가 스키마를 관리
+
+  flyway:
+    enabled: false
+
+  # Kafka를 어떻게든 참조하는 곳이 있어도 무해하게
+  kafka:
+    bootstrap-servers: 127.0.0.1:0
+    listener:
+      missing-topics-fatal: false
+    admin:
+      fail-fast: false
+
+logging:
+  level:
+    org.hibernate.SQL: WARN
+    org.apache.kafka: WARN
+    org.springframework.kafka: WARN
