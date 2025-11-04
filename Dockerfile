@@ -16,7 +16,7 @@ RUN ./gradlew bootJar
 # --- 2단계: 최종 실행(Runtime) 환경 ---
 # 실제 애플리케이션을 실행할 환경입니다. JDK 21만 포함된 가벼운 이미지를 사용합니다.
 # openjdk:21-jdk-slim 으로 버전을 변경했습니다.
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jdk-jammy
 
 # 컨테이너 내부에 작업 디렉터리를 만듭니다.
 WORKDIR /app
