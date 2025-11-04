@@ -39,7 +39,7 @@ public class ReceivingController {
 
     private final ReceivingService service;
 
-    @Operation(summary = "입고 예정 리스트 조회", description = "입고 예정된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseCode(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc. 날짜 필터는 requestedAt 기준이며, dateFrom/dateTo가 있을 경우 범위가 단일 값보다 우선합니다(경계 포함).")
+    @Operation(summary = "입고 예정 리스트 조회", description = "입고 예정된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseCode(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc. 날짜 필터는 requestedAt 기준이며, dateFrom/dateTo가 있을 경우 범위가 단일 값보다 우선합니다(경계 포함). KST(+09:00) 로컬일을 UTC 경계로 변환해 포함 범위로 처리합니다.")
     @Parameters({
             @Parameter(name = "date", description = "단일 날짜(YYYY-MM-DD, KST 로컬일) — requestedAt 기준"),
             @Parameter(name = "dateFrom", description = "시작일(YYYY-MM-DD, KST 로컬일) — 범위가 단일보다 우선"),
@@ -154,7 +154,8 @@ public class ReceivingController {
         return CommonApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_LINE_UPDATE_SUCCESS, updated);
     }
 
-    @Operation(summary = "입고 완료", description = "입고 내역서의 모든 항목이 처리되었음을 확인하고, 완료 가능 여부를 판단 및 적용합니다. 엔드포인트 전용 완료 처리입니다. 검사자 정보가 필요하며(요청 전 설정), 완료 시 ACCEPTED 라인 수량을 기준으로 재고가 증가합니다.")
+    @Operation(summary = "입고 완료", description = "입고 내역서의 모든 항목이 처리되었음을 확인하고, 완료 가능 여부를 판단 및 적용합니다. 엔드포인트 전용 완료 처리입니다. 검사자 정보가 필요하며(요청 전 설정), 완료 시 ACCEPTED 라인 수량을 기준으로 재고가 증가합니다.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true, description = "검수자 정보 입력이 필요합니다: { inspectorName, inspectorDept, inspectorPhone }"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "입고 완료 처리 성공"),
             @ApiResponse(responseCode = "400", description = "검증 실패 (검사자 정보 누락 등)"),

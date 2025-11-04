@@ -41,7 +41,9 @@ public class ShippingController {
 
     @Operation(summary = "출고 예정 리스트 조회", description = "출고 예정된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseCode(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc. 날짜 필터는 requestedAt 기준이며 KST(+09:00) 로컬일을 UTC 경계로 변환해 포함 범위로 처리합니다. 통합 엔드포인트(/notes) 사용을 권장합니다.")
     @Parameters({
-            @Parameter(name = "date", description = "단일 날짜(YYYY-MM-DD) — requestedAt 기준"),
+            @Parameter(name = "date", description = "단일 날짜(YYYY-MM-DD, KST 로컬일) — requestedAt 기준"),
+            @Parameter(name = "dateFrom", description = "시작일(YYYY-MM-DD, KST 로컬일) — 범위가 단일보다 우선"),
+            @Parameter(name = "dateTo", description = "종료일(YYYY-MM-DD, KST 로컬일) — 경계 포함"),
             @Parameter(name = "warehouseCode", description = "창고 코드(예: 서울)"),
             @Parameter(name = "page", description = "페이지(기본 0, 최소 0)"),
             @Parameter(name = "size", description = "페이지 크기(기본 20, 1..100)"),
@@ -152,7 +154,8 @@ public class ShippingController {
         return CommonApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_LINE_UPDATE_SUCCESS, updated);
     }
 
-    @Operation(summary = "출고 완료 처리", description = "출고 내역서의 모든 항목이 처리되었음을 확인하고, 완료 상태(DELAYED/COMPLETED)로 전환합니다. 엔드포인트 전용 완료 처리입니다. 담당자 정보가 필요하며(요청 전 설정), READY 라인의 pickedQty 합계를 기준으로 재고가 감소합니다. SHORTAGE가 존재하면 전표는 DELAYED로 전환되며 재고 감소는 수행되지 않습니다.")
+    @Operation(summary = "출고 완료 처리", description = "출고 내역서의 모든 항목이 처리되었음을 확인하고, 완료 상태(DELAYED/COMPLETED)로 전환합니다. 엔드포인트 전용 완료 처리입니다. 담당자 정보가 필요하며(요청 전 설정), READY 라인의 pickedQty 합계를 기준으로 재고가 감소합니다. SHORTAGE가 존재하면 전표는 DELAYED로 전환되며 재고 감소는 수행되지 않습니다.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true, description = "담당자 정보 입력이 필요합니다: { assigneeName, assigneeDept, assigneePhone }"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "출고 완료 처리 성공"),
             @ApiResponse(responseCode = "400", description = "검증 실패 (담당자 정보 누락 등)"),
