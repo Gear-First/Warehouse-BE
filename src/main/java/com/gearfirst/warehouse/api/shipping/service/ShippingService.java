@@ -1,5 +1,6 @@
 package com.gearfirst.warehouse.api.shipping.service;
 
+import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteRequest;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCreateNoteRequest;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteDetailResponse;
@@ -38,7 +39,8 @@ public interface ShippingService {
 
     ShippingNoteDetailResponse updateLine(Long noteId, Long lineId, ShippingUpdateLineRequest request);
 
-    ShippingCompleteResponse complete(Long noteId);
+    // Completion APIs
+    ShippingCompleteResponse complete(Long noteId, ShippingCompleteRequest request);
 
     // Create new shipping note (stub for now)
     ShippingNoteDetailResponse create(ShippingCreateNoteRequest request);

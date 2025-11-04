@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.gearfirst.warehouse.api.inventory.persistence.InventoryOnHandJpaRepository;
 import com.gearfirst.warehouse.api.inventory.persistence.entity.InventoryOnHandEntity;
+import com.gearfirst.warehouse.api.receiving.dto.ReceivingCompleteRequest;
 import com.gearfirst.warehouse.api.receiving.domain.ReceivingLineStatus;
 import com.gearfirst.warehouse.api.receiving.domain.ReceivingNoteStatus;
 import com.gearfirst.warehouse.api.receiving.persistence.ReceivingNoteJpaRepository;
@@ -76,7 +77,7 @@ class ReceivingInventoryIntegrationTest {
     @Test
     @DisplayName("complete: ACCEPTED 라인 합만큼 WHPG 버킷이 증가하고 lastUpdatedAt이 설정된다")
     void complete_increasesInventoryBuckets() {
-        var resp = service.complete(noteId);
+        var resp = service.complete(noteId, ReceivingCompleteRequest.builder().inspectorName("WAREHOUSE").inspectorDept("DEFAULT").inspectorPhone("N/A").build());
         assertNotNull(resp.completedAt());
         // Expect rows for (WHPG,501) and (WHPG,502)
         var e501 = onHandRepo.findByWarehouseCodeAndPartId("WHPG", 501L).orElse(null);
@@ -95,7 +96,7 @@ class ReceivingInventoryIntegrationTest {
     @DisplayName("complete: 재호출 409이며 on-hand 수량은 변하지 않는다")
     void complete_idempotency_inventoryNotDoubled() {
         // first completion
-        service.complete(noteId);
+        service.complete(noteId, ReceivingCompleteRequest.builder().inspectorName("WAREHOUSE").inspectorDept("DEFAULT").inspectorPhone("N/A").build());
         var before501 = onHandRepo.findByWarehouseCodeAndPartId("WHPG", 501L).map(InventoryOnHandEntity::getOnHandQty)
                 .orElse(0);
         var before502 = onHandRepo.findByWarehouseCodeAndPartId("WHPG", 502L).map(InventoryOnHandEntity::getOnHandQty)
@@ -103,7 +104,7 @@ class ReceivingInventoryIntegrationTest {
         assertEquals(5, before501);
         assertEquals(7, before502);
         // second completion must 409 and quantities unchanged
-        assertThrows(ConflictException.class, () -> service.complete(noteId));
+        assertThrows(ConflictException.class, () -> service.complete(noteId, ReceivingCompleteRequest.builder().inspectorName("WAREHOUSE").inspectorDept("DEFAULT").inspectorPhone("N/A").build()));
         var after501 = onHandRepo.findByWarehouseCodeAndPartId("WHPG", 501L).map(InventoryOnHandEntity::getOnHandQty)
                 .orElse(0);
         var after502 = onHandRepo.findByWarehouseCodeAndPartId("WHPG", 502L).map(InventoryOnHandEntity::getOnHandQty)

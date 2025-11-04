@@ -1,5 +1,6 @@
 package com.gearfirst.warehouse.api.receiving.service;
 
+import com.gearfirst.warehouse.api.receiving.dto.ReceivingCompleteRequest;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingCompleteResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingCreateNoteRequest;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteDetailResponse;
@@ -36,7 +37,8 @@ public interface ReceivingService {
 
     ReceivingNoteDetailResponse updateLine(Long noteId, Long lineId, ReceivingUpdateLineRequest request);
 
-    ReceivingCompleteResponse complete(Long noteId);
+    // Completion APIs
+    ReceivingCompleteResponse complete(Long noteId, ReceivingCompleteRequest request);
 
     // Create new receiving note (stub for now)
     ReceivingNoteDetailResponse create(ReceivingCreateNoteRequest request);

@@ -9,12 +9,12 @@ import org.junit.jupiter.api.Test;
 class DateFilterTest {
 
     @Test
-    @DisplayName("normalize: 단일 date만 주어지면 from=to=date, hasRange=true")
+    @DisplayName("normalize: 단일 date만 주어지면 from=to=date, hasRange=false (범위 아님)")
     void normalize_singleDate() {
         var nf = DateFilter.normalize("2025-01-02", null, null);
         assertEquals("2025-01-02", nf.from());
         assertEquals("2025-01-02", nf.to());
-        assertTrue(nf.hasRange());
+        assertFalse(nf.hasRange());
     }
 
     @Test

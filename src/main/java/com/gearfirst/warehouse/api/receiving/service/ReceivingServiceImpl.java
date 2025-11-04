@@ -3,6 +3,7 @@ package com.gearfirst.warehouse.api.receiving.service;
 import com.gearfirst.warehouse.api.inventory.service.InventoryService;
 import com.gearfirst.warehouse.api.receiving.domain.ReceivingLineStatus;
 import com.gearfirst.warehouse.api.receiving.domain.ReceivingNoteStatus;
+import com.gearfirst.warehouse.api.receiving.dto.ReceivingCompleteRequest;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingCompleteResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingCreateNoteRequest;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteDetailResponse;
@@ -148,10 +149,18 @@ public class ReceivingServiceImpl implements ReceivingService {
         return toDetail(note);
     }
 
+
     @Override
-    public ReceivingCompleteResponse complete(Long noteId) {
+    public ReceivingCompleteResponse complete(Long noteId, ReceivingCompleteRequest req) {
         var note = repository.findById(noteId)
                 .orElseThrow(() -> new NotFoundException("Receiving note not found: " + noteId));
+
+        // Apply inspector info from request if provided (overrides existing null/blank)
+        if (req != null) {
+            if (req.inspectorName() != null && !req.inspectorName().isBlank()) note.setInspectorName(req.inspectorName());
+            if (req.inspectorDept() != null && !req.inspectorDept().isBlank()) note.setInspectorDept(req.inspectorDept());
+            if (req.inspectorPhone() != null && !req.inspectorPhone().isBlank()) note.setInspectorPhone(req.inspectorPhone());
+        }
         // Require handler/inspector info before completion
         if (note.getInspectorName() == null || note.getInspectorName().isBlank()) {
             throw new BadRequestException(ErrorStatus.RECEIVING_HANDLER_INFO_REQUIRED);

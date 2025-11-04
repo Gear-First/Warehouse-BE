@@ -222,12 +222,26 @@ public class ShippingServiceImpl implements ShippingService {
         return toDetail(updated);
     }
 
+
     @Override
-    public ShippingCompleteResponse complete(Long noteId) {
+    public ShippingCompleteResponse complete(Long noteId, com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteRequest req) {
         var note = repository.findById(noteId)
                 .orElseThrow(() -> new NotFoundException("Shipping note not found: " + noteId));
+
+        // Idempotency: block if already in a terminal state
+        if (note.getStatus() == NoteStatus.COMPLETED || note.getStatus() == NoteStatus.DELAYED) {
+            throw new ConflictException(CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED);
+        }
+
+        // Resolve handler info from request if provided
+        String assigneeName = (req != null && req.assigneeName() != null && !req.assigneeName().isBlank())
+                ? req.assigneeName() : note.getAssigneeName();
+        String assigneeDept = (req != null && req.assigneeDept() != null && !req.assigneeDept().isBlank())
+                ? req.assigneeDept() : note.getAssigneeDept();
+        String assigneePhone = (req != null && req.assigneePhone() != null && !req.assigneePhone().isBlank())
+                ? req.assigneePhone() : note.getAssigneePhone();
         // Require handler info before completion processing
-        if (note.getAssigneeName() == null || note.getAssigneeName().isBlank()) {
+        if (assigneeName == null || assigneeName.isBlank()) {
             throw new BadRequestException(ErrorStatus.SHIPPING_HANDLER_INFO_REQUIRED);
         }
         boolean hasShortage = note.getLines().stream().anyMatch(l -> l.getStatus() == LineStatus.SHORTAGE);
@@ -264,9 +278,9 @@ public class ShippingServiceImpl implements ShippingService {
                 .requestedAt(note.getRequestedAt())
                 .expectedShipDate(note.getExpectedShipDate())
                 .shippedAt(note.getShippedAt())
-                .assigneeName(note.getAssigneeName())
-                .assigneeDept(note.getAssigneeDept())
-                .assigneePhone(note.getAssigneePhone())
+                .assigneeName(assigneeName)
+                .assigneeDept(assigneeDept)
+                .assigneePhone(assigneePhone)
                 .remark(note.getRemark())
                 .status(finalStatus)
                 .completedAt(completedAt)

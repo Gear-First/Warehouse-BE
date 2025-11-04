@@ -1,6 +1,7 @@
 package com.gearfirst.warehouse.api.shipping.service;
 
 import com.gearfirst.warehouse.api.shipping.dto.ShippingUpdateLineRequest;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteRequest;
 import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.api.shipping.domain.LineStatus;
 import com.gearfirst.warehouse.api.shipping.domain.NoteStatus;
@@ -68,7 +69,7 @@ class ShippingServiceImplTest {
     @DisplayName("complete: 모든 라인이 READY면 COMPLETED와 completedAt 반환")
     void complete_completed() {
         // noteId=601 은 이미 모든 라인이 READY
-        var resp = service.complete(601L);
+        var resp = service.complete(601L, ShippingCompleteRequest.builder().assigneeName("WAREHOUSE").assigneeDept("DEFAULT").assigneePhone("N/A").build());
         assertNotNull(resp.completedAt());
         assertEquals(10, resp.totalShippedQty());
     }
@@ -76,7 +77,7 @@ class ShippingServiceImplTest {
     @Test
     @DisplayName("complete: SHORTAGE 포함이면 DELAYED와 completedAt 반환")
     void complete_delayed() {
-        var resp = service.complete(602L);
+        var resp = service.complete(602L, ShippingCompleteRequest.builder().assigneeName("WAREHOUSE").assigneeDept("DEFAULT").assigneePhone("N/A").build());
         assertNotNull(resp.completedAt());
     }
 
@@ -103,7 +104,7 @@ class ShippingServiceImplTest {
                 .build();
         repo.save(temp);
 
-        assertThrows(ConflictException.class, () -> service.complete(9001L));
+        assertThrows(ConflictException.class, () -> service.complete(9001L, ShippingCompleteRequest.builder().assigneeName("WAREHOUSE").assigneeDept("DEFAULT").assigneePhone("N/A").build()));
     }
 
     @Test

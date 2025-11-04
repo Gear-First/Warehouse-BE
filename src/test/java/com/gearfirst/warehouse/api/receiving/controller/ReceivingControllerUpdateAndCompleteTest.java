@@ -128,7 +128,7 @@ class ReceivingControllerUpdateAndCompleteTest {
                 .thenReturn(new ReceivingNoteDetailResponse(102L, "BCD Parts", 2, 45, "IN_PROGRESS", null,
                         null, null, null, null, null, null, null, null, null,
                         List.of()));
-        when(receivingService.complete(102L))
+        when(receivingService.complete(eq(102L), org.mockito.ArgumentMatchers.any(ReceivingCompleteRequest.class)))
                 .thenReturn(new ReceivingCompleteResponse("2025-10-27T05:00:00Z", 20));
 
         mockMvc.perform(patch("/api/v1/receiving/{noteId}/lines/{lineId}", 102L, 10L)
@@ -140,7 +140,11 @@ class ReceivingControllerUpdateAndCompleteTest {
                         .content(objectMapper.writeValueAsString(new ReceivingUpdateLineRequest(0, true))))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(post("/api/v1/receiving/{noteId}:complete", 102L))
+        var completeReq = ReceivingCompleteRequest.builder()
+                .inspectorName("홍길동").inspectorDept("품질관리팀").inspectorPhone("010-1234-5678").build();
+        mockMvc.perform(post("/api/v1/receiving/{noteId}:complete", 102L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(completeReq)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
                 .andExpect(jsonPath("$.data.completedAt", notNullValue()))
@@ -150,10 +154,14 @@ class ReceivingControllerUpdateAndCompleteTest {
     @Test
     @DisplayName("POST /api/v1/receiving/{noteId}:complete - 진행 중 라인이 있으면 409")
     void complete_conflict_whenNotAllDone() throws Exception {
-        when(receivingService.complete(101L))
+        when(receivingService.complete(eq(101L), org.mockito.ArgumentMatchers.any(ReceivingCompleteRequest.class)))
                 .thenThrow(new ConflictException(ErrorStatus.CONFLICT_RECEIVING_CANNOT_COMPLETE_WHEN_NOT_DONE));
 
-        mockMvc.perform(post("/api/v1/receiving/{noteId}:complete", 101L))
+        var completeReq2 = ReceivingCompleteRequest.builder()
+                .inspectorName("홍길동").inspectorDept("품질관리팀").inspectorPhone("010-1234-5678").build();
+        mockMvc.perform(post("/api/v1/receiving/{noteId}:complete", 101L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(completeReq2)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.status", is(409)));

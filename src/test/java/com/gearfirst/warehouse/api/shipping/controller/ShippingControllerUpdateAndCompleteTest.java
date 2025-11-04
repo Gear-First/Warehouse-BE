@@ -84,10 +84,14 @@ class ShippingControllerUpdateAndCompleteTest {
     void complete_completed() throws Exception {
         // given
         var resp = new ShippingCompleteResponse("2025-10-22T10:00:00Z", 100);
-        when(shippingService.complete(5001L)).thenReturn(resp);
+        when(shippingService.complete(eq(5001L), org.mockito.ArgumentMatchers.any(ShippingCompleteRequest.class))).thenReturn(resp);
 
         // when & then
+        var completeReq = ShippingCompleteRequest.builder()
+                .assigneeName("김담당").assigneeDept("물류팀").assigneePhone("010-9876-5432").build();
         mockMvc.perform(post("/api/v1/shipping/{noteId}:complete", 5001L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(completeReq))
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
@@ -101,10 +105,14 @@ class ShippingControllerUpdateAndCompleteTest {
     void complete_delayed() throws Exception {
         // given
         var resp = new ShippingCompleteResponse("2025-10-22T11:00:00Z", 80);
-        when(shippingService.complete(5002L)).thenReturn(resp);
+        when(shippingService.complete(eq(5002L), org.mockito.ArgumentMatchers.any(ShippingCompleteRequest.class))).thenReturn(resp);
 
         // when & then
+        var completeReq = ShippingCompleteRequest.builder()
+                .assigneeName("김담당").assigneeDept("물류팀").assigneePhone("010-9876-5432").build();
         mockMvc.perform(post("/api/v1/shipping/{noteId}:complete", 5002L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(completeReq))
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))

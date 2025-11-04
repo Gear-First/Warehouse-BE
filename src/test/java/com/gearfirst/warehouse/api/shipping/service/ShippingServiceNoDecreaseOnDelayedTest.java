@@ -1,6 +1,7 @@
 package com.gearfirst.warehouse.api.shipping.service;
 
 import com.gearfirst.warehouse.api.inventory.service.InventoryService;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteRequest;
 import com.gearfirst.warehouse.api.shipping.domain.LineStatus;
 import com.gearfirst.warehouse.api.shipping.domain.NoteStatus;
 import com.gearfirst.warehouse.api.shipping.domain.ShippingNote;
@@ -66,7 +67,7 @@ class ShippingServiceNoDecreaseOnDelayedTest {
         repo.save(note);
 
         // when
-        var resp = service.complete(9901L);
+        var resp = service.complete(9901L, ShippingCompleteRequest.builder().assigneeName("WAREHOUSE").assigneeDept("DEFAULT").assigneePhone("N/A").build());
 
         // then: no inventory decrease should be called
         verify(inventory, never()).decrease(any(), any(), anyInt());

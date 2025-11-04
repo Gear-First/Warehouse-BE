@@ -2,6 +2,7 @@ package com.gearfirst.warehouse.api.receiving;
 
 import static java.util.Comparator.comparing;
 
+import com.gearfirst.warehouse.api.receiving.dto.ReceivingCompleteRequest;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingCompleteResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingCreateNoteRequest;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteDetailResponse;
@@ -76,7 +77,8 @@ public class ReceivingController {
         if (!nf.hasRange() && (warehouseCode == null || warehouseCode.isBlank())) {
             list = service.getNotDone(date);
         } else {
-            list = service.getNotDone(date, nf.from(), nf.to(), warehouseCode);
+            String dateArg = nf.hasRange() ? null : date;
+            list = service.getNotDone(dateArg, nf.from(), nf.to(), warehouseCode);
         }
         var sorted = list.stream()
                 .sorted(Comparator.comparing(ReceivingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
@@ -123,7 +125,8 @@ public class ReceivingController {
         if (noFilters) {
             list = service.getDone(date);
         } else {
-            list = service.getDone(date, nf.from(), nf.to(), warehouseCode);
+            String dateArg = nf.hasRange() ? null : date;
+            list = service.getDone(dateArg, nf.from(), nf.to(), warehouseCode);
         }
 
         // 기본 정렬: noteId asc (null-safe)
@@ -171,8 +174,11 @@ public class ReceivingController {
             @ApiResponse(responseCode = "409", description = "완료 불가 상태(미처리 라인 존재/이미 완료)")
     })
     @PostMapping("/{noteId}:complete")
-    public ResponseEntity<CommonApiResponse<ReceivingCompleteResponse>> complete(@PathVariable Long noteId) {
-        var resp = service.complete(noteId);
+    public ResponseEntity<CommonApiResponse<ReceivingCompleteResponse>> complete(
+            @PathVariable Long noteId,
+            @RequestBody @Valid ReceivingCompleteRequest req
+    ) {
+        var resp = service.complete(noteId, req);
         return CommonApiResponse.success(SuccessStatus.SEND_RECEIVING_COMPLETE_SUCCESS, resp);
     }
 
@@ -224,37 +230,39 @@ public class ReceivingController {
         String df = nf.from();
         String dt = nf.to();
         String statusNormalized = (status == null ? "not-done" : status.toLowerCase(Locale.ROOT));
+        // When explicit range present, ignore single date and pass null to ranged overloads
+        String dateArg = nf.hasRange() ? null : date;
         if (!hasFilters) {
             switch (statusNormalized) {
                 case "done" -> list = (warehouseCode == null || warehouseCode.isBlank())
-                        ? service.getDone(date)
-                        : service.getDone(date, warehouseCode);
+                        ? service.getDone(dateArg)
+                        : service.getDone(dateArg, warehouseCode);
                 case "all" -> {
                     var nd = (warehouseCode == null || warehouseCode.isBlank())
-                            ? service.getNotDone(date)
-                            : service.getNotDone(date, warehouseCode);
+                            ? service.getNotDone(dateArg)
+                            : service.getNotDone(dateArg, warehouseCode);
                     var dn = (warehouseCode == null || warehouseCode.isBlank())
-                            ? service.getDone(date)
-                            : service.getDone(date, warehouseCode);
+                            ? service.getDone(dateArg)
+                            : service.getDone(dateArg, warehouseCode);
                     list = new java.util.ArrayList<>(nd.size() + dn.size());
                     list.addAll(nd);
                     list.addAll(dn);
                 }
                 default -> list = (warehouseCode == null || warehouseCode.isBlank())
-                        ? service.getNotDone(date)
-                        : service.getNotDone(date, warehouseCode);
+                        ? service.getNotDone(dateArg)
+                        : service.getNotDone(dateArg, warehouseCode);
             }
         } else {
             switch (statusNormalized) {
-                case "done" -> list = service.getDone(date, df, dt, warehouseCode);
+                case "done" -> list = service.getDone(dateArg, df, dt, warehouseCode);
                 case "all" -> {
-                    var nd = service.getNotDone(date, df, dt, warehouseCode);
-                    var dn = service.getDone(date, df, dt, warehouseCode);
+                    var nd = service.getNotDone(dateArg, df, dt, warehouseCode);
+                    var dn = service.getDone(dateArg, df, dt, warehouseCode);
                     list = new java.util.ArrayList<>(nd.size() + dn.size());
                     list.addAll(nd);
                     list.addAll(dn);
                 }
-                default -> list = service.getNotDone(date, df, dt, warehouseCode);
+                default -> list = service.getNotDone(dateArg, df, dt, warehouseCode);
             }
         }
         var sorted = list.stream()

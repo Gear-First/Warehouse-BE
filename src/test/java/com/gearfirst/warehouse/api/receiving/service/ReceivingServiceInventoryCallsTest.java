@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.gearfirst.warehouse.api.inventory.service.InventoryService;
+import com.gearfirst.warehouse.api.receiving.dto.ReceivingCompleteRequest;
 import com.gearfirst.warehouse.api.receiving.domain.ReceivingLineStatus;
 import com.gearfirst.warehouse.api.receiving.domain.ReceivingNoteStatus;
 import com.gearfirst.warehouse.api.receiving.persistence.ReceivingNoteJpaRepository;
@@ -90,7 +91,7 @@ class ReceivingServiceInventoryCallsTest {
     @DisplayName("complete: ACCEPTED 라인만 (warehouseCode, partId, orderedQty) 기준으로 increase 호출")
     void complete_callsInventoryIncreaseForAcceptedOnly() {
         // when
-        var resp = service.complete(noteId);
+        var resp = service.complete(noteId, ReceivingCompleteRequest.builder().inspectorName("WAREHOUSE").inspectorDept("DEFAULT").inspectorPhone("N/A").build());
 
         // then (verify inventory increase called exactly once for the ACCEPTED line)
         verify(inventory, times(1)).increase(eq("WH-T"), eq(acceptedPartId), eq(acceptedOrderedQty));
@@ -104,7 +105,7 @@ class ReceivingServiceInventoryCallsTest {
     @DisplayName("complete: 재호출 시 409이며 추가 increase 호출이 없어야 한다")
     void complete_idempotency_noDoubleIncrease() {
         // first completion
-        service.complete(noteId);
+        service.complete(noteId, ReceivingCompleteRequest.builder().inspectorName("WAREHOUSE").inspectorDept("DEFAULT").inspectorPhone("N/A").build());
         // verify once
         verify(inventory, times(1)).increase(eq("WH-T"), eq(acceptedPartId), eq(acceptedOrderedQty));
 
@@ -112,7 +113,7 @@ class ReceivingServiceInventoryCallsTest {
         Mockito.clearInvocations(inventory);
 
         // second completion should throw ConflictException and not call increase
-        assertThrows(ConflictException.class, () -> service.complete(noteId));
+        assertThrows(ConflictException.class, () -> service.complete(noteId, ReceivingCompleteRequest.builder().inspectorName("WAREHOUSE").inspectorDept("DEFAULT").inspectorPhone("N/A").build()));
         verify(inventory, never()).increase(any(), any(), anyInt());
     }
 
@@ -136,7 +137,7 @@ class ReceivingServiceInventoryCallsTest {
         n = jpa.save(n);
         Long anotherId = n.getNoteId();
 
-        assertThrows(ConflictException.class, () -> service.complete(anotherId));
+        assertThrows(ConflictException.class, () -> service.complete(anotherId, ReceivingCompleteRequest.builder().inspectorName("WAREHOUSE").inspectorDept("DEFAULT").inspectorPhone("N/A").build()));
         verify(inventory, never()).increase(any(), any(), anyInt());
     }
 }

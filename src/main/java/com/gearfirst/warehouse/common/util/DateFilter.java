@@ -36,7 +36,9 @@ public final class DateFilter {
         }
         String from = fromLd == null ? null : fromLd.toString();
         String to = toLd == null ? null : toLd.toString();
-        boolean hasRange = (fromLd != null || toLd != null);
+        // hasRange should reflect explicit range parameters (dateFrom/dateTo) presence,
+        // not a derived single-date normalization. That ensures controller uses single-date overload when only `date` is provided.
+        boolean hasRange = (dateFrom != null && !dateFrom.isBlank()) || (dateTo != null && !dateTo.isBlank());
         return new Normalized(from, to, hasRange);
     }
 

@@ -5,6 +5,7 @@ import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.OnHandSummary;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteRequest;
 import com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.PartRef;
 import com.gearfirst.warehouse.api.inventory.service.InventoryService;
 import com.gearfirst.warehouse.api.shipping.domain.LineStatus;
@@ -74,7 +75,7 @@ class ShippingServiceWarehouseTest {
         inventory.increase("2", 1001L, 10);
 
         // when: complete
-        var resp = service.complete(8001L);
+        var resp = service.complete(8001L, ShippingCompleteRequest.builder().assigneeName("WAREHOUSE").assigneeDept("DEFAULT").assigneePhone("N/A").build());
 
         // then: WH1 becomes 0, WH2 remains 10
         var wh1 = inventory.listOnHand("1", null, null, null, null, 0, 100, java.util.List.of()).items().stream()
@@ -123,7 +124,7 @@ class ShippingServiceWarehouseTest {
         inventory.increase("5", 2001L, 5); // insufficient
 
         // when/then
-        ConflictException ex = assertThrows(ConflictException.class, () -> service.complete(8002L));
+        ConflictException ex = assertThrows(ConflictException.class, () -> service.complete(8002L, ShippingCompleteRequest.builder().assigneeName("WAREHOUSE").assigneeDept("DEFAULT").assigneePhone("N/A").build()));
         assertEquals(ErrorStatus.CONFLICT_INVENTORY_INSUFFICIENT.getMessage(), ex.getMessage());
     }
 

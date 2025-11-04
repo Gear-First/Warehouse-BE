@@ -2,6 +2,7 @@ package com.gearfirst.warehouse.api.shipping;
 
 import static java.util.Comparator.comparing;
 
+import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteRequest;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCreateNoteRequest;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteDetailResponse;
@@ -71,11 +72,13 @@ public class ShippingController {
 
         // Normalize dates via DateFilter (range wins; swap when from>to)
         DateFilter.Normalized nf = DateFilter.normalize(date, dateFrom, dateTo);
+        boolean explicitRange = (dateFrom != null && !dateFrom.isBlank()) || (dateTo != null && !dateTo.isBlank());
         List<ShippingNoteSummaryResponse> all;
-        if (!nf.hasRange() && (warehouseCode == null || warehouseCode.isBlank())) {
+        if (!explicitRange && (warehouseCode == null || warehouseCode.isBlank())) {
             all = service.getNotDone(date);
         } else {
-            all = service.getNotDone(date, nf.from(), nf.to(), warehouseCode);
+            String dateArg = explicitRange ? null : date;
+            all = service.getNotDone(dateArg, nf.from(), nf.to(), warehouseCode);
         }
         var sorted = all.stream()
                 .sorted(Comparator.comparing(ShippingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
@@ -116,11 +119,13 @@ public class ShippingController {
 
         // Normalize dates via DateFilter (range wins; swap when from>to)
         DateFilter.Normalized nf = DateFilter.normalize(date, dateFrom, dateTo);
+        boolean explicitRange = (dateFrom != null && !dateFrom.isBlank()) || (dateTo != null && !dateTo.isBlank());
         List<ShippingNoteSummaryResponse> all;
-        if (!nf.hasRange() && (warehouseCode == null || warehouseCode.isBlank())) {
+        if (!explicitRange && (warehouseCode == null || warehouseCode.isBlank())) {
             all = service.getDone(date);
         } else {
-            all = service.getDone(date, nf.from(), nf.to(), warehouseCode);
+            String dateArg = explicitRange ? null : date;
+            all = service.getDone(dateArg, nf.from(), nf.to(), warehouseCode);
         }
         var sorted = all.stream()
                 .sorted(Comparator.comparing(ShippingNoteSummaryResponse::noteId, Comparator.nullsLast(Long::compareTo)))
@@ -166,8 +171,11 @@ public class ShippingController {
             @ApiResponse(responseCode = "409", description = "완료 불가 상태(혼합 상태/이미 최종)")
     })
     @PostMapping("/{noteId}:complete")
-    public ResponseEntity<CommonApiResponse<ShippingCompleteResponse>> complete(@PathVariable Long noteId) {
-        var resp = service.complete(noteId);
+    public ResponseEntity<CommonApiResponse<ShippingCompleteResponse>> complete(
+            @PathVariable Long noteId,
+            @RequestBody @Valid ShippingCompleteRequest req
+    ) {
+        var resp = service.complete(noteId, req);
         return CommonApiResponse.success(SuccessStatus.SEND_SHIPPING_COMPLETE_SUCCESS, resp);
     }
 
@@ -218,40 +226,42 @@ public class ShippingController {
         boolean hasFilters = nf.hasRange() || (warehouseCode != null && !warehouseCode.isBlank());
         String df = nf.from();
         String dt = nf.to();
+        // When explicit range present, date must be ignored (null) to use ranged overloads consistently
+        String dateArg = nf.hasRange() ? null : date;
 
         List<ShippingNoteSummaryResponse> list;
         String statusNormalized = (status == null ? "not-done" : status.toLowerCase(java.util.Locale.ROOT));
         if (!hasFilters) {
             switch (statusNormalized) {
                 case "done" -> list = (warehouseCode == null || warehouseCode.isBlank())
-                        ? service.getDone(date)
-                        : service.getDone(date, warehouseCode);
+                        ? service.getDone(dateArg)
+                        : service.getDone(dateArg, warehouseCode);
                 case "all" -> {
                     var nd = (warehouseCode == null || warehouseCode.isBlank())
-                            ? service.getNotDone(date)
-                            : service.getNotDone(date, warehouseCode);
+                            ? service.getNotDone(dateArg)
+                            : service.getNotDone(dateArg, warehouseCode);
                     var dn = (warehouseCode == null || warehouseCode.isBlank())
-                            ? service.getDone(date)
-                            : service.getDone(date, warehouseCode);
+                            ? service.getDone(dateArg)
+                            : service.getDone(dateArg, warehouseCode);
                     list = new java.util.ArrayList<>(nd.size() + dn.size());
                     list.addAll(nd);
                     list.addAll(dn);
                 }
                 default -> list = (warehouseCode == null || warehouseCode.isBlank())
-                        ? service.getNotDone(date)
-                        : service.getNotDone(date, warehouseCode);
+                        ? service.getNotDone(dateArg)
+                        : service.getNotDone(dateArg, warehouseCode);
             }
         } else {
             switch (statusNormalized) {
-                case "done" -> list = service.getDone(date, df, dt, warehouseCode);
+                case "done" -> list = service.getDone(dateArg, df, dt, warehouseCode);
                 case "all" -> {
-                    var nd = service.getNotDone(date, df, dt, warehouseCode);
-                    var dn = service.getDone(date, df, dt, warehouseCode);
+                    var nd = service.getNotDone(dateArg, df, dt, warehouseCode);
+                    var dn = service.getDone(dateArg, df, dt, warehouseCode);
                     list = new java.util.ArrayList<>(nd.size() + dn.size());
                     list.addAll(nd);
                     list.addAll(dn);
                 }
-                default -> list = service.getNotDone(date, df, dt, warehouseCode);
+                default -> list = service.getNotDone(dateArg, df, dt, warehouseCode);
             }
         }
 
