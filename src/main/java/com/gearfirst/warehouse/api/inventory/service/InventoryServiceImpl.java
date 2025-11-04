@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -106,7 +107,7 @@ public class InventoryServiceImpl implements InventoryService {
             }
             var parts = s.split(",");
             String field = parts[0].trim();
-            String dir = parts.length > 1 ? parts[1].trim().toLowerCase(java.util.Locale.ROOT) : "asc";
+            String dir = parts.length > 1 ? parts[1].trim().toLowerCase(Locale.ROOT) : "asc";
             Comparator<OnHandSummary> c;
             switch (field) {
                 case "partName" -> c = Comparator.comparing(i -> i.part().name() == null ? "" : i.part().name(),
@@ -169,6 +170,6 @@ public class InventoryServiceImpl implements InventoryService {
         if (text == null) {
             return false;
         }
-        return text.toLowerCase(java.util.Locale.ROOT).contains(kw.toLowerCase(java.util.Locale.ROOT));
+        return text.toLowerCase(Locale.ROOT).contains(kw.toLowerCase(Locale.ROOT));
     }
 }
