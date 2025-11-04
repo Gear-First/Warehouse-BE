@@ -1,6 +1,7 @@
 package com.gearfirst.warehouse.api.receiving.service;
 
 import com.gearfirst.warehouse.api.inventory.service.InventoryService;
+import com.gearfirst.warehouse.api.parts.persistence.PartJpaRepository;
 import com.gearfirst.warehouse.api.receiving.domain.ReceivingLineStatus;
 import com.gearfirst.warehouse.api.receiving.domain.ReceivingNoteStatus;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingCompleteRequest;
@@ -18,6 +19,7 @@ import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.common.exception.ConflictException;
 import com.gearfirst.warehouse.common.exception.NotFoundException;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
+import com.gearfirst.warehouse.common.sequence.NoteNumberGenerator;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -37,8 +39,9 @@ public class ReceivingServiceImpl implements ReceivingService {
             ReceivingNoteStatus.COMPLETED_ISSUE);
 
     private final ReceivingNoteRepository repository;
-    private final com.gearfirst.warehouse.common.sequence.NoteNumberGenerator noteNumberGenerator;
+    private final NoteNumberGenerator noteNumberGenerator;
     private final InventoryService inventoryService;
+    private final PartJpaRepository partRepository;
 
     @Override
     public List<ReceivingNoteSummaryResponse> getNotDone(String date) {
@@ -81,7 +84,8 @@ public class ReceivingServiceImpl implements ReceivingService {
     }
 
     @Override
-    public List<ReceivingNoteSummaryResponse> getNotDone(String date, String dateFrom, String dateTo, String warehouseCode) {
+    public List<ReceivingNoteSummaryResponse> getNotDone(String date, String dateFrom, String dateTo,
+                                                         String warehouseCode) {
         var list = repository.findNotDone(date, dateFrom, dateTo, warehouseCode);
         return list.stream()
                 .sorted(Comparator.comparing(ReceivingNoteEntity::getNoteId, Comparator.nullsLast(Long::compareTo)))
@@ -90,7 +94,8 @@ public class ReceivingServiceImpl implements ReceivingService {
     }
 
     @Override
-    public List<ReceivingNoteSummaryResponse> getDone(String date, String dateFrom, String dateTo, String warehouseCode) {
+    public List<ReceivingNoteSummaryResponse> getDone(String date, String dateFrom, String dateTo,
+                                                      String warehouseCode) {
         var list = repository.findDone(date, dateFrom, dateTo, warehouseCode);
         return list.stream()
                 .sorted(Comparator.comparing(ReceivingNoteEntity::getNoteId, Comparator.nullsLast(Long::compareTo)))
@@ -157,9 +162,15 @@ public class ReceivingServiceImpl implements ReceivingService {
 
         // Apply inspector info from request if provided (overrides existing null/blank)
         if (req != null) {
-            if (req.inspectorName() != null && !req.inspectorName().isBlank()) note.setInspectorName(req.inspectorName());
-            if (req.inspectorDept() != null && !req.inspectorDept().isBlank()) note.setInspectorDept(req.inspectorDept());
-            if (req.inspectorPhone() != null && !req.inspectorPhone().isBlank()) note.setInspectorPhone(req.inspectorPhone());
+            if (req.inspectorName() != null && !req.inspectorName().isBlank()) {
+                note.setInspectorName(req.inspectorName());
+            }
+            if (req.inspectorDept() != null && !req.inspectorDept().isBlank()) {
+                note.setInspectorDept(req.inspectorDept());
+            }
+            if (req.inspectorPhone() != null && !req.inspectorPhone().isBlank()) {
+                note.setInspectorPhone(req.inspectorPhone());
+            }
         }
         // Require handler/inspector info before completion
         if (note.getInspectorName() == null || note.getInspectorName().isBlank()) {
@@ -186,7 +197,7 @@ public class ReceivingServiceImpl implements ReceivingService {
         String whCode = note.getWarehouseCode();
         note.getLines().stream()
                 .filter(l -> l.getStatus() == ReceivingLineStatus.ACCEPTED)
-                .forEach(l -> inventoryService.increase(whCode, l.getProductId(), l.getOrderedQty()));
+                .forEach(l -> inventoryService.increase(whCode, l.getProductId(), l.getOrderedQty(), note.getSupplierName()));
 
         boolean hasRejected = note.getLines().stream().anyMatch(l -> l.getStatus() == ReceivingLineStatus.REJECTED);
         ReceivingNoteStatus finalStatus =
@@ -242,21 +253,52 @@ public class ReceivingServiceImpl implements ReceivingService {
         Set<Long> productIds = new HashSet<>();
         List<ReceivingNoteLineEntity> lineEntities = new ArrayList<>();
         if (request != null && request.lines() != null) {
+            // Pre-validate: all productIds must exist
+            Set<Long> idsToValidate = new HashSet<>();
+            for (var rl : request.lines()) {
+                if (rl.productId() != null) {
+                    idsToValidate.add(rl.productId());
+                }
+            }
+            if (!idsToValidate.isEmpty()) {
+                var found = partRepository.findAllById(idsToValidate).stream().map(p -> p.getId()).collect(java.util.stream.Collectors.toSet());
+                for (Long pid : idsToValidate) {
+                    if (!found.contains(pid)) {
+                        throw new BadRequestException(ErrorStatus.PART_CODE_INVALID);
+                    }
+                }
+            }
             for (var rl : request.lines()) {
                 int ordered = rl.orderedQty() == null ? 0 : rl.orderedQty();
                 totalQty += ordered;
                 if (rl.productId() != null) {
                     productIds.add(rl.productId());
                 }
-                // Determine productCode snapshot and LOT
-                String productCode = rl.productId() == null ? null : ("P-" + rl.productId());
+                // Determine product snapshot from Part and LOT
+                String productCode = null;
+                String productName = null;
+                String productImgUrl = null;
+                if (rl.productId() != null) {
+                    var partOpt = partRepository.findById(rl.productId());
+                    if (partOpt.isPresent()) {
+                        var part = partOpt.get();
+                        productCode = part.getCode();
+                        productName = part.getName();
+                        productImgUrl = part.getImageUrl();
+                    } else {
+                        // fallback to legacy pattern if part missing
+                        productCode = "P-" + rl.productId();
+                    }
+                }
                 String lot = rl.lotNo();
                 if (lot == null || lot.isBlank()) {
-                    // Generate LOT: factoryName(=supplierName) - (requestedAt-7d yyyyMMdd) - partCode
-                    String factoryName = request == null ? null : request.supplierName();
+                    // Generate LOT: supplier 3-chars - (requestedAt-7d yyyyMMdd) - part.code
+                    String supplier = request == null ? null : request.supplierName();
+                    String supplier3 = (supplier == null || supplier.isBlank()) ? ""
+                            : supplier.substring(0, Math.min(3, supplier.length()));
                     java.time.LocalDate prodDate = reqAt.minusDays(7).toLocalDate();
                     String ymd = prodDate.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
-                    lot = (factoryName == null ? "" : factoryName) + "-" + ymd + "-" + (productCode == null ? "" : productCode);
+                    lot = supplier3 + "-" + ymd + "-" + (productCode == null ? "" : productCode);
                 }
 
                 var line = ReceivingNoteLineEntity.builder()
@@ -264,8 +306,8 @@ public class ReceivingServiceImpl implements ReceivingService {
                         .productId(rl.productId())
                         .productLot(lot)
                         .productCode(productCode)
-                        .productName(null)
-                        .productImgUrl(null)
+                        .productName(productName)
+                        .productImgUrl(productImgUrl)
                         .orderedQty(ordered)
                         .inspectedQty(0)
                         .status(ReceivingLineStatus.PENDING)

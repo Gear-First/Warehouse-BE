@@ -130,6 +130,13 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     @Transactional
     public void increase(String warehouseCode, Long partId, int qty) {
+        // Backward-compatible call without supplier attribution
+        increase(warehouseCode, partId, qty, null);
+    }
+
+    @Override
+    @Transactional
+    public void increase(String warehouseCode, Long partId, int qty, String supplierName) {
         if (qty <= 0 || partId == null) {
             return;
         }
@@ -139,8 +146,13 @@ public class InventoryServiceImpl implements InventoryService {
                         .warehouseCode(warehouseCode)
                         .partId(partId)
                         .onHandQty(0)
+                        .supplierName(supplierName)
                         .lastUpdatedAt(now)
                         .build());
+        // Update supplier snapshot if provided (non-blank)
+        if (supplierName != null && !supplierName.isBlank()) {
+            entity.setSupplierName(supplierName);
+        }
         entity.increase(qty, now);
         repo.save(entity);
     }

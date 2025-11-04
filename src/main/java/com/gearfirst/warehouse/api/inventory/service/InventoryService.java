@@ -21,6 +21,12 @@ public interface InventoryService {
     /** Increase on-hand by qty for the given warehouse/part (warehouseId is optional for MVP). */
     void increase(String warehouseCode, Long partId, int qty);
 
+    /** Increase with supplier attribution snapshot (nullable supplierName allowed). */
+    default void increase(String warehouseCode, Long partId, int qty, String supplierName) {
+        // default delegates to legacy method without supplier attribution
+        increase(warehouseCode, partId, qty);
+    }
+
     /**
      * Decrease on-hand by qty; must not go below zero (throws ConflictException on insufficient).
      */

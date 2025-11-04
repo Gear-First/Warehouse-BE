@@ -3,6 +3,7 @@ package com.gearfirst.warehouse.api.receiving.service;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -94,9 +95,9 @@ class ReceivingServiceInventoryCallsTest {
         var resp = service.complete(noteId, ReceivingCompleteRequest.builder().inspectorName("WAREHOUSE").inspectorDept("DEFAULT").inspectorPhone("N/A").build());
 
         // then (verify inventory increase called exactly once for the ACCEPTED line)
-        verify(inventory, times(1)).increase(eq("WH-T"), eq(acceptedPartId), eq(acceptedOrderedQty));
+        verify(inventory, times(1)).increase(eq("WH-T"), eq(acceptedPartId), eq(acceptedOrderedQty), eq("Supplier-X"));
         // never for REJECTED line
-        verify(inventory, never()).increase(eq("WH-T"), eq(rejectedPartId), anyInt());
+        verify(inventory, never()).increase(eq("WH-T"), eq(rejectedPartId), anyInt(), anyString());
         // no other calls
         verifyNoMoreInteractions(inventory);
     }
@@ -107,14 +108,14 @@ class ReceivingServiceInventoryCallsTest {
         // first completion
         service.complete(noteId, ReceivingCompleteRequest.builder().inspectorName("WAREHOUSE").inspectorDept("DEFAULT").inspectorPhone("N/A").build());
         // verify once
-        verify(inventory, times(1)).increase(eq("WH-T"), eq(acceptedPartId), eq(acceptedOrderedQty));
+        verify(inventory, times(1)).increase(eq("WH-T"), eq(acceptedPartId), eq(acceptedOrderedQty), eq("Supplier-X"));
 
         // reset interactions for clear counting of second call
         Mockito.clearInvocations(inventory);
 
         // second completion should throw ConflictException and not call increase
         assertThrows(ConflictException.class, () -> service.complete(noteId, ReceivingCompleteRequest.builder().inspectorName("WAREHOUSE").inspectorDept("DEFAULT").inspectorPhone("N/A").build()));
-        verify(inventory, never()).increase(any(), any(), anyInt());
+        verify(inventory, never()).increase(any(), any(), anyInt(), anyString());
     }
 
     @Test

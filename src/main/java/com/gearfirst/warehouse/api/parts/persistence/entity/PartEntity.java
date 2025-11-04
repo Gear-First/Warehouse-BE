@@ -47,5 +47,9 @@ public class PartEntity extends BaseTimeEntity {
 
     @Builder.Default
     @Column(nullable = false)
+    private Integer safetyStockQty = 0;
+
+    @Builder.Default
+    @Column(nullable = false)
     private boolean enabled = true;
 }

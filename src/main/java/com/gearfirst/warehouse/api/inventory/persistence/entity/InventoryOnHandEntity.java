@@ -43,6 +43,9 @@ public class InventoryOnHandEntity extends BaseTimeEntity {
     @Column(nullable = false)
     private Integer onHandQty;
 
+    // Snapshot of supplier name for on-hand attribution (no master table)
+    private String supplierName;
+
     private OffsetDateTime lastUpdatedAt;
 
     public void increase(int qty, OffsetDateTime now) {

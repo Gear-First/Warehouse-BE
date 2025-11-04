@@ -3,7 +3,9 @@ package com.gearfirst.warehouse.api.shipping.service;
 import static com.gearfirst.warehouse.common.response.ErrorStatus.CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED;
 
 import com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.OnHandSummary;
+import com.gearfirst.warehouse.api.inventory.persistence.InventoryOnHandJpaRepository;
 import com.gearfirst.warehouse.api.inventory.service.InventoryService;
+import com.gearfirst.warehouse.api.parts.persistence.PartJpaRepository;
 import com.gearfirst.warehouse.api.shipping.domain.LineStatus;
 import com.gearfirst.warehouse.api.shipping.domain.NoteStatus;
 import com.gearfirst.warehouse.api.shipping.domain.ShippingNote;
@@ -31,6 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,16 +44,20 @@ public class ShippingServiceImpl implements ShippingService {
     private final OnHandProvider onHandProvider;
     private final InventoryService inventoryService;
     private final NoteNumberGenerator noteNumberGenerator;
+    // Optional helper for product snapshot (nullable for tests)
+    private PartJpaRepository partRepository;
 
     @Autowired
     public ShippingServiceImpl(ShippingNoteRepository repository,
                                OnHandProvider onHandProvider,
                                InventoryService inventoryService,
-                               NoteNumberGenerator noteNumberGenerator) {
+                               NoteNumberGenerator noteNumberGenerator,
+                               PartJpaRepository partRepository) {
         this.repository = repository;
         this.onHandProvider = onHandProvider;
         this.inventoryService = inventoryService;
         this.noteNumberGenerator = noteNumberGenerator;
+        this.partRepository = partRepository;
     }
 
     // Backward-compatible ctors for tests
@@ -301,19 +308,65 @@ public class ShippingServiceImpl implements ShippingService {
         Set<Long> productIds = new HashSet<>();
         if (request != null && request.lines() != null) {
             int i = 0;
+            // Pre-validate: all productIds must exist
+            HashSet<Long> idsToValidate = new java.util.HashSet<>();
+            for (var rl : request.lines()) {
+                if (rl.productId() != null) idsToValidate.add(rl.productId());
+            }
+            if (!idsToValidate.isEmpty() && partRepository != null) {
+                var found = partRepository.findAllById(idsToValidate).stream().map(p -> p.getId()).collect(java.util.stream.Collectors.toSet());
+                for (Long pid : idsToValidate) {
+                    if (!found.contains(pid)) {
+                        throw new BadRequestException(ErrorStatus.PART_CODE_INVALID);
+                    }
+                }
+            }
             for (var rl : request.lines()) {
                 int ordered = rl.orderedQty() == null ? 0 : rl.orderedQty();
                 totalQty += ordered;
                 if (rl.productId() != null) {
                     productIds.add(rl.productId());
                 }
+                // Snapshot product info via Part if available
+                String productCode = null;
+                String productName = null;
+                String productImgUrl = null;
+                if (rl.productId() != null && partRepository != null) {
+                    var partOpt = partRepository.findById(rl.productId());
+                    if (partOpt.isPresent()) {
+                        var part = partOpt.get();
+                        productCode = part.getCode();
+                        productName = part.getName();
+                        productImgUrl = part.getImageUrl();
+                    } else {
+                        productCode = "P-" + rl.productId();
+                    }
+                } else if (rl.productId() != null) {
+                    productCode = "P-" + rl.productId();
+                }
+                // LOT generation: use supplierName from Part (first 3 chars) when available; fallback to empty prefix
+                String lot = null;
+                String reqAtStr = request == null ? null : request.requestedAt();
+                if (reqAtStr != null && !reqAtStr.isBlank()) {
+                    var reqAt = OffsetDateTime.parse(reqAtStr);
+                    String supplier3 = "";
+                    if (rl.productId() != null && partRepository != null) {
+                        var partOpt2 = partRepository.findById(rl.productId());
+                        if (partOpt2.isPresent() && partOpt2.get().getSupplierName() != null) {
+                            String sn = partOpt2.get().getSupplierName();
+                            supplier3 = sn.substring(0, Math.min(3, sn.length()));
+                        }
+                    }
+                    String ymd = reqAt.minusDays(3).toLocalDate().format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+                    lot = supplier3 + "-" + ymd + "-" + (productCode == null ? "" : productCode);
+                }
                 lines.add(ShippingNoteLine.builder()
                         .lineId(null)
                         .productId(rl.productId())
-                        .productLot(null)
-                        .productCode(null)
-                        .productName(null)
-                        .productImgUrl(null)
+                        .productLot(lot)
+                        .productCode(productCode)
+                        .productName(productName)
+                        .productImgUrl(productImgUrl)
                         .orderedQty(ordered)
                         .pickedQty(0)
                         .status(LineStatus.PENDING)
@@ -419,6 +472,9 @@ public class ShippingServiceImpl implements ShippingService {
 
         @Override
         public void increase(String warehouseCode, Long partId, int qty) { /* no-op */ }
+
+        @Override
+        public void increase(String warehouseCode, Long partId, int qty, String supplierName) { /* no-op */ }
 
         @Override
         public void decrease(String warehouseCode, Long partId, int qty) { /* no-op */ }
