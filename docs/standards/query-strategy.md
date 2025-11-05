@@ -1,29 +1,40 @@
 # Query Strategy (MVP)
 
-- Status: Draft
-- Date: 2025-10-24
+- Status: Proposed (Pilot Ready)
+- Date: 2025-11-05
 - Deciders: 현희찬
 
 ## 결론 (현 단계)
-- Spring Data 메서드 쿼리/간단 JPQL 유지
-- Querydsl는 "준비만" 단계: 문서/가드레일만 정의, 설치/리팩터 없음
-- 파일럿 재평가 시점: Parts Read 검색(후속 PR)
+- 기본 원칙: Spring Data 메서드 쿼리/간단 JPQL 유지
+- Querydsl: 읽기 전용 복잡 조회에 한정하여 점진 도입. 1차 파일럿: Parts Read 검색
+- 도입은 "추가" 방식으로 진행(기존 Repository 보존), 리스크/범위 최소화
 
 ## 근거
 - 현재/근시일 질의 복잡도는 메서드 쿼리로 충분(상태/일자/페이징)
-- 중기(Parts 검색, 향후 재고/멀티창고)에는 동적 조건/조인이 증가 → Querydsl 적합
+- 중기(Parts 검색, 향후 재고/멀티창고)에는 동적 조건/조인/정렬 조합 증가 -> Querydsl 적합(타입세이프/가독성/리팩터 안정성)
 
-## 가드레일(지금부터 준수)
-- Repository 목록 조회는 파라미터 객체(SearchCondition/Spec)로 전달(향후 동적 조건 추가 용이)
-- Service 계층은 정렬/페이징/필터 파라미터를 객체로 통일해 전달
-- UC 문서에 선택적 필터(dateFrom/dateTo/keyword/status[]) 사전 고지(미구현 표기 가능)
+## 파일럿 범위(Parts Read)
+- 필터: keyword(code/name), categoryId/name, carModelId/name, enabled
+- 정렬: code, name, price, createdAt (asc/desc)
+- 프로젝션: PartSummary(id, code, name, price, imageUrl, category{id,name})
+- 페이지네이션: page/size 기본값 유지
 
-## 향후 도입 체크리스트(파일럿 시)
-- Gradle: querydsl-jpa + annotationProcessor 설정
-- Bean: JPAQueryFactory 구성, Q-클래스 생성 경로 IDE 제외 설정
-- Repository: 복잡 조회만 Querydsl로 신규 구현, 나머지는 유지
-- 카운트 성능: 별도 countQuery 구성
-- 테스트: H2 환경에서 Q-클래스 생성/동작 검증, 변경 라인 diff 커버리지 > 90%
+## 개발자 준비(Gradle/IDE)
+- Gradle 의존성: querydsl-jpa, querydsl-apt(jpa), jakarta.persistence/annotation-api(annotationProcessor)
+- 생성 경로: build/generated/sources/annotationProcessor/java/main 를 sources root 로 추가(IDE)
+- Bean: JPAQueryFactory 구성(예: @Configuration)
+
+## 가드레일(공통)
+- Repository 목록 조회는 파라미터 객체(SearchCondition)로 전달 -> Querydsl 전환 용이
+- 허용 정렬 키 화이트리스트 운영(무효 키는 무시 또는 기본 정렬)
+- KST 날짜 윈도 규칙/expected* 기본값(+2일) 유지(Receiving/Shipping)
+
+## 향후 도입 체크리스트(파일럿/확장 시)
+- Repository: 복잡 조회만 Querydsl 신규 구현, 나머지는 유지
+- 카운트 성능: 별도 countQuery 구성 또는 fetchResults 대체 전략
+- 테스트: Q-클래스 생성/동작 검증, 조건/정렬/페이지 조합 테스트, 커버리지 > 90%
+- 성능: N+1 방지(LEFT JOIN + distinct/서브쿼리), 인덱스 점검
 
 ## 참고
+- ADR-06-Querydsl-Adoption.md(본 문서의 ADR)
 - ADR-05(UC 비권위), standards/acceptance-checklists.md

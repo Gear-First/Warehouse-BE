@@ -12,8 +12,8 @@
 
 ## 상태 정의(정합화)
 
-- Note: PENDING → IN_PROGRESS → COMPLETED_OK | COMPLETED_ISSUE
-- Line: PENDING → ACCEPTED | REJECTED
+- Note: PENDING -> IN_PROGRESS -> COMPLETED_OK | COMPLETED_ISSUE
+- Line: PENDING -> ACCEPTED | REJECTED
 - REJECTED 트리거: 파손/부족 등 검수 이슈가 발생하면 해당 라인은 전량 거부(REJECTED)
 
 ## 적용 수량 규칙
@@ -37,12 +37,23 @@
 - receivedQty: 실제 도착 수량
 - inspectedQty: 검수 통과 수량(MVP에서는 부분 수용 미지원 가정 하에 ACCEPTED 시 orderedQty와 동일)
 - acceptedQty(파생): 재고 반영 수량
-  - MVP: ACCEPTED → acceptedQty = orderedQty, REJECTED → acceptedQty = 0
+  - MVP: ACCEPTED -> acceptedQty = orderedQty, REJECTED -> acceptedQty = 0
   - 향후 부분 수용 도입 시: acceptedQty = inspectedQty로 전환 가능(정책/UC 동시 개정)
 
 > 인벤토리 반영: 입고 완료 시 증가 기준은 acceptedQty의 합계(MVP에서는 사실상 orderedQty 합계)입니다.
 
+## 일정/예정일(정책)
+
+- expectedReceiveDate 기본값: 요청일(requestedAt) + 2일
+- 요청에서 expectedReceiveDate가 명시되면 해당 값을 우선한다
+- 리스트/상세 응답의 날짜 표기는 KST ISO-8601로 노출한다(서버 내부 UTC 저장)
+
+## 인벤토리 반영(스냅샷 메타)
+
+- 입고 완료 시 증가 기준은 acceptedQty 합계(본문 규칙 참조)
+- 공급자 스냅샷(supplierName)을 `inventory_onhand`에 함께 저장하여 추적 가능하게 한다
+
 ## 참고
 
-- 관련: ADR-01, ADR-02, ADR-05
-- UC 문서: docs/uc/01-receiving/* (본 정책의 상태 명칭과 일치시키도록 업데이트 예정)
+- 관련: ADR-01, ADR-02, ADR-05, ADR-06-Querydsl-Adoption.md
+- UC 문서: docs/uc/01-receiving/* (본 정책의 상태 명칭과 일치시키도록 업데이트됨)

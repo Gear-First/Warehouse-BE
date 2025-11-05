@@ -74,3 +74,23 @@
 }
 ```
 - Filtering (phase 1): `date`/`dateFrom`/`dateTo` apply to `requestedAt` by default (range wins; closed interval; UTC). A later PR may add `dateField` to switch to `completedAt`.
+
+
+#### Update (2025-11-05 — expectedReceiveDate & KST window)
+- List item now includes `expectedReceiveDate` (ISO-8601 KST). If not provided on create, server defaults to `requestedAt + 2 days`.
+- Date filters (`date`, `dateFrom`, `dateTo`) are interpreted by KST day windows while timestamps are stored in UTC.
+- Example item fields now include:
+```json
+{
+  "noteId": 201,
+  "receivingNo": "IN-서울-20251102-001",
+  "supplierName": "HanKorea",
+  "itemKinds": 2,
+  "totalQty": 40,
+  "status": "COMPLETED_OK",
+  "warehouseCode": "서울",
+  "requestedAt": "2025-11-02T09:00:00+09:00",
+  "expectedReceiveDate": "2025-11-04T09:00:00+09:00",
+  "completedAt": "2025-11-03T16:00:00+09:00"
+}
+```

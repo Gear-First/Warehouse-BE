@@ -96,3 +96,23 @@
 }
 ```
 - Filtering (phase 1): `date`/`dateFrom`/`dateTo` apply to `requestedAt` by default (range wins; closed interval; UTC).
+
+
+#### Update (2025-11-05 — expectedShipDate & KST window)
+- List item now includes `expectedShipDate` (ISO-8601 KST). If not provided on create, server defaults to `requestedAt + 2 days`.
+- Date filters (`date`, `dateFrom`, `dateTo`) are interpreted by KST day windows while timestamps are stored in UTC.
+- Example item fields now include:
+```json
+{
+  "noteId": 501,
+  "shippingNo": "OUT-부산-20251103-001",
+  "branchName": "ACME",
+  "itemKinds": 2,
+  "totalQty": 30,
+  "status": "IN_PROGRESS",
+  "warehouseCode": "부산",
+  "requestedAt": "2025-11-03T09:00:00+09:00",
+  "expectedShipDate": "2025-11-05T09:00:00+09:00",
+  "completedAt": null
+}
+```
