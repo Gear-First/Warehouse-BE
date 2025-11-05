@@ -37,8 +37,8 @@ class ShippingControllerNotesTest {
     @DisplayName("GET /api/v1/shipping/notes?status=not-done - 통합 엔드포인트: 예정 목록")
     void getNotes_notDone_success() throws Exception {
         var list = List.of(
-                new ShippingNoteSummaryResponse(2001L, "S-001", "ACME", 3, 50, "PENDING", "WH1", "2025-10-20T09:00:00Z", null),
-                new ShippingNoteSummaryResponse(2002L, "S-002", "BETA", 1, 10, "IN_PROGRESS", "WH1", "2025-10-20T09:05:00Z", null)
+                new ShippingNoteSummaryResponse(2001L, "S-001", "ACME", 3, 50, "PENDING", "WH1", "2025-10-20T09:00:00Z", "2025-10-22T09:00:00Z",null),
+                new ShippingNoteSummaryResponse(2002L, "S-002", "BETA", 1, 10, "IN_PROGRESS", "WH1", "2025-10-20T09:05:00Z", "2025-10-22T09:05:00Z",null)
         );
         when(shippingService.getNotDone(any())).thenReturn(list);
 
@@ -59,8 +59,8 @@ class ShippingControllerNotesTest {
     @DisplayName("GET /api/v1/shipping/notes?status=done - 통합 엔드포인트: 완료/지연 목록")
     void getNotes_done_success() throws Exception {
         var list = List.of(
-                new ShippingNoteSummaryResponse(2003L, "S-003", "ACME", 3, 50, "COMPLETED", "WH1", "2025-10-20T08:00:00Z", "2025-10-20T10:00:00Z"),
-                new ShippingNoteSummaryResponse(2004L, "S-004", "BETA", 1, 10, "DELAYED", "WH1", "2025-10-20T09:00:00Z", "2025-10-20T15:00:00Z")
+                new ShippingNoteSummaryResponse(2003L, "S-003", "ACME", 3, 50, "COMPLETED", "WH1", "2025-10-20T08:00:00Z", "2025-10-22T08:00:00Z", "2025-10-20T10:00:00Z"),
+                new ShippingNoteSummaryResponse(2004L, "S-004", "BETA", 1, 10, "DELAYED", "WH1", "2025-10-20T09:00:00Z", "2025-10-22T09:00:00Z", "2025-10-20T15:00:00Z")
         );
         when(shippingService.getDone(any())).thenReturn(list);
 
@@ -80,10 +80,10 @@ class ShippingControllerNotesTest {
     @DisplayName("GET /api/v1/shipping/notes?status=all - 통합 엔드포인트: 전체 목록(머지)")
     void getNotes_all_success() throws Exception {
         when(shippingService.getNotDone(any())).thenReturn(List.of(
-                new ShippingNoteSummaryResponse(2005L, "S-005", "ACME", 3, 50, "PENDING", "WH1", "2025-10-20T09:00:00Z", null)
+                new ShippingNoteSummaryResponse(2005L, "S-005", "ACME", 3, 50, "PENDING", "WH1", "2025-10-20T09:00:00Z", "2025-10-22T09:00:00Z", null)
         ));
         when(shippingService.getDone(any())).thenReturn(List.of(
-                new ShippingNoteSummaryResponse(2006L, "S-006", "BETA", 1, 10, "COMPLETED", "WH1", "2025-10-20T08:00:00Z", "2025-10-20T10:00:00Z")
+                new ShippingNoteSummaryResponse(2006L, "S-006", "BETA", 1, 10, "COMPLETED", "WH1", "2025-10-20T08:00:00Z","2025-10-22T08:00:00Z", "2025-10-20T10:00:00Z")
         ));
 
         mockMvc.perform(get("/api/v1/shipping/notes").param("status", "all").accept(MediaType.APPLICATION_JSON))

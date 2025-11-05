@@ -69,7 +69,7 @@ class ShippingControllerKstNormalizationNotDoneTest {
     @DisplayName("GET /shipping/not-done: 단일 date만 있을 때 단일 오버로드 호출")
     void notDone_singleDate_callsSingleOverload() throws Exception {
         when(shippingService.getNotDone(anyString())).thenReturn(List.of(
-                new ShippingNoteSummaryResponse(30L, "OUT-001", "ACME", 1, 10, "PENDING", "서울", "2025-11-01T15:00:00Z", null)
+                new ShippingNoteSummaryResponse(30L, "OUT-001", "ACME", 1, 10, "PENDING", "서울", "2025-11-01T15:00:00Z", "2025-11-03T15:00:00Z",null)
         ));
 
         mockMvc.perform(get("/api/v1/shipping/not-done")

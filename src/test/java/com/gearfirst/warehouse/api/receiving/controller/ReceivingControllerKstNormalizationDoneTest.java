@@ -70,7 +70,7 @@ class ReceivingControllerKstNormalizationDoneTest {
     @DisplayName("GET /receiving/done: 단일 date면 단일 오버로드 호출")
     void done_singleDate_callsSingleOverload() throws Exception {
         when(receivingService.getDone(anyString())).thenReturn(List.of(
-                new ReceivingNoteSummaryResponse(11L, "IN-OK", "SUP", 1, 10, "COMPLETED_OK", "W1", "2025-11-01T15:00:00Z", null)
+                new ReceivingNoteSummaryResponse(11L, "IN-OK", "SUP", 1, 10, "COMPLETED_OK", "W1", "2025-11-01T15:00:00Z", "2025-11-03T15:00:00Z", null)
         ));
 
         mockMvc.perform(get("/api/v1/receiving/done")

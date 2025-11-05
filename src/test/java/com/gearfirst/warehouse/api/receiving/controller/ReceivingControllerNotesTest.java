@@ -37,8 +37,8 @@ class ReceivingControllerNotesTest {
     @DisplayName("GET /api/v1/receiving/notes?status=not-done - 통합 엔드포인트: 예정 목록")
     void getNotes_notDone_success() throws Exception {
         var list = List.of(
-                new ReceivingNoteSummaryResponse(101L, "IN-WH1-20251020-001", "ABC Supply", 3, 120, "PENDING", "WH1", "2025-10-20T09:00:00Z", null),
-                new ReceivingNoteSummaryResponse(102L, "IN-WH1-20251020-002", "BCD Parts", 2, 45, "IN_PROGRESS", "WH1", "2025-10-20T09:05:00Z", null)
+                new ReceivingNoteSummaryResponse(101L, "IN-WH1-20251020-001", "ABC Supply", 3, 120, "PENDING", "WH1", "2025-10-20T09:00:00Z", "2025-10-22T09:00:00Z", null),
+                new ReceivingNoteSummaryResponse(102L, "IN-WH1-20251020-002", "BCD Parts", 2, 45, "IN_PROGRESS", "WH1", "2025-10-20T09:05:00Z", "2025-10-22T09:05:00Z", null)
         );
         when(receivingService.getNotDone(any())).thenReturn(list);
 
@@ -59,8 +59,8 @@ class ReceivingControllerNotesTest {
     @DisplayName("GET /api/v1/receiving/notes?status=done - 통합 엔드포인트: 완료 목록")
     void getNotes_done_success() throws Exception {
         var list = List.of(
-                new ReceivingNoteSummaryResponse(201L, "IN-WH1-20251020-010", "ABC Supply", 1, 10, "COMPLETED_OK", "WH1", "2025-10-20T08:00:00Z", "2025-10-20T10:00:00Z"),
-                new ReceivingNoteSummaryResponse(202L, "IN-WH1-20251020-011", "ABC Supply", 1, 10, "COMPLETED_ISSUE", "WH1", "2025-10-20T09:00:00Z", "2025-10-20T15:00:00Z")
+                new ReceivingNoteSummaryResponse(201L, "IN-WH1-20251020-010", "ABC Supply", 1, 10, "COMPLETED_OK", "WH1", "2025-10-20T08:00:00Z", "2025-10-22T08:00:00Z", "2025-10-20T10:00:00Z"),
+                new ReceivingNoteSummaryResponse(202L, "IN-WH1-20251020-011", "ABC Supply", 1, 10, "COMPLETED_ISSUE", "WH1", "2025-10-20T09:00:00Z", "2025-10-22T09:00:00Z", "2025-10-20T15:00:00Z")
         );
         when(receivingService.getDone(any())).thenReturn(list);
 
@@ -80,10 +80,10 @@ class ReceivingControllerNotesTest {
     @DisplayName("GET /api/v1/receiving/notes?status=all - 통합 엔드포인트: 전체 목록(머지)")
     void getNotes_all_success() throws Exception {
         when(receivingService.getNotDone(any())).thenReturn(List.of(
-                new ReceivingNoteSummaryResponse(101L, "IN-WH1-20251020-001", "ABC Supply", 3, 120, "PENDING", "WH1", "2025-10-20T09:00:00Z", null)
+                new ReceivingNoteSummaryResponse(101L, "IN-WH1-20251020-001", "ABC Supply", 3, 120, "PENDING", "WH1", "2025-10-20T09:00:00Z", "2025-10-22T09:00:00Z",null)
         ));
         when(receivingService.getDone(any())).thenReturn(List.of(
-                new ReceivingNoteSummaryResponse(201L, "IN-WH1-20251020-010", "ABC Supply", 1, 10, "COMPLETED_OK", "WH1", "2025-10-20T08:00:00Z", "2025-10-20T10:00:00Z")
+                new ReceivingNoteSummaryResponse(201L, "IN-WH1-20251020-010", "ABC Supply", 1, 10, "COMPLETED_OK", "WH1", "2025-10-20T08:00:00Z", "2025-10-22T08:00:00Z", "2025-10-20T10:00:00Z")
         ));
 
         mockMvc.perform(get("/api/v1/receiving/notes").param("status", "all").accept(MediaType.APPLICATION_JSON))

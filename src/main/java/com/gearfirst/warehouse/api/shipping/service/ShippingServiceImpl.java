@@ -398,6 +398,7 @@ public class ShippingServiceImpl implements ShippingService {
                 status,
                 note.getWarehouseCode(),
                 note.getRequestedAt(),
+                note.getExpectedShipDate(),
                 note.getCompletedAt()
         );
     }

@@ -45,6 +45,7 @@ class ShippingControllerKstBoundaryEdgeTest {
         var list = List.of(
                 new ShippingNoteSummaryResponse(301L, "OUT-KST-001", "납품처A", 1, 10, "COMPLETED", "WH1",
                         "2025-11-02T00:00:00+09:00", // KST midnight
+                        "2025-11-04T00:00:00+09:00",
                         "2025-11-02T23:59:59+09:00")
         );
         when(shippingService.getDone(eq("2025-11-02"))).thenReturn(list);

@@ -20,6 +20,7 @@ import com.gearfirst.warehouse.common.exception.ConflictException;
 import com.gearfirst.warehouse.common.exception.NotFoundException;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
 import com.gearfirst.warehouse.common.sequence.NoteNumberGenerator;
+import com.gearfirst.warehouse.common.util.DateTimes;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -209,7 +210,7 @@ public class ReceivingServiceImpl implements ReceivingService {
         repository.save(note);
 
         return new ReceivingCompleteResponse(
-                com.gearfirst.warehouse.common.util.DateTimes.toKstString(completedAt),
+                DateTimes.toKstString(completedAt),
                 appliedSum
         );
     }
@@ -344,7 +345,7 @@ public class ReceivingServiceImpl implements ReceivingService {
     }
 
     private ReceivingNoteSummaryResponse toSummary(ReceivingNoteEntity n) {
-        String completedAt = com.gearfirst.warehouse.common.util.DateTimes.toKstString(n.getCompletedAt());
+        String completedAt = DateTimes.toKstString(n.getCompletedAt());
         return new ReceivingNoteSummaryResponse(
                 n.getNoteId(),
                 n.getReceivingNo(),
@@ -353,13 +354,14 @@ public class ReceivingServiceImpl implements ReceivingService {
                 n.getTotalQty(),
                 n.getStatus().name(),
                 n.getWarehouseCode(),
-                com.gearfirst.warehouse.common.util.DateTimes.toKstString(n.getRequestedAt()),
+                DateTimes.toKstString(n.getRequestedAt()),
+                DateTimes.toKstString(n.getExpectedReceiveDate()),
                 completedAt
         );
     }
 
     private ReceivingNoteDetailResponse toDetail(ReceivingNoteEntity n) {
-        String completedAt = com.gearfirst.warehouse.common.util.DateTimes.toKstString(n.getCompletedAt());
+        String completedAt = DateTimes.toKstString(n.getCompletedAt());
         var lines = n.getLines().stream().map(l -> new ReceivingNoteLineResponse(
                 l.getLineId(),
                 new ReceivingProductResponse(l.getProductId(), l.getProductLot(), l.getProductCode(),
@@ -377,9 +379,9 @@ public class ReceivingServiceImpl implements ReceivingService {
                 completedAt,
                 n.getReceivingNo(),
                 n.getWarehouseCode(),
-                com.gearfirst.warehouse.common.util.DateTimes.toKstString(n.getRequestedAt()),
-                com.gearfirst.warehouse.common.util.DateTimes.toKstString(n.getExpectedReceiveDate()),
-                com.gearfirst.warehouse.common.util.DateTimes.toKstString(n.getReceivedAt()),
+                DateTimes.toKstString(n.getRequestedAt()),
+                DateTimes.toKstString(n.getExpectedReceiveDate()),
+                DateTimes.toKstString(n.getReceivedAt()),
                 n.getInspectorName(),
                 n.getInspectorDept(),
                 n.getInspectorPhone(),

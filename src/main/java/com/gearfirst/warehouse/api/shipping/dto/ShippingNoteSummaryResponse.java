@@ -9,6 +9,7 @@ public record ShippingNoteSummaryResponse(
         String status,       // PENDING | IN_PROGRESS | DELAYED | COMPLETED
         String warehouseCode,
         String requestedAt,  // ISO8601 string or null
+        String expectedShipDate, // ISO8601 string or null
         String completedAt   // ISO8601 string or null
 ) {
 }

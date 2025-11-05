@@ -68,7 +68,7 @@ class ShippingControllerKstNormalizationTest {
     @DisplayName("GET /shipping/done: 단일 date만 있을 때 단일 오버로드 호출")
     void done_singleDate_callsSingleOverload() throws Exception {
         when(shippingService.getDone(anyString())).thenReturn(List.of(
-                new ShippingNoteSummaryResponse(20L, "OUT-001", "ACME", 1, 10, "COMPLETED", "서울", "2025-11-01T15:00:00Z", null)
+                new ShippingNoteSummaryResponse(20L, "OUT-001", "ACME", 1, 10, "COMPLETED", "서울", "2025-11-01T15:00:00Z", "2025-11-03T15:00:00Z",null)
         ));
 
         mockMvc.perform(get("/api/v1/shipping/done")

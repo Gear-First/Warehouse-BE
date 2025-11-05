@@ -82,7 +82,7 @@ class ReceivingControllerKstNormalizationTest {
     void notDone_singleDate_callsSingleOverload() throws Exception {
         // Arrange
         when(receivingService.getNotDone(anyString())).thenReturn(List.of(
-                new ReceivingNoteSummaryResponse(10L, "IN-001", "ACME", 1, 10, "PENDING", "서울", "2025-11-01T15:00:00Z",
+                new ReceivingNoteSummaryResponse(10L, "IN-001", "ACME", 1, 10, "PENDING", "서울", "2025-11-01T15:00:00Z", "2025-11-03T15:00:00Z",
                         null)
         ));
 

@@ -45,6 +45,7 @@ class ReceivingControllerKstBoundaryEdgeTest {
         var list = List.of(
                 new ReceivingNoteSummaryResponse(201L, "IN-KST-001", "공급A", 1, 10, "COMPLETED_OK", "WH1",
                         "2025-11-02T00:00:00+09:00", // KST midnight start
+                        "2025-11-04T00:00:00+09:00",
                         "2025-11-02T23:59:59+09:00") // KST end of day (string example)
         );
         when(receivingService.getDone(eq("2025-11-02"))).thenReturn(list);

@@ -34,8 +34,8 @@ class ShippingControllerDoneTest {
     void getDone_success() throws Exception {
         // given
         var list = List.of(
-                new ShippingNoteSummaryResponse(2001L, "OUT-SEO-20251020-001", "ACME", 3, 50, "COMPLETED", "SEO", "2025-10-20T08:30:00Z", "2025-10-20T10:00:00Z"),
-                new ShippingNoteSummaryResponse(2002L, "OUT-SEO-20251021-002", "BETA", 1, 10, "DELAYED", "SEO", "2025-10-21T11:00:00Z", null)
+                new ShippingNoteSummaryResponse(2001L, "OUT-SEO-20251020-001", "ACME", 3, 50, "COMPLETED", "SEO", "2025-10-20T08:30:00Z", "2025-10-22T08:30:00Z","2025-10-22T10:00:00Z"),
+                new ShippingNoteSummaryResponse(2002L, "OUT-SEO-20251021-002", "BETA", 1, 10, "DELAYED", "SEO", "2025-10-21T11:00:00Z", "2025-10-23T08:30:00Z", null)
         );
         when(shippingService.getDone(any())).thenReturn(list);
 
