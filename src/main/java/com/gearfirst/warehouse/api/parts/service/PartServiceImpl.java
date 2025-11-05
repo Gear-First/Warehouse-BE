@@ -119,6 +119,7 @@ public class PartServiceImpl implements PartService {
                 .price(req.price())
                 .categoryId(req.categoryId())
                 .imageUrl(req.imageUrl())
+                .safetyStockQty(req.safetyStockQty() == null ? 0 : Math.max(0, req.safetyStockQty()))
                 .enabled(true)
                 .build());
 
@@ -159,6 +160,9 @@ public class PartServiceImpl implements PartService {
         p.setImageUrl(req.imageUrl());
         if (req.enabled() != null) {
             p.setEnabled(req.enabled());
+        }
+        if (req.safetyStockQty() != null) {
+            p.setSafetyStockQty(Math.max(0, req.safetyStockQty()));
         }
         partRepo.save(p);
         return toDetail(p);
@@ -219,7 +223,8 @@ public class PartServiceImpl implements PartService {
                 new CategoryRef(p.getCategoryId(), resolveCategoryName(p.getCategoryId())),
                 p.getImageUrl(), p.isEnabled(),
                 p.getCreatedAt() != null ? p.getCreatedAt().toString() : null,
-                p.getUpdatedAt() != null ? p.getUpdatedAt().toString() : null
+                p.getUpdatedAt() != null ? p.getUpdatedAt().toString() : null,
+                p.getSafetyStockQty()
         );
     }
 

@@ -98,9 +98,9 @@ class PartsControllerTest {
     @Test
     @DisplayName("POST /api/v1/parts - 생성 성공")
     void createPart_success() throws Exception {
-        var req = new CreatePartRequest("P-1001", "오일필터", 12000, 10L, "/img/p-1001.png");
+        var req = new CreatePartRequest("P-1001", "오일필터", 12000, 10L, "/img/p-1001.png", 0);
         var detail = new PartDetailResponse(1L, "P-1001", "오일필터", 12000,
-                new CategoryRef(10L, "Filter"), "/img/p-1001.png", true, "2025-10-27T00:00:00Z", "2025-10-27T00:00:00Z");
+                new CategoryRef(10L, "Filter"), "/img/p-1001.png", true, "2025-10-27T00:00:00Z", "2025-10-27T00:00:00Z", 0);
         when(partService.create(org.mockito.ArgumentMatchers.any(CreatePartRequest.class))).thenReturn(detail);
 
         mockMvc.perform(post("/api/v1/parts")

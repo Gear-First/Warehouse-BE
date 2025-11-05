@@ -38,7 +38,7 @@ class ShippingServiceWarehouseTest {
         repo = new InMemoryShippingNoteRepository();
         inventory = new FakeInventoryService();
         provider = new InventoryBackedOnHandProvider(inventory);
-        service = new ShippingServiceImpl(repo, provider, inventory);
+        service = new ShippingServiceImpl(repo, provider, inventory, null, null);
     }
 
     @Test
@@ -157,7 +157,7 @@ class ShippingServiceWarehouseTest {
                 var key = e.getKey();
                 if (warehouseCode != null && !warehouseCode.isBlank() && !java.util.Objects.equals(warehouseCode, key.wh)) continue;
                 var part = new PartRef(key.part, "P-"+key.part, null);
-                list.add(new OnHandSummary(key.wh, part, e.getValue(), now));
+                list.add(new OnHandSummary(key.wh, part, e.getValue(), now, false, 0));
             }
             return of(list, 0, list.size(), list.size());
         }

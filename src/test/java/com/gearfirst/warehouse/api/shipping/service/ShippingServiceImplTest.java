@@ -29,7 +29,15 @@ class ShippingServiceImplTest {
     void setUp() {
         repo = new InMemoryShippingNoteRepository();
         OnHandProvider provider = productId -> Integer.MAX_VALUE / 2; // default: sufficient stock
-        service = new ShippingServiceImpl(repo, provider);
+        com.gearfirst.warehouse.api.inventory.service.InventoryService inv = new com.gearfirst.warehouse.api.inventory.service.InventoryService() {
+            @Override
+            public com.gearfirst.warehouse.common.response.PageEnvelope<com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.OnHandSummary> listOnHand(String warehouseCode, String partKeyword, String supplierName, Integer minQty, Integer maxQty, int page, int size, java.util.List<String> sort) {
+                return com.gearfirst.warehouse.common.response.PageEnvelope.of(java.util.List.of(), 0, 0, 0);
+            }
+            @Override public void increase(String warehouseCode, Long partId, int qty) { }
+            @Override public void decrease(String warehouseCode, Long partId, int qty) { }
+        };
+        service = new ShippingServiceImpl(repo, provider, inv, null, null);
     }
 
     @Test

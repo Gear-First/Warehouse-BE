@@ -12,7 +12,8 @@ public class PartDtos {
             @NotBlank @Size(min = 2, max = 100) String name,
             @NotNull @Min(0) Integer price,
             @NotNull Long categoryId,
-            String imageUrl
+            String imageUrl,
+            @Min(0) Integer safetyStockQty
     ) {
     }
 
@@ -22,7 +23,8 @@ public class PartDtos {
             @NotNull @Min(0) Integer price,
             @NotNull Long categoryId,
             String imageUrl,
-            Boolean enabled
+            Boolean enabled,
+            @Min(0) Integer safetyStockQty
     ) {
     }
 
@@ -43,7 +45,8 @@ public class PartDtos {
             String imageUrl,
             boolean enabled,
             String createdAt,
-            String updatedAt
+            String updatedAt,
+            Integer safetyStockQty
     ) {
     }
 

@@ -8,7 +8,9 @@ public class OnHandDtos {
             String warehouseCode,
             PartRef part,
             int onHandQty,
-            String lastUpdatedAt
+            String lastUpdatedAt,
+            boolean lowStock,
+            Integer safetyStockQty
     ) {
     }
 }

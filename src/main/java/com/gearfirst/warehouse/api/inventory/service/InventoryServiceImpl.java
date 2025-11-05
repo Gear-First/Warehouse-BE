@@ -63,7 +63,10 @@ public class InventoryServiceImpl implements InventoryService {
             String name = pe != null ? pe.getName() : null;
             var partRef = new PartRef(e.getPartId(), code, name);
             var last = com.gearfirst.warehouse.common.util.DateTimes.toKstString(e.getLastUpdatedAt());
-            items.add(new OnHandSummary(e.getWarehouseCode(), partRef, e.getOnHandQty(), last));
+            int onHand = e.getOnHandQty() == null ? 0 : e.getOnHandQty();
+            int safety = pe != null && pe.getSafetyStockQty() != null ? pe.getSafetyStockQty() : 0;
+            boolean low = onHand < safety;
+            items.add(new OnHandSummary(e.getWarehouseCode(), partRef, onHand, last, low, safety));
         }
         // Filters: partKeyword (code|name), supplierName (part attribution), qty range
         var filtered = items.stream()

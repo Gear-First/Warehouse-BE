@@ -3,7 +3,6 @@ package com.gearfirst.warehouse.api.shipping.service;
 import static com.gearfirst.warehouse.common.response.ErrorStatus.CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED;
 
 import com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.OnHandSummary;
-import com.gearfirst.warehouse.api.inventory.persistence.InventoryOnHandJpaRepository;
 import com.gearfirst.warehouse.api.inventory.service.InventoryService;
 import com.gearfirst.warehouse.api.parts.persistence.PartJpaRepository;
 import com.gearfirst.warehouse.api.shipping.domain.LineStatus;
@@ -32,12 +31,12 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 public class ShippingServiceImpl implements ShippingService {
 
     private final ShippingNoteRepository repository;
@@ -45,37 +44,7 @@ public class ShippingServiceImpl implements ShippingService {
     private final InventoryService inventoryService;
     private final NoteNumberGenerator noteNumberGenerator;
     // Optional helper for product snapshot (nullable for tests)
-    private PartJpaRepository partRepository;
-
-    @Autowired
-    public ShippingServiceImpl(ShippingNoteRepository repository,
-                               OnHandProvider onHandProvider,
-                               InventoryService inventoryService,
-                               NoteNumberGenerator noteNumberGenerator,
-                               PartJpaRepository partRepository) {
-        this.repository = repository;
-        this.onHandProvider = onHandProvider;
-        this.inventoryService = inventoryService;
-        this.noteNumberGenerator = noteNumberGenerator;
-        this.partRepository = partRepository;
-    }
-
-    // Backward-compatible ctors for tests
-    public ShippingServiceImpl(ShippingNoteRepository repository, OnHandProvider onHandProvider) {
-        this.repository = repository;
-        this.onHandProvider = onHandProvider;
-        this.inventoryService = new NoOpInventoryService();
-        this.noteNumberGenerator = null;
-    }
-
-    public ShippingServiceImpl(ShippingNoteRepository repository,
-                               OnHandProvider onHandProvider,
-                               InventoryService inventoryService) {
-        this.repository = repository;
-        this.onHandProvider = onHandProvider;
-        this.inventoryService = inventoryService;
-        this.noteNumberGenerator = null;
-    }
+    private final PartJpaRepository partRepository;
 
     @Override
     public List<ShippingNoteSummaryResponse> getNotDone(String date) {

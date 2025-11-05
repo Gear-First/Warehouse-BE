@@ -43,7 +43,7 @@ class InventoryControllerTest {
     @Test
     @DisplayName("GET /api/v1/inventory/onhand - 목록 성공(ApiResponse<PageEnvelope>)")
     void listOnHand_success() throws Exception {
-        var items = List.of(new OnHandSummary("1", new PartRef(1001L, "P-1001", "오일필터"), 128, "2025-10-27T00:00:00Z"));
+        var items = List.of(new OnHandSummary("1", new PartRef(1001L, "P-1001", "오일필터"), 128, "2025-10-27T00:00:00Z", false, 0));
         var envelope = PageEnvelope.of(items, 0, 20, 1);
         when(inventoryService.listOnHand(any(), any(), any(), any(), any(), anyInt(), anyInt(), any())).thenReturn(envelope);
 
