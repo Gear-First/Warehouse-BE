@@ -9,7 +9,7 @@
 ## Policy
 - 운영 권장: 삭제보다 "단종(Discontinue)"을 우선 사용한다.
 - 단종은 검색/리스트/선택에서 기본적으로 제외되도록 한다(enabled=false 또는 status=DISCONTINUED). 단, 과거 이력/참조에는 영향 주지 않는다.
-- 삭제(Delete)는 강한 제약(관리자 전용, 참조 무결성 보장)하에 제한적으로만 허용한다. 삭제 정책은 [UC-PART-005-delete-part.md](./UC-PART-005-delete-part.md) 참고.
+- 삭제(Delete)는 강한 제약(관리자 전용, 참조 무결성 보장)하에 제한적으로만 허용한다. 삭제 정책은 [UC-PART-005-delete-part.md](UC-PART-005-delete-part.md) 참고.
 
 ## Intent
 - 지정한 부품을 운영 흐름에서 비활성화(단종) 처리한다. 이후 신규 입출고/매핑/검색 대상에서 제외한다(정책에 따름).

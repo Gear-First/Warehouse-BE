@@ -14,7 +14,7 @@
 - 중기(Parts 검색, 향후 재고/멀티창고)에는 동적 조건/조인/정렬 조합 증가 -> Querydsl 적합(타입세이프/가독성/리팩터 안정성)
 
 ## 파일럿 범위(Parts Read)
-- 필터: keyword(code/name), categoryId/name, carModelId/name, enabled
+- 필터: q(code|name), categoryId/name, carModelId/name, enabled
 - 정렬: code, name, price, createdAt (asc/desc)
 - 프로젝션: PartSummary(id, code, name, price, imageUrl, category{id,name})
 - 페이지네이션: page/size 기본값 유지
@@ -38,3 +38,24 @@
 ## 참고
 - ADR-06-Querydsl-Adoption.md(본 문서의 ADR)
 - ADR-05(UC 비권위), standards/acceptance-checklists.md
+
+
+## Unified Search Parameter (`q`) — Convention
+- Purpose: Enable one-string integrated search across primary and related fields while preserving precise field filters.
+- Parameter: `q` (string, optional)
+  - Matching scope (Parts pilot): case-insensitive contains over `part.code | part.name | category.name | carModel.name`
+  - Normalization: trim, collapse multiple spaces, compare using lowercase
+  - Precedence: `q` is ANDed with all other specific filters (e.g., `categoryId`, `enabled`)
+- Mini-grammar (operators inside `q`, optional):
+  - `id:123` (exact numeric id)
+  - `code:P-1001` (contains by default; exact can be `code==P-1001` if needed later)
+  - `name:패드`
+  - `category:제동`
+  - `model:아반떼`
+- ID handling policy:
+  - Do NOT implicitly interpret a bare numeric `q` value as `id`. Ambiguity with codes/names that include digits is risky.
+  - Use explicit `partId` request parameter for programmatic exact targeting; or use `q=id:123` operator when using a single search box.
+- Sorting & paging: unchanged; continue whitelist sorting and standard `page/size` semantics.
+- Implementation notes (Querydsl):
+  - LEFT JOIN related tables; use `distinct`/id-grouping; separate `countQuery` without heavy joins.
+  - Tokenize `q`, detect operators, combine predicates with AND; free-text tokens match across the defined scope.

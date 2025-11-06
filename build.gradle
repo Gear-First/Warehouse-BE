@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.gearfirst'
 version = '0.0.1-SNAPSHOT'
-description = '창고 사용자를 위한 백엔드 서비스'
+description = '입고/출고/재고 등 부품 정보와 관련된 영역을 위한 백엔드 서비스'
 
 java {
 	toolchain {
