@@ -13,9 +13,12 @@ import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCreateNoteRequest;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteDetailResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteLineResponse;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteSummary;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteSummaryResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingProductResponse;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingSearchCond;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingUpdateLineRequest;
+import com.gearfirst.warehouse.api.shipping.persistence.ShippingQueryRepository;
 import com.gearfirst.warehouse.api.shipping.repository.ShippingNoteRepository;
 import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.common.exception.ConflictException;
@@ -32,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +49,10 @@ public class ShippingServiceImpl implements ShippingService {
     private final NoteNumberGenerator noteNumberGenerator;
     // Optional helper for product snapshot (nullable for tests)
     private final PartJpaRepository partRepository;
+
+    // Optional Querydsl repository for unified list queries (nullable for tests)
+    @Autowired(required = false)
+    private ShippingQueryRepository shippingQueryRepository;
 
     @Override
     public List<ShippingNoteSummaryResponse> getNotDone(String date) {
@@ -76,6 +84,21 @@ public class ShippingServiceImpl implements ShippingService {
 
     @Override
     public List<ShippingNoteSummaryResponse> getNotDone(String date, String dateFrom, String dateTo, String warehouseCode) {
+        // Prefer Querydsl repository when available (range-first policy is handled at controller)
+        if (shippingQueryRepository != null) {
+            ShippingSearchCond cond = ShippingSearchCond.builder()
+                    .status("not-done")
+                    .date(date)
+                    .dateFrom(dateFrom)
+                    .dateTo(dateTo)
+                    .warehouseCode(warehouseCode)
+                    .shippingNo(null)
+                    .branchName(null)
+                    .build();
+            List<ShippingNoteSummary> list = shippingQueryRepository.searchAll(cond);
+            return list.stream().map(s -> toSummaryFromQuery(s)).toList();
+        }
+        // Fallback to legacy repository implementation
         return repository.findNotDone(date, dateFrom, dateTo, warehouseCode).stream()
                 .sorted(Comparator.comparing(ShippingNote::getNoteId, Comparator.nullsLast(Long::compareTo)))
                 .map(this::toSummary)
@@ -84,6 +107,19 @@ public class ShippingServiceImpl implements ShippingService {
 
     @Override
     public List<ShippingNoteSummaryResponse> getDone(String date, String dateFrom, String dateTo, String warehouseCode) {
+        if (shippingQueryRepository != null) {
+            ShippingSearchCond cond = ShippingSearchCond.builder()
+                    .status("done")
+                    .date(date)
+                    .dateFrom(dateFrom)
+                    .dateTo(dateTo)
+                    .warehouseCode(warehouseCode)
+                    .shippingNo(null)
+                    .branchName(null)
+                    .build();
+            List<ShippingNoteSummary> list = shippingQueryRepository.searchAll(cond);
+            return list.stream().map(this::toSummaryFromQuery).toList();
+        }
         return repository.findDone(date, dateFrom, dateTo, warehouseCode).stream()
                 .sorted(Comparator.comparing(ShippingNote::getNoteId, Comparator.nullsLast(Long::compareTo)))
                 .map(this::toSummary)
@@ -400,6 +436,22 @@ public class ShippingServiceImpl implements ShippingService {
                 note.getRequestedAt(),
                 note.getExpectedShipDate(),
                 note.getCompletedAt()
+        );
+    }
+
+    private ShippingNoteSummaryResponse toSummaryFromQuery(ShippingNoteSummary s) {
+        String status = s.getStatus() == null ? "PENDING" : s.getStatus().name();
+        return new ShippingNoteSummaryResponse(
+                s.getNoteId(),
+                s.getShippingNo(),
+                s.getBranchName(),
+                s.getItemKindsNumber(),
+                s.getTotalQty(),
+                status,
+                s.getWarehouseCode(),
+                s.getRequestedAt(),
+                s.getExpectedShipDate(),
+                s.getCompletedAt()
         );
     }
 

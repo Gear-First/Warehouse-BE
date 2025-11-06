@@ -1,37 +1,45 @@
 package com.gearfirst.warehouse.api.shipping.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gearfirst.warehouse.api.shipping.ShippingController;
-import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteSummaryResponse;
-import com.gearfirst.warehouse.api.shipping.service.ShippingService;
-import com.gearfirst.warehouse.common.response.SuccessStatus;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.List;
-
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = ShippingController.class)
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gearfirst.warehouse.api.shipping.ShippingController;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteSummaryResponse;
+import com.gearfirst.warehouse.api.shipping.service.ShippingService;
+import com.gearfirst.warehouse.common.exception.GlobalExceptionHandler;
+import com.gearfirst.warehouse.common.response.SuccessStatus;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+@ExtendWith(MockitoExtension.class)
 class ShippingControllerNotesTest {
 
-    @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @Mock
     private ShippingService shippingService;
+
+    @BeforeEach
+    void setup() {
+        ShippingController controller = new ShippingController(shippingService);
+        this.mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+        this.objectMapper = new ObjectMapper();
+    }
 
     @Test
     @DisplayName("GET /api/v1/shipping/notes?status=not-done - 통합 엔드포인트: 예정 목록")
