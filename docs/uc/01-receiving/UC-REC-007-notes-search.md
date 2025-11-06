@@ -24,7 +24,7 @@ Receiving 노트의 상태/번호/업체/날짜/창고 등 복합 조건 검색�
 - Sorting (whitelist; default: `requestedAt,desc`)
   - `sort=requestedAt|completedAt|receivingNo|status|supplierName|warehouseCode[,asc|desc]`
 - Unified Search
-  - `q` (string, optional): case-insensitive contains over `receivingNo | productCode(partCode) | supplierName | warehouseCode`
+  - `q` (string, optional): case-insensitive contains over `receivingNo | supplierName | warehouseCode`
     - Normalization: trim, collapse spaces, lowercase matching
     - Precedence: combined with all other filters using logical AND
 - Filters (all optional; AND-combined)

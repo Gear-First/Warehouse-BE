@@ -126,6 +126,88 @@ public class ShippingServiceImpl implements ShippingService {
                 .toList();
     }
 
+    // Extended overloads including shippingNo/branchName filters
+    @Override
+    public List<ShippingNoteSummaryResponse> getNotDone(String date, String dateFrom, String dateTo, String warehouseCode,
+                                                        String shippingNo, String branchName) {
+        if (shippingQueryRepository != null) {
+            ShippingSearchCond cond = ShippingSearchCond.builder()
+                    .status("not-done")
+                    .date(date)
+                    .dateFrom(dateFrom)
+                    .dateTo(dateTo)
+                    .warehouseCode(warehouseCode)
+                    .shippingNo(shippingNo)
+                    .branchName(branchName)
+                    .build();
+            List<ShippingNoteSummary> list = shippingQueryRepository.searchAll(cond);
+            return list.stream().map(this::toSummaryFromQuery).toList();
+        }
+        // Legacy fallback ignores text filters
+        return getNotDone(date, dateFrom, dateTo, warehouseCode);
+    }
+
+    @Override
+    public List<ShippingNoteSummaryResponse> getDone(String date, String dateFrom, String dateTo, String warehouseCode,
+                                                     String shippingNo, String branchName) {
+        if (shippingQueryRepository != null) {
+            ShippingSearchCond cond = ShippingSearchCond.builder()
+                    .status("done")
+                    .date(date)
+                    .dateFrom(dateFrom)
+                    .dateTo(dateTo)
+                    .warehouseCode(warehouseCode)
+                    .shippingNo(shippingNo)
+                    .branchName(branchName)
+                    .build();
+            List<ShippingNoteSummary> list = shippingQueryRepository.searchAll(cond);
+            return list.stream().map(this::toSummaryFromQuery).toList();
+        }
+        // Legacy fallback ignores text filters
+        return getDone(date, dateFrom, dateTo, warehouseCode);
+    }
+
+    // Unified q overloads
+    @Override
+    public List<ShippingNoteSummaryResponse> getNotDone(String date, String dateFrom, String dateTo, String warehouseCode,
+                                                        String shippingNo, String branchName, String q) {
+        if (shippingQueryRepository != null) {
+            ShippingSearchCond cond = ShippingSearchCond.builder()
+                    .status("not-done")
+                    .q(q)
+                    .date(date)
+                    .dateFrom(dateFrom)
+                    .dateTo(dateTo)
+                    .warehouseCode(warehouseCode)
+                    .shippingNo(shippingNo)
+                    .branchName(branchName)
+                    .build();
+            List<ShippingNoteSummary> list = shippingQueryRepository.searchAll(cond);
+            return list.stream().map(this::toSummaryFromQuery).toList();
+        }
+        return getNotDone(date, dateFrom, dateTo, warehouseCode, shippingNo, branchName);
+    }
+
+    @Override
+    public List<ShippingNoteSummaryResponse> getDone(String date, String dateFrom, String dateTo, String warehouseCode,
+                                                     String shippingNo, String branchName, String q) {
+        if (shippingQueryRepository != null) {
+            ShippingSearchCond cond = ShippingSearchCond.builder()
+                    .status("done")
+                    .q(q)
+                    .date(date)
+                    .dateFrom(dateFrom)
+                    .dateTo(dateTo)
+                    .warehouseCode(warehouseCode)
+                    .shippingNo(shippingNo)
+                    .branchName(branchName)
+                    .build();
+            List<ShippingNoteSummary> list = shippingQueryRepository.searchAll(cond);
+            return list.stream().map(this::toSummaryFromQuery).toList();
+        }
+        return getDone(date, dateFrom, dateTo, warehouseCode, shippingNo, branchName);
+    }
+
     // Overload with optional warehouse filter (warehouseCode)
     public List<ShippingNoteSummaryResponse> getDone(String date, String warehouseCode) {
         var notes = repository.findDone(date);

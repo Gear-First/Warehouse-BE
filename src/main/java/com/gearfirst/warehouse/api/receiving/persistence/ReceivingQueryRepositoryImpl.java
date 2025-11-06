@@ -122,6 +122,19 @@ public class ReceivingQueryRepositoryImpl implements ReceivingQueryRepository {
             }
         }
 
+        // unified q (receivingNo | supplierName | warehouseCode[when explicit param is blank])
+        if (cond.getQ() != null && !cond.getQ().isBlank()) {
+            String term = cond.getQ().trim();
+            var qPredicate =
+                receivingNoteEntity.receivingNo.containsIgnoreCase(term)
+                    .or(receivingNoteEntity.supplierName.containsIgnoreCase(term));
+            // Only include warehouseCode in q-scope when explicit warehouseCode filter is not provided
+            if (cond.getWarehouseCode() == null || cond.getWarehouseCode().isBlank()) {
+                qPredicate = qPredicate.or(receivingNoteEntity.warehouseCode.containsIgnoreCase(term));
+            }
+            list.add(qPredicate);
+        }
+
         if (cond.getWarehouseCode() != null && !cond.getWarehouseCode().isBlank()) {
             list.add(receivingNoteEntity.warehouseCode.equalsIgnoreCase(cond.getWarehouseCode().trim()));
         }
@@ -140,6 +153,7 @@ public class ReceivingQueryRepositoryImpl implements ReceivingQueryRepository {
         if (sort == null || sort.isEmpty()) return List.of();
         Map<String, Function<Sort.Order, OrderSpecifier<?>>> mapping = new HashMap<>();
         mapping.put("requestedAt", o -> new OrderSpecifier<>(toOrder(o), receivingNoteEntity.requestedAt));
+        mapping.put("expectedReceiveDate", o -> new OrderSpecifier<>(toOrder(o), receivingNoteEntity.expectedReceiveDate));
         mapping.put("completedAt", o -> new OrderSpecifier<>(toOrder(o), receivingNoteEntity.completedAt));
         mapping.put("receivingNo", o -> new OrderSpecifier<>(toOrder(o), receivingNoteEntity.receivingNo));
         mapping.put("noteId", o -> new OrderSpecifier<>(toOrder(o), receivingNoteEntity.noteId));

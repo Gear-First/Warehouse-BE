@@ -1,7 +1,8 @@
 package com.gearfirst.warehouse.api.shipping.controller;
 
 import static org.hamcrest.Matchers.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -27,7 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 @ExtendWith(MockitoExtension.class)
-class ShippingControllerKstNormalizationNotDoneTest {
+class ShippingControllerKstNormalizationDoneTest {
 
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
@@ -45,16 +46,16 @@ class ShippingControllerKstNormalizationNotDoneTest {
     }
 
     @Test
-    @DisplayName("GET /shipping/not-done: range 우선 및 역전 스왑")
-    void notDone_rangeWins_andSwap() throws Exception {
-        when(shippingService.getNotDone(
+    @DisplayName("GET /shipping/done: range 우선 및 역전 스왑")
+    void done_rangeWins_andSwap() throws Exception {
+        when(shippingService.getDone(
                 ArgumentMatchers.<String>nullable(String.class),
                 ArgumentMatchers.<String>nullable(String.class),
                 ArgumentMatchers.<String>nullable(String.class),
                 any()
         )).thenReturn(List.of());
 
-        mockMvc.perform(get("/api/v1/shipping/not-done")
+        mockMvc.perform(get("/api/v1/shipping/done")
                         .queryParam("date", "2025-11-01")
                         .queryParam("dateFrom", "2025-11-03")
                         .queryParam("dateTo", "2025-11-02")
@@ -72,7 +73,7 @@ class ShippingControllerKstNormalizationNotDoneTest {
         ArgumentCaptor<String> fromCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> toCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> wcCaptor = ArgumentCaptor.forClass(String.class);
-        verify(shippingService).getNotDone(dateCaptor.capture(), fromCaptor.capture(), toCaptor.capture(), wcCaptor.capture());
+        verify(shippingService).getDone(dateCaptor.capture(), fromCaptor.capture(), toCaptor.capture(), wcCaptor.capture());
 
         Assertions.assertNull(dateCaptor.getValue());
         Assertions.assertEquals("2025-11-02", fromCaptor.getValue());
@@ -81,34 +82,34 @@ class ShippingControllerKstNormalizationNotDoneTest {
     }
 
     @Test
-    @DisplayName("GET /shipping/not-done: 단일 date면 단일 오버로드 호출")
-    void notDone_singleDate_callsSingleOverload() throws Exception {
-        when(shippingService.getNotDone(eq("2025-11-02"))).thenReturn(List.of(
-                new ShippingNoteSummaryResponse(11L, "OUT-OK", "ACME", 1, 10, "PENDING", "W1", "2025-11-01T15:00:00Z", "2025-11-03T15:00:00Z", null)
+    @DisplayName("GET /shipping/done: 단일 date면 단일 오버로드 호출")
+    void done_singleDate_callsSingleOverload() throws Exception {
+        when(shippingService.getDone(eq("2025-11-02"))).thenReturn(List.of(
+                new ShippingNoteSummaryResponse(11L, "OUT-OK", "ACME", 1, 10, "COMPLETED", "W1", "2025-11-01T15:00:00Z", "2025-11-03T15:00:00Z", null)
         ));
 
-        mockMvc.perform(get("/api/v1/shipping/not-done")
+        mockMvc.perform(get("/api/v1/shipping/done")
                         .queryParam("date", "2025-11-02")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items", hasSize(1)))
                 .andExpect(jsonPath("$.data.items[0].noteId", is(11)));
 
-        verify(shippingService, times(1)).getNotDone(eq("2025-11-02"));
-        verify(shippingService, never()).getNotDone(anyString(), anyString(), anyString(), any());
+        verify(shippingService, times(1)).getDone(eq("2025-11-02"));
+        verify(shippingService, never()).getDone(anyString(), anyString(), anyString(), any());
     }
 
     @Test
-    @DisplayName("GET /shipping/not-done: dateFrom만 있으면 date=null로 범위 오버로드 호출(from만 설정)")
-    void notDone_dateFromOnly_callsRangeOverload() throws Exception {
-        when(shippingService.getNotDone(
+    @DisplayName("GET /shipping/done: dateFrom만 있으면 date=null로 범위 오버로드 호출(from만 설정)")
+    void done_dateFromOnly_callsRangeOverload() throws Exception {
+        when(shippingService.getDone(
                 ArgumentMatchers.<String>nullable(String.class),
                 ArgumentMatchers.<String>nullable(String.class),
                 ArgumentMatchers.<String>nullable(String.class),
                 any()
         )).thenReturn(List.of());
 
-        mockMvc.perform(get("/api/v1/shipping/not-done")
+        mockMvc.perform(get("/api/v1/shipping/done")
                         .queryParam("dateFrom", "2025-11-02")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -117,23 +118,23 @@ class ShippingControllerKstNormalizationNotDoneTest {
         ArgumentCaptor<String> dateCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> fromCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> toCaptor = ArgumentCaptor.forClass(String.class);
-        verify(shippingService).getNotDone(dateCaptor.capture(), fromCaptor.capture(), toCaptor.capture(), any());
+        verify(shippingService).getDone(dateCaptor.capture(), fromCaptor.capture(), toCaptor.capture(), any());
         Assertions.assertNull(dateCaptor.getValue());
         Assertions.assertEquals("2025-11-02", fromCaptor.getValue());
         Assertions.assertNull(toCaptor.getValue());
     }
 
     @Test
-    @DisplayName("GET /shipping/not-done: dateTo만 있으면 date=null로 범위 오버로드 호출(to만 설정)")
-    void notDone_dateToOnly_callsRangeOverload() throws Exception {
-        when(shippingService.getNotDone(
+    @DisplayName("GET /shipping/done: dateTo만 있으면 date=null로 범위 오버로드 호출(to만 설정)")
+    void done_dateToOnly_callsRangeOverload() throws Exception {
+        when(shippingService.getDone(
                 ArgumentMatchers.<String>nullable(String.class),
                 ArgumentMatchers.<String>nullable(String.class),
                 ArgumentMatchers.<String>nullable(String.class),
                 any()
         )).thenReturn(List.of());
 
-        mockMvc.perform(get("/api/v1/shipping/not-done")
+        mockMvc.perform(get("/api/v1/shipping/done")
                         .queryParam("dateTo", "2025-11-03")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -142,7 +143,7 @@ class ShippingControllerKstNormalizationNotDoneTest {
         ArgumentCaptor<String> dateCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> fromCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> toCaptor = ArgumentCaptor.forClass(String.class);
-        verify(shippingService).getNotDone(dateCaptor.capture(), fromCaptor.capture(), toCaptor.capture(), any());
+        verify(shippingService).getDone(dateCaptor.capture(), fromCaptor.capture(), toCaptor.capture(), any());
         Assertions.assertNull(dateCaptor.getValue());
         Assertions.assertNull(fromCaptor.getValue());
         Assertions.assertEquals("2025-11-03", toCaptor.getValue());

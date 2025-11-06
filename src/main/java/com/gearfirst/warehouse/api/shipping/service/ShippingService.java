@@ -30,10 +30,33 @@ public interface ShippingService {
         return list; // impl override will handle
     }
 
-    // New overloads for centralized filtering (range > single) and optional warehouse filter
+    // New overloads for centralized filtering (range > single) and optional warehouse/text filters
     List<ShippingNoteSummaryResponse> getNotDone(String date, String dateFrom, String dateTo, String warehouseCode);
 
     List<ShippingNoteSummaryResponse> getDone(String date, String dateFrom, String dateTo, String warehouseCode);
+
+    // Extended overloads including shippingNo/branchName filters (preferred)
+    default List<ShippingNoteSummaryResponse> getNotDone(String date, String dateFrom, String dateTo, String warehouseCode,
+                                                         String shippingNo, String branchName) {
+        // by default delegate to 4-arg overload for backward compatibility
+        return getNotDone(date, dateFrom, dateTo, warehouseCode);
+    }
+
+    default List<ShippingNoteSummaryResponse> getDone(String date, String dateFrom, String dateTo, String warehouseCode,
+                                                      String shippingNo, String branchName) {
+        return getDone(date, dateFrom, dateTo, warehouseCode);
+    }
+
+    // Unified q overloads (shippingNo | branchName)
+    default List<ShippingNoteSummaryResponse> getNotDone(String date, String dateFrom, String dateTo, String warehouseCode,
+                                                         String shippingNo, String branchName, String q) {
+        return getNotDone(date, dateFrom, dateTo, warehouseCode, shippingNo, branchName);
+    }
+
+    default List<ShippingNoteSummaryResponse> getDone(String date, String dateFrom, String dateTo, String warehouseCode,
+                                                      String shippingNo, String branchName, String q) {
+        return getDone(date, dateFrom, dateTo, warehouseCode, shippingNo, branchName);
+    }
 
     ShippingNoteDetailResponse getDetail(Long noteId);
 

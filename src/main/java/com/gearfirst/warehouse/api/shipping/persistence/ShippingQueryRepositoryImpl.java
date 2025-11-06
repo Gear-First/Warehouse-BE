@@ -122,6 +122,18 @@ public class ShippingQueryRepositoryImpl implements ShippingQueryRepository {
             }
         }
 
+        // unified q (shippingNo | branchName | warehouseCode[when explicit param is blank])
+        if (cond.getQ() != null && !cond.getQ().isBlank()) {
+            String term = cond.getQ().trim();
+            var qPredicate =
+                shippingNoteEntity.shippingNo.containsIgnoreCase(term)
+                    .or(shippingNoteEntity.branchName.containsIgnoreCase(term));
+            if (cond.getWarehouseCode() == null || cond.getWarehouseCode().isBlank()) {
+                qPredicate = qPredicate.or(shippingNoteEntity.warehouseCode.containsIgnoreCase(term));
+            }
+            list.add(qPredicate);
+        }
+
         if (cond.getWarehouseCode() != null && !cond.getWarehouseCode().isBlank()) {
             list.add(shippingNoteEntity.warehouseCode.equalsIgnoreCase(cond.getWarehouseCode().trim()));
         }
@@ -140,6 +152,7 @@ public class ShippingQueryRepositoryImpl implements ShippingQueryRepository {
         if (sort == null || sort.isEmpty()) return List.of();
         Map<String, Function<Sort.Order, OrderSpecifier<?>>> mapping = new HashMap<>();
         mapping.put("requestedAt", o -> new OrderSpecifier<>(toOrder(o), shippingNoteEntity.requestedAt));
+        mapping.put("expectedShipDate", o -> new OrderSpecifier<>(toOrder(o), shippingNoteEntity.expectedShipDate));
         mapping.put("completedAt", o -> new OrderSpecifier<>(toOrder(o), shippingNoteEntity.completedAt));
         mapping.put("shippingNo", o -> new OrderSpecifier<>(toOrder(o), shippingNoteEntity.shippingNo));
         mapping.put("noteId", o -> new OrderSpecifier<>(toOrder(o), shippingNoteEntity.noteId));

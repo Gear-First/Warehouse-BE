@@ -183,16 +183,19 @@ public class ShippingController {
         return CommonApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_DETAIL_SUCCESS, created);
     }
 
-    @Operation(summary = "출고 통합 리스트 조회", description = "상태 파라미터로 not-done|done|all을 선택하여 조회합니다. 날짜/창고 필터링 지원. 기본 정렬: noteId asc (phase-1: date/dateFrom/dateTo는 requestedAt에 적용). 날짜 필터는 KST(+09:00) 로컬일을 UTC 경계로 변환해 포함 범위로 처리하며, 범위(dateFrom/dateTo)가 단일(date)보다 우선합니다.")
+    @Operation(summary = "출고 통합 리스트 조회", description = "상태 파라미터로 not-done|done|all을 선택하여 조회합니다. 날짜/창고/텍스트(shippingNo|branchName) 필터링 지원. 정렬 화이트리스트: requestedAt, expectedShipDate, completedAt, shippingNo, noteId, status, branchName, warehouseCode. 기본 정렬 폴백: noteId DESC, requestedAt DESC. 날짜 필터는 KST(+09:00) 로컬일을 UTC 경계로 변환해 포함 범위로 처리하며, 범위(dateFrom/dateTo)가 단일(date)보다 우선합니다(역전 시 자동 스왑).")
     @Parameters({
-            @Parameter(name = "status", description = "조회 상태 (not-done|done|all). 기본값 not-done"),
+            @Parameter(name = "status", description = "조회 상태 (not-done|done|all). 기본값 all"),
+            @Parameter(name = "q", description = "통합 검색 문자열(shippingNo | branchName | warehouseCode[explicit 미지정 시]) 부분 일치, 대소문자 무시"),
             @Parameter(name = "date", description = "단일 날짜(YYYY-MM-DD) — requestedAt 기준"),
             @Parameter(name = "dateFrom", description = "시작일(YYYY-MM-DD) — requestedAt 기준"),
             @Parameter(name = "dateTo", description = "종료일(YYYY-MM-DD) — requestedAt 기준"),
             @Parameter(name = "warehouseCode", description = "창고 코드(예: 서울)"),
+            @Parameter(name = "shippingNo", description = "출고 번호 부분 일치 (대소문자 무시)"),
+            @Parameter(name = "branchName", description = "납품처/지점명 부분 일치 (대소문자 무시)"),
             @Parameter(name = "page", description = "페이지(기본 0, 최소 0)"),
             @Parameter(name = "size", description = "페이지 크기(기본 20, 1..100)"),
-            @Parameter(name = "sort", description = "정렬 필드(예: noteId,asc)")
+            @Parameter(name = "sort", description = "정렬 필드(예: requestedAt,desc&sort=shippingNo,asc)")
     })
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "출고 리스트 조회 성공"),
@@ -200,11 +203,14 @@ public class ShippingController {
     })
     @GetMapping("/notes")
     public ResponseEntity<CommonApiResponse<PageEnvelope<ShippingNoteSummaryResponse>>> getNotes(
-            @RequestParam(defaultValue = "not-done") String status,
+            @RequestParam(required = false) String q,
+            @RequestParam(defaultValue = "all") String status,
             @RequestParam(required = false) String date,
             @RequestParam(required = false) String dateFrom,
             @RequestParam(required = false) String dateTo,
             @RequestParam(required = false) String warehouseCode,
+            @RequestParam(required = false) String shippingNo,
+            @RequestParam(required = false) String branchName,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) List<String> sort
@@ -214,14 +220,17 @@ public class ShippingController {
 
         // Normalize dates via DateFilter
         DateFilter.Normalized nf = DateFilter.normalize(date, dateFrom, dateTo);
-        boolean hasFilters = nf.hasRange() || (warehouseCode != null && !warehouseCode.isBlank());
+        boolean hasFilters = nf.hasRange() ||
+                        (warehouseCode != null && !warehouseCode.isBlank()) ||
+                        (shippingNo != null && !shippingNo.isBlank()) ||
+                        (branchName != null && !branchName.isBlank());
         String df = nf.from();
         String dt = nf.to();
         // When explicit range present, date must be ignored (null) to use ranged overloads consistently
         String dateArg = nf.hasRange() ? null : date;
 
         List<ShippingNoteSummaryResponse> list;
-        String statusNormalized = (status == null ? "not-done" : status.toLowerCase(java.util.Locale.ROOT));
+        String statusNormalized = (status == null ? "all" : status.toLowerCase(java.util.Locale.ROOT));
         if (!hasFilters) {
             switch (statusNormalized) {
                 case "done" -> list = (warehouseCode == null || warehouseCode.isBlank())
@@ -244,15 +253,15 @@ public class ShippingController {
             }
         } else {
             switch (statusNormalized) {
-                case "done" -> list = service.getDone(dateArg, df, dt, warehouseCode);
+                case "done" -> list = service.getDone(dateArg, df, dt, warehouseCode, shippingNo, branchName, q);
                 case "all" -> {
-                    var nd = service.getNotDone(dateArg, df, dt, warehouseCode);
-                    var dn = service.getDone(dateArg, df, dt, warehouseCode);
+                    var nd = service.getNotDone(dateArg, df, dt, warehouseCode, shippingNo, branchName, q);
+                    var dn = service.getDone(dateArg, df, dt, warehouseCode, shippingNo, branchName, q);
                     list = new java.util.ArrayList<>(nd.size() + dn.size());
                     list.addAll(nd);
                     list.addAll(dn);
                 }
-                default -> list = service.getNotDone(dateArg, df, dt, warehouseCode);
+                default -> list = service.getNotDone(dateArg, df, dt, warehouseCode, shippingNo, branchName, q);
             }
         }
 
