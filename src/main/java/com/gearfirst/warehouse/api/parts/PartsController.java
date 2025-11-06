@@ -99,7 +99,7 @@ public class PartsController {
         return CommonApiResponse.success(SuccessStatus.SEND_PART_LIST_SUCCESS, envelope);
     }
 
-    @Operation(summary = "부품 통합 조회", description = "Querydsl 기반 통합 검색: q(code|name), categoryId|categoryName, carModelId|carModelName, enabled. 정렬 화이트리스트(code,name,price,createdAt,updatedAt)")
+    @Operation(summary = "부품 통합 조회", description = "Querydsl 기반 통합 검색: q(code | name | category.name | carModel.name), categoryId|categoryName, carModelId|carModelName, enabled. 정렬 화이트리스트(code,name,price,createdAt,updatedAt)")
     @GetMapping("/integrated")
     public ResponseEntity<CommonApiResponse<PageEnvelope<PartIntegratedItem>>> searchIntegrated(
             @RequestParam(required = false) String q,

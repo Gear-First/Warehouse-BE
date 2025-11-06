@@ -109,7 +109,21 @@ public class PartQueryRepositoryImpl implements PartQueryRepository {
 
         if (cond.getQ() != null && !cond.getQ().isBlank()) {
             String q = cond.getQ().trim();
-            predicates.add(partEntity.code.containsIgnoreCase(q).or(partEntity.name.containsIgnoreCase(q)));
+            // q over part.code | part.name | category.name | carModel.name
+            BooleanExpression qExpr = partEntity.code.containsIgnoreCase(q)
+                    .or(partEntity.name.containsIgnoreCase(q))
+                    .or(c.name.containsIgnoreCase(q));
+            QPartCarModelEntity pcmQ = QPartCarModelEntity.partCarModelEntity;
+            QCarModelEntity mQ = QCarModelEntity.carModelEntity;
+            qExpr = qExpr.or(
+                    JPAExpressions.selectOne()
+                            .from(pcmQ)
+                            .join(mQ).on(mQ.id.eq(pcmQ.carModelId))
+                            .where(pcmQ.partId.eq(partEntity.id)
+                                    .and(mQ.name.containsIgnoreCase(q)))
+                            .exists()
+            );
+            predicates.add(qExpr);
         }
         if (cond.getPartId() != null) {
             predicates.add(partEntity.id.eq(cond.getPartId()));
@@ -151,7 +165,23 @@ public class PartQueryRepositoryImpl implements PartQueryRepository {
 
         if (cond.getQ() != null && !cond.getQ().isBlank()) {
             String q = cond.getQ().trim();
-            predicates.add(partEntity.code.containsIgnoreCase(q).or(partEntity.name.containsIgnoreCase(q)));
+            QPartCategoryEntity c2 = QPartCategoryEntity.partCategoryEntity;
+            QPartCarModelEntity pcm2 = QPartCarModelEntity.partCarModelEntity;
+            QCarModelEntity m2 = QCarModelEntity.carModelEntity;
+            BooleanExpression qExpr = partEntity.code.containsIgnoreCase(q)
+                    .or(partEntity.name.containsIgnoreCase(q))
+                    .or(JPAExpressions.selectOne()
+                        .from(c2)
+                        .where(c2.id.eq(partEntity.categoryId)
+                                .and(c2.name.containsIgnoreCase(q)))
+                        .exists())
+                    .or(JPAExpressions.selectOne()
+                        .from(pcm2)
+                        .join(m2).on(m2.id.eq(pcm2.carModelId))
+                        .where(pcm2.partId.eq(partEntity.id)
+                                .and(m2.name.containsIgnoreCase(q)))
+                        .exists());
+            predicates.add(qExpr);
         }
         if (cond.getPartId() != null) {
             predicates.add(partEntity.id.eq(cond.getPartId()));
