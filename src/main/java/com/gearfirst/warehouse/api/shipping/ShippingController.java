@@ -221,6 +221,7 @@ public class ShippingController {
         // Normalize dates via DateFilter
         DateFilter.Normalized nf = DateFilter.normalize(date, dateFrom, dateTo);
         boolean hasFilters = nf.hasRange() ||
+                        (q != null && !q.isBlank()) ||
                         (warehouseCode != null && !warehouseCode.isBlank()) ||
                         (shippingNo != null && !shippingNo.isBlank()) ||
                         (branchName != null && !branchName.isBlank());
