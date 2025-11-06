@@ -1,46 +1,63 @@
 package com.gearfirst.warehouse.api.parts.controller;
 
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gearfirst.warehouse.api.parts.PartsController;
-import com.gearfirst.warehouse.api.parts.dto.CategoryDtos.*;
-import com.gearfirst.warehouse.api.parts.dto.PartDtos.*;
+import com.gearfirst.warehouse.api.parts.dto.CategoryDtos.CategorySummaryResponse;
+import com.gearfirst.warehouse.api.parts.dto.CategoryDtos.CreateCategoryRequest;
+import com.gearfirst.warehouse.api.parts.dto.PartDtos.CategoryRef;
+import com.gearfirst.warehouse.api.parts.dto.PartDtos.CreatePartRequest;
+import com.gearfirst.warehouse.api.parts.dto.PartDtos.PartDetailResponse;
+import com.gearfirst.warehouse.api.parts.dto.PartDtos.PartSummaryResponse;
 import com.gearfirst.warehouse.api.parts.service.PartCategoryService;
+import com.gearfirst.warehouse.api.parts.service.PartQueryService;
 import com.gearfirst.warehouse.api.parts.service.PartService;
 import com.gearfirst.warehouse.common.exception.ConflictException;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
-import com.gearfirst.warehouse.common.response.SuccessStatus;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
+import com.gearfirst.warehouse.common.response.SuccessStatus;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.List;
-
-import static org.hamcrest.Matchers.*;
-// Mockito matchers (use FQN calls below to avoid clash with Hamcrest Matchers.any)
-// import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-@WebMvcTest(controllers = PartsController.class)
+@ExtendWith(MockitoExtension.class)
 class PartsControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @Mock
     private PartCategoryService categoryService;
 
-    @MockBean
+    @Mock
     private PartService partService;
+
+    @Mock
+    private PartQueryService partQueryService;
+
+    @BeforeEach
+    void setup() {
+        PartsController controller = new PartsController(categoryService, partService, partQueryService);
+        this.mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new com.gearfirst.warehouse.common.exception.GlobalExceptionHandler())
+                .build();
+        this.objectMapper = new ObjectMapper();
+    }
 
     @Test
     @DisplayName("GET /api/v1/parts/categories - 목록 성공")
@@ -110,6 +127,40 @@ class PartsControllerTest {
                 .andExpect(jsonPath("$.success", is(true)))
                 .andExpect(jsonPath("$.status", is(SuccessStatus.SEND_PART_CREATE_SUCCESS.getStatusCode())))
                 .andExpect(jsonPath("$.data.code", is("P-1001")));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/parts/integrated - 통합 검색 파라미터 바인딩 및 응답 래핑")
+    void integrated_search_success() throws Exception {
+        // given
+        var item = com.gearfirst.warehouse.api.parts.dto.PartIntegratedItem.builder()
+                .id(1L).code("P-1001").name("Engine Oil Filter").price(12000)
+                .imageUrl("/img/p-1001.png").safetyStockQty(0).enabled(true)
+                .categoryId(10L).categoryName("Filter")
+                .carModelNames(java.util.List.of("Avante", "Sonata"))
+                .build();
+        var envelope = com.gearfirst.warehouse.common.response.PageEnvelope.of(java.util.List.of(item), 0, 20, 1);
+        when(partQueryService.searchIntegrated(
+                org.mockito.ArgumentMatchers.any(com.gearfirst.warehouse.api.parts.dto.PartSearchCond.class),
+                org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)
+        )).thenReturn(envelope);
+
+        // when/then
+        mockMvc.perform(get("/api/v1/parts/integrated")
+                        .param("q", "oil")
+                        .param("categoryName", "Filter")
+                        .param("carModelName", "Avante")
+                        .param("page", "0")
+                        .param("size", "20")
+                        .param("sort", "name,asc")
+                        .param("sort", "updatedAt,desc")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.status", is(SuccessStatus.SEND_PART_LIST_SUCCESS.getStatusCode())))
+                .andExpect(jsonPath("$.data.items[0].code", is("P-1001")))
+                .andExpect(jsonPath("$.data.items[0].categoryName", is("Filter")))
+                .andExpect(jsonPath("$.data.items[0].carModelNames", hasSize(2)));
     }
 
     @Test

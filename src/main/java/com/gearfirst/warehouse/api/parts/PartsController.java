@@ -8,7 +8,10 @@ import com.gearfirst.warehouse.api.parts.dto.PartDtos.CreatePartRequest;
 import com.gearfirst.warehouse.api.parts.dto.PartDtos.PartDetailResponse;
 import com.gearfirst.warehouse.api.parts.dto.PartDtos.PartSummaryResponse;
 import com.gearfirst.warehouse.api.parts.dto.PartDtos.UpdatePartRequest;
+import com.gearfirst.warehouse.api.parts.dto.PartIntegratedItem;
+import com.gearfirst.warehouse.api.parts.dto.PartSearchCond;
 import com.gearfirst.warehouse.api.parts.service.PartCategoryService;
+import com.gearfirst.warehouse.api.parts.service.PartQueryService;
 import com.gearfirst.warehouse.api.parts.service.PartService;
 import com.gearfirst.warehouse.common.response.CommonApiResponse;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
@@ -19,6 +22,9 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -38,6 +44,7 @@ public class PartsController {
 
     private final PartCategoryService categoryService;
     private final PartService partService;
+    private final PartQueryService partQueryService;
 
     // Categories
     @Operation(summary = "부품 카테고리 목록", description = "키워드로 카테고리를 검색합니다. (임시) 전체 리스트 반환 후 필터 적용")
@@ -90,6 +97,58 @@ public class PartsController {
         int s = Math.max(1, Math.min(size, 100));
         PageEnvelope<PartSummaryResponse> envelope = partService.list(code, name, categoryId, p, s, sort);
         return CommonApiResponse.success(SuccessStatus.SEND_PART_LIST_SUCCESS, envelope);
+    }
+
+    @Operation(summary = "부품 통합 조회", description = "Querydsl 기반 통합 검색: q(code|name), categoryId|categoryName, carModelId|carModelName, enabled. 정렬 화이트리스트(code,name,price,createdAt,updatedAt)")
+    @GetMapping("/integrated")
+    public ResponseEntity<CommonApiResponse<PageEnvelope<PartIntegratedItem>>> searchIntegrated(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) Long partId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String categoryName,
+            @RequestParam(required = false) Long carModelId,
+            @RequestParam(required = false) String carModelName,
+            @RequestParam(required = false) Boolean enabled,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) List<String> sort
+    ) {
+        int p = Math.max(0, page);
+        int s = Math.max(1, Math.min(size, 100));
+        Pageable pageable = PageRequest.of(p, s, parseSort(sort));
+        var cond = PartSearchCond.builder()
+                .q(q)
+                .partId(partId)
+                .categoryId(categoryId)
+                .categoryName(categoryName)
+                .carModelId(carModelId)
+                .carModelName(carModelName)
+                .enabled(enabled)
+                .build();
+        var envelope = partQueryService.searchIntegrated(cond, pageable);
+        return CommonApiResponse.success(SuccessStatus.SEND_PART_LIST_SUCCESS, envelope);
+    }
+
+    private Sort parseSort(List<String> sortParams) {
+        if (sortParams == null || sortParams.isEmpty()) {
+            return Sort.unsorted();
+        }
+        try {
+            List<Sort.Order> orders = sortParams.stream()
+                    .map(s -> {
+                        String[] arr = s.split(",");
+                        String prop = arr[0].trim();
+                        String dir = arr.length > 1 ? arr[1].trim().toLowerCase() : "asc";
+                        Sort.Order o = "desc".equals(dir)
+                                ? Sort.Order.desc(prop)
+                                : Sort.Order.asc(prop);
+                        return o.ignoreCase();
+                    })
+                    .toList();
+            return orders.isEmpty() ? Sort.unsorted() : Sort.by(orders);
+        } catch (Exception e) {
+            return Sort.unsorted();
+        }
     }
 
     @Operation(summary = "부품 상세", description = "부품 ID로 상세를 조회합니다.")
