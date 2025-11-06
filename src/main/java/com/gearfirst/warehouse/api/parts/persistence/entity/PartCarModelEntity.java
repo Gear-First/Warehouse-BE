@@ -22,7 +22,8 @@ import lombok.Setter;
                 @UniqueConstraint(name = "UQ_part_car_model", columnNames = {"partId", "carModelId"})
         },
         indexes = {
-                @Index(name = "IDX_pcm_carmodel", columnList = "carModelId")
+                @Index(name = "IDX_pcm_carmodel", columnList = "carModelId"),
+                @Index(name = "IDX_pcm_part", columnList = "partId")
         }
 )
 @Getter

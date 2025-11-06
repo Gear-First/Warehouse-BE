@@ -10,8 +10,10 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +25,19 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "shipping_note")
+@Table(
+    name = "shipping_note",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "UQ_shipping_note_no", columnNames = {"shippingNo"})
+    },
+    indexes = {
+        @Index(name = "IDX_shp_note_requested_at", columnList = "requestedAt"),
+        @Index(name = "IDX_shp_note_completed_at", columnList = "completedAt"),
+        @Index(name = "IDX_shp_note_status", columnList = "status"),
+        @Index(name = "IDX_shp_note_wh", columnList = "warehouseCode"),
+        @Index(name = "IDX_shp_note_branch", columnList = "branchName")
+    }
+)
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

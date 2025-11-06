@@ -8,6 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotNull;
 import java.time.OffsetDateTime;
 import lombok.AccessLevel;
@@ -22,6 +23,9 @@ import lombok.Setter;
         indexes = {
                 @Index(name = "IDX_onhand_wh_part", columnList = "warehouseCode,partId"),
                 @Index(name = "IDX_onhand_part", columnList = "partId")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(name = "UQ_onhand_wh_part", columnNames = {"warehouseCode", "partId"})
         })
 @Getter
 @Setter
