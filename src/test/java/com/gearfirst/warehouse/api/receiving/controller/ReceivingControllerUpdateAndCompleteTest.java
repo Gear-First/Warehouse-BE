@@ -1,23 +1,5 @@
 package com.gearfirst.warehouse.api.receiving.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gearfirst.warehouse.api.receiving.ReceivingController;
-import com.gearfirst.warehouse.api.receiving.dto.*;
-import com.gearfirst.warehouse.api.receiving.service.ReceivingService;
-import com.gearfirst.warehouse.common.exception.BadRequestException;
-import com.gearfirst.warehouse.common.exception.ConflictException;
-import com.gearfirst.warehouse.common.response.ErrorStatus;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.List;
-
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
@@ -26,22 +8,51 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = ReceivingController.class)
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gearfirst.warehouse.api.receiving.ReceivingController;
+import com.gearfirst.warehouse.api.receiving.dto.*;
+import com.gearfirst.warehouse.api.receiving.service.ReceivingQueryService;
+import com.gearfirst.warehouse.api.receiving.service.ReceivingService;
+import com.gearfirst.warehouse.common.exception.BadRequestException;
+import com.gearfirst.warehouse.common.exception.ConflictException;
+import com.gearfirst.warehouse.common.exception.GlobalExceptionHandler;
+import com.gearfirst.warehouse.common.response.ErrorStatus;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+@ExtendWith(MockitoExtension.class)
 class ReceivingControllerUpdateAndCompleteTest {
 
-    @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @Mock
     private ReceivingService receivingService;
+
+    @Mock
+    private ReceivingQueryService receivingQueryService;
+
+    @BeforeEach
+    void setup() {
+        ReceivingController controller = new ReceivingController(receivingService, receivingQueryService);
+        this.mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+        this.objectMapper = new ObjectMapper();
+    }
 
     @Test
     @DisplayName("PATCH /api/v1/receiving/{noteId}/lines/{lineId} - hasIssue=false이면 ACCEPTED로 전이하고 note는 IN_PROGRESS")
     void updateLine_doneOk_success() throws Exception {
-        // given
         var req = new ReceivingUpdateLineRequest(18, false);
         var lines = List.of(new ReceivingNoteLineResponse(10L,
                 new ReceivingProductResponse(4L, "LOT-P-2001", "P-2001", "스페이서", "/img/p2001"),
@@ -51,7 +62,6 @@ class ReceivingControllerUpdateAndCompleteTest {
                 lines);
         when(receivingService.updateLine(eq(102L), eq(10L), ArgumentMatchers.any(ReceivingUpdateLineRequest.class))).thenReturn(detail);
 
-        // when & then
         mockMvc.perform(patch("/api/v1/receiving/{noteId}/lines/{lineId}", 102L, 10L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
@@ -65,7 +75,6 @@ class ReceivingControllerUpdateAndCompleteTest {
     @Test
     @DisplayName("PATCH /api/v1/receiving/{noteId}/lines/{lineId} - hasIssue=true이면 REJECTED로 전이하고 issueQty=ordered-inspected")
     void updateLine_doneIssue_success() throws Exception {
-        // given
         var req = new ReceivingUpdateLineRequest(20, true);
         var lines = List.of(new ReceivingNoteLineResponse(11L,
                 new ReceivingProductResponse(5L, "LOT-P-2002", "P-2002", "클립", "/img/p2002"),
@@ -75,7 +84,6 @@ class ReceivingControllerUpdateAndCompleteTest {
                 lines);
         when(receivingService.updateLine(eq(102L), eq(11L), ArgumentMatchers.any(ReceivingUpdateLineRequest.class))).thenReturn(detail);
 
-        // when & then
         mockMvc.perform(patch("/api/v1/receiving/{noteId}/lines/{lineId}", 102L, 11L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
@@ -119,7 +127,6 @@ class ReceivingControllerUpdateAndCompleteTest {
     @Test
     @DisplayName("POST /api/v1/receiving/{noteId}:complete - 라인이 모두 ACCEPTED/REJECTED일 때 완료되고 appliedQtyTotal은 ACCEPTED 합")
     void complete_success() throws Exception {
-        // stub two updates (responses are not asserted deeply in this test)
         when(receivingService.updateLine(eq(102L), eq(10L), ArgumentMatchers.any(ReceivingUpdateLineRequest.class)))
                 .thenReturn(new ReceivingNoteDetailResponse(102L, "BCD Parts", 2, 45, "IN_PROGRESS", null,
                         null, null, null, null, null, null, null, null, null,

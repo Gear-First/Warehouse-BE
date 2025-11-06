@@ -5,7 +5,9 @@ import com.gearfirst.warehouse.api.receiving.dto.ReceivingCompleteResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingCreateNoteRequest;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteDetailResponse;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteSummaryResponse;
+import com.gearfirst.warehouse.api.receiving.dto.ReceivingSearchCond;
 import com.gearfirst.warehouse.api.receiving.dto.ReceivingUpdateLineRequest;
+import com.gearfirst.warehouse.api.receiving.service.ReceivingQueryService;
 import com.gearfirst.warehouse.api.receiving.service.ReceivingService;
 import com.gearfirst.warehouse.common.response.CommonApiResponse;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
@@ -16,11 +18,15 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,10 +40,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Controller
 @RequestMapping("/api/v1/receiving")
 @RequiredArgsConstructor
-@io.swagger.v3.oas.annotations.tags.Tag(name = "Receiving", description = "입고 API: 서버가 ACCEPTED/REJECTED를 도출하고 완료 시 COMPLETED_OK/ISSUE")
+@Tag(name = "Receiving", description = "입고 API: 서버가 ACCEPTED/REJECTED를 도출하고 완료 시 COMPLETED_OK/ISSUE")
 public class ReceivingController {
 
     private final ReceivingService service;
+    private final ReceivingQueryService receivingQueryService;
 
     @Operation(summary = "입고 예정 리스트 조회", description = "입고 예정된 내역 리스트를 조회합니다. 날짜/창고 필터링 지원. 쿼리 파라미터: date=YYYY-MM-DD (예: 2025-10-29), warehouseCode(옵션), page(기본 0, 최소 0), size(기본 20, 1..100), sort(옵션). 기본 정렬: noteId asc. 날짜 필터는 requestedAt 기준이며, dateFrom/dateTo가 있을 경우 범위가 단일 값보다 우선합니다(경계 포함). KST(+09:00) 로컬일을 UTC 경계로 변환해 포함 범위로 처리합니다.")
     @Parameters({
@@ -67,7 +74,7 @@ public class ReceivingController {
         int s = Math.max(1, Math.min(size, 100));
         // Normalize dates via DateFilter (range wins; swap when from>to)
         DateFilter.Normalized nf = DateFilter.normalize(date, dateFrom, dateTo);
-        java.util.List<com.gearfirst.warehouse.api.receiving.dto.ReceivingNoteSummaryResponse> list;
+        List<ReceivingNoteSummaryResponse> list;
         if (!nf.hasRange() && (warehouseCode == null || warehouseCode.isBlank())) {
             list = service.getNotDone(date);
         } else {
@@ -211,53 +218,46 @@ public class ReceivingController {
     ) {
         int p = Math.max(0, page);
         int s = Math.max(1, Math.min(size, 100));
-        List<ReceivingNoteSummaryResponse> list;
+
         // Normalize dates via DateFilter (range wins; swap when from>to)
         DateFilter.Normalized nf = DateFilter.normalize(date, dateFrom, dateTo);
-        boolean hasFilters = nf.hasRange() || (warehouseCode != null && !warehouseCode.isBlank());
-        String df = nf.from();
-        String dt = nf.to();
         String statusNormalized = (status == null ? "not-done" : status.toLowerCase(Locale.ROOT));
-        // When explicit range present, ignore single date and pass null to ranged overloads
-        String dateArg = nf.hasRange() ? null : date;
-        if (!hasFilters) {
-            switch (statusNormalized) {
-                case "done" -> list = (warehouseCode == null || warehouseCode.isBlank())
-                        ? service.getDone(dateArg)
-                        : service.getDone(dateArg, warehouseCode);
-                case "all" -> {
-                    var nd = (warehouseCode == null || warehouseCode.isBlank())
-                            ? service.getNotDone(dateArg)
-                            : service.getNotDone(dateArg, warehouseCode);
-                    var dn = (warehouseCode == null || warehouseCode.isBlank())
-                            ? service.getDone(dateArg)
-                            : service.getDone(dateArg, warehouseCode);
-                    list = new java.util.ArrayList<>(nd.size() + dn.size());
-                    list.addAll(nd);
-                    list.addAll(dn);
-                }
-                default -> list = (warehouseCode == null || warehouseCode.isBlank())
-                        ? service.getNotDone(dateArg)
-                        : service.getNotDone(dateArg, warehouseCode);
-            }
-        } else {
-            switch (statusNormalized) {
-                case "done" -> list = service.getDone(dateArg, df, dt, warehouseCode);
-                case "all" -> {
-                    var nd = service.getNotDone(dateArg, df, dt, warehouseCode);
-                    var dn = service.getDone(dateArg, df, dt, warehouseCode);
-                    list = new java.util.ArrayList<>(nd.size() + dn.size());
-                    list.addAll(nd);
-                    list.addAll(dn);
-                }
-                default -> list = service.getNotDone(dateArg, df, dt, warehouseCode);
-            }
-        }
-        long total = list.size();
-        int fromIdx = Math.min(p * s, (int) total);
-        int toIdx = Math.min(fromIdx + s, (int) total);
-        var envelope = PageEnvelope.of(list.subList(fromIdx, toIdx), p, s, total);
+
+        // Build condition (range wins: when range exists, ignore single date)
+        ReceivingSearchCond cond = ReceivingSearchCond.builder()
+                .status(statusNormalized)
+                .date(nf.hasRange() ? null : date)
+                .dateFrom(nf.from())
+                .dateTo(nf.to())
+                .warehouseCode(warehouseCode)
+                .receivingNo(null)
+                .supplierName(null)
+                .build();
+
+        Pageable pageable = PageRequest.of(p, s, parseSort(sort));
+        var envelope = receivingQueryService.search(cond, pageable);
         return CommonApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_LIST_SUCCESS, envelope);
     }
 
+    private Sort parseSort(java.util.List<String> sortParams) {
+        if (sortParams == null || sortParams.isEmpty()) {
+            return Sort.unsorted();
+        }
+        try {
+            java.util.List<Sort.Order> orders = sortParams.stream()
+                    .map(s -> {
+                        String[] arr = s.split(",");
+                        String prop = arr[0].trim();
+                        String dir = arr.length > 1 ? arr[1].trim().toLowerCase(java.util.Locale.ROOT) : "asc";
+                        Sort.Order o = "desc".equals(dir)
+                                ? Sort.Order.desc(prop)
+                                : Sort.Order.asc(prop);
+                        return o.ignoreCase();
+                    })
+                    .toList();
+            return orders.isEmpty() ? Sort.unsorted() : Sort.by(orders);
+        } catch (Exception e) {
+            return Sort.unsorted();
+        }
+    }
 }

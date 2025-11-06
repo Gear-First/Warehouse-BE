@@ -21,6 +21,7 @@ import com.gearfirst.warehouse.api.parts.service.PartCategoryService;
 import com.gearfirst.warehouse.api.parts.service.PartQueryService;
 import com.gearfirst.warehouse.api.parts.service.PartService;
 import com.gearfirst.warehouse.common.exception.ConflictException;
+import com.gearfirst.warehouse.common.exception.GlobalExceptionHandler;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
@@ -54,7 +56,7 @@ class PartsControllerTest {
     void setup() {
         PartsController controller = new PartsController(categoryService, partService, partQueryService);
         this.mockMvc = MockMvcBuilders.standaloneSetup(controller)
-                .setControllerAdvice(new com.gearfirst.warehouse.common.exception.GlobalExceptionHandler())
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
         this.objectMapper = new ObjectMapper();
     }
@@ -62,7 +64,7 @@ class PartsControllerTest {
     @Test
     @DisplayName("GET /api/v1/parts/categories - 목록 성공")
     void listCategories_success() throws Exception {
-        when(categoryService.list(org.mockito.ArgumentMatchers.anyString())).thenReturn(List.of(new CategorySummaryResponse(10L, "Filter", "Oil/Air")));
+        when(categoryService.list(ArgumentMatchers.anyString())).thenReturn(List.of(new CategorySummaryResponse(10L, "Filter", "Oil/Air")));
 
         mockMvc.perform(get("/api/v1/parts/categories").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -75,7 +77,7 @@ class PartsControllerTest {
     @DisplayName("POST /api/v1/parts/categories - 중복 이름이면 409")
     void createCategory_conflict() throws Exception {
         var req = new CreateCategoryRequest("Filter", "Oil/Air");
-        when(categoryService.create(org.mockito.ArgumentMatchers.any(CreateCategoryRequest.class)))
+        when(categoryService.create(ArgumentMatchers.any(CreateCategoryRequest.class)))
                 .thenThrow(new ConflictException(ErrorStatus.PART_CATEGORY_NAME_ALREADY_EXISTS));
 
         mockMvc.perform(post("/api/v1/parts/categories")
@@ -94,12 +96,12 @@ class PartsControllerTest {
                 0, 20, 1
         );
         when(partService.list(
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.any(),
-                org.mockito.ArgumentMatchers.anyInt(),
-                org.mockito.ArgumentMatchers.anyInt(),
-                org.mockito.ArgumentMatchers.isNull()
+                ArgumentMatchers.any(),
+                ArgumentMatchers.any(),
+                ArgumentMatchers.any(),
+                ArgumentMatchers.anyInt(),
+                ArgumentMatchers.anyInt(),
+                ArgumentMatchers.isNull()
         )).thenReturn(envelope);
 
         mockMvc.perform(get("/api/v1/parts").accept(MediaType.APPLICATION_JSON))
@@ -118,7 +120,7 @@ class PartsControllerTest {
         var req = new CreatePartRequest("P-1001", "오일필터", 12000, 10L, "/img/p-1001.png", 0);
         var detail = new PartDetailResponse(1L, "P-1001", "오일필터", 12000,
                 new CategoryRef(10L, "Filter"), "/img/p-1001.png", true, "2025-10-27T00:00:00Z", "2025-10-27T00:00:00Z", 0);
-        when(partService.create(org.mockito.ArgumentMatchers.any(CreatePartRequest.class))).thenReturn(detail);
+        when(partService.create(ArgumentMatchers.any(CreatePartRequest.class))).thenReturn(detail);
 
         mockMvc.perform(post("/api/v1/parts")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -141,8 +143,8 @@ class PartsControllerTest {
                 .build();
         var envelope = com.gearfirst.warehouse.common.response.PageEnvelope.of(java.util.List.of(item), 0, 20, 1);
         when(partQueryService.searchIntegrated(
-                org.mockito.ArgumentMatchers.any(com.gearfirst.warehouse.api.parts.dto.PartSearchCond.class),
-                org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)
+                ArgumentMatchers.any(com.gearfirst.warehouse.api.parts.dto.PartSearchCond.class),
+                ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)
         )).thenReturn(envelope);
 
         // when/then

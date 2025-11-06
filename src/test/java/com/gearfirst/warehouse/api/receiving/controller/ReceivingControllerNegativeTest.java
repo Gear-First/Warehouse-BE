@@ -1,17 +1,5 @@
 package com.gearfirst.warehouse.api.receiving.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gearfirst.warehouse.api.receiving.ReceivingController;
-import com.gearfirst.warehouse.api.receiving.service.ReceivingService;
-import com.gearfirst.warehouse.common.exception.NotFoundException;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
@@ -20,17 +8,42 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = ReceivingController.class)
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gearfirst.warehouse.api.receiving.ReceivingController;
+import com.gearfirst.warehouse.api.receiving.service.ReceivingQueryService;
+import com.gearfirst.warehouse.api.receiving.service.ReceivingService;
+import com.gearfirst.warehouse.common.exception.GlobalExceptionHandler;
+import com.gearfirst.warehouse.common.exception.NotFoundException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+@ExtendWith(MockitoExtension.class)
 class ReceivingControllerNegativeTest {
 
-    @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @Mock
     private ReceivingService receivingService;
+
+    @Mock
+    private ReceivingQueryService receivingQueryService;
+
+    @BeforeEach
+    void setup() {
+        ReceivingController controller = new ReceivingController(receivingService, receivingQueryService);
+        this.mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+        this.objectMapper = new ObjectMapper();
+    }
 
     @Test
     @DisplayName("GET /api/v1/receiving/{noteId} - 존재하지 않으면 404 반환")
