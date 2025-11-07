@@ -302,6 +302,7 @@ public class ShippingServiceImpl implements ShippingService {
                 .totalQty(note.getTotalQty())
                 .warehouseCode(note.getWarehouseCode())
                 .shippingNo(note.getShippingNo())
+                .orderId(note.getOrderId())
                 .requestedAt(note.getRequestedAt())
                 .expectedShipDate(note.getExpectedShipDate())
                 .shippedAt(note.getShippedAt())
@@ -335,6 +336,9 @@ public class ShippingServiceImpl implements ShippingService {
                 ? req.assigneeDept() : note.getAssigneeDept();
         String assigneePhone = (req != null && req.assigneePhone() != null && !req.assigneePhone().isBlank())
                 ? req.assigneePhone() : note.getAssigneePhone();
+        // Backup: accept optional orderId during complete (temporary)
+        Long incomingOrderId = (req == null ? null : req.orderId());
+        Long orderIdToPersist = (note.getOrderId() != null) ? note.getOrderId() : incomingOrderId;
         // Require handler info before completion processing
         if (assigneeName == null || assigneeName.isBlank()) {
             throw new BadRequestException(ErrorStatus.SHIPPING_HANDLER_INFO_REQUIRED);
@@ -370,6 +374,7 @@ public class ShippingServiceImpl implements ShippingService {
                 .totalQty(note.getTotalQty())
                 .warehouseCode(note.getWarehouseCode())
                 .shippingNo(note.getShippingNo())
+                .orderId(orderIdToPersist)
                 .requestedAt(note.getRequestedAt())
                 .expectedShipDate(note.getExpectedShipDate())
                 .shippedAt(note.getShippedAt())
@@ -462,7 +467,7 @@ public class ShippingServiceImpl implements ShippingService {
             }
         }
         int itemKinds = productIds.size();
-        // required fields: requestedAt, shippingNo
+        // required fields: requestedAt
         String requestedAt = (request == null ? null : request.requestedAt());
         if (requestedAt == null || requestedAt.isBlank()) {
             throw new BadRequestException(ErrorStatus.SHIPPING_REQUESTED_AT_INVALID);
@@ -471,17 +476,18 @@ public class ShippingServiceImpl implements ShippingService {
         if (expectedShipDate == null || expectedShipDate.isBlank()) {
             expectedShipDate = OffsetDateTime.parse(requestedAt).plusDays(2).toString();
         }
-        String shippingNo = (request == null ? null : request.shippingNo());
-        if (shippingNo == null || shippingNo.isBlank()) {
-            if (this.noteNumberGenerator != null) {
-                // Auto-generate OUT number using warehouseCode + requestedAt
-                var reqAtOd = OffsetDateTime.parse(requestedAt);
-                shippingNo = noteNumberGenerator.generateShippingNo(
-                        request == null ? null : request.warehouseCode(), reqAtOd);
-            } else {
-                // In tests constructed without generator, keep strict validation
-                throw new BadRequestException(ErrorStatus.SHIPPING_NO_INVALID);
-            }
+        // Always generate shippingNo on server side
+        String shippingNo;
+        if (this.noteNumberGenerator != null) {
+            var reqAtOd = OffsetDateTime.parse(requestedAt);
+            shippingNo = noteNumberGenerator.generateShippingNo(
+                    request == null ? null : request.warehouseCode(), reqAtOd);
+        } else {
+            // Fallback simple generator for test environments without NoteNumberGenerator
+            var reqAtOd = OffsetDateTime.parse(requestedAt);
+            String ymd = reqAtOd.toLocalDate().format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+            String wh = (request == null || request.warehouseCode() == null || request.warehouseCode().isBlank()) ? "DEFAULT" : request.warehouseCode();
+            shippingNo = "OUT-" + wh + "-" + ymd + "-001";
         }
 
         var note = ShippingNote.builder()
@@ -491,6 +497,7 @@ public class ShippingServiceImpl implements ShippingService {
                 .totalQty(totalQty)
                 .warehouseCode(request == null ? null : request.warehouseCode())
                 .shippingNo(shippingNo)
+                .orderId(request == null ? null : request.orderId())
                 .requestedAt(requestedAt)
                 .expectedShipDate(expectedShipDate)
                 .shippedAt(null)
@@ -548,6 +555,7 @@ public class ShippingServiceImpl implements ShippingService {
                 status,
                 note.getCompletedAt(),
                 note.getShippingNo(),
+                note.getOrderId(),
                 note.getWarehouseCode(),
                 note.getRequestedAt(),
                 note.getExpectedShipDate(),

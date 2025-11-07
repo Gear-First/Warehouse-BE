@@ -60,6 +60,7 @@ public class ShippingNoteEntity extends BaseTimeEntity {
 
     // Additive metadata
     private String shippingNo;
+    private Long orderId;
     private OffsetDateTime requestedAt;
     private OffsetDateTime expectedShipDate;
     private OffsetDateTime shippedAt;

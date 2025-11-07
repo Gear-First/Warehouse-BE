@@ -39,7 +39,7 @@ class ShippingControllerDetailTest {
                         10, 8, "READY")
         );
         var detail = new ShippingNoteDetailResponse(3001L, "ACME", 1, 10, "IN_PROGRESS", null,
-                        null, null, null, null, null, null, null, null, null,
+                        null, 10001L, null, null, null, null, null, null, null, null,
                         lines);
         when(shippingService.getDetail(anyLong())).thenReturn(detail);
 

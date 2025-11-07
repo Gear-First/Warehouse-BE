@@ -11,6 +11,7 @@ public record ShippingNoteDetailResponse(
         String completedAt,   // ISO8601 string or null
         // Additive, nullable metadata fields (may be null until modeled)
         String shippingNo,
+        Long orderId,
         String warehouseCode,
         String requestedAt,
         String expectedShipDate,

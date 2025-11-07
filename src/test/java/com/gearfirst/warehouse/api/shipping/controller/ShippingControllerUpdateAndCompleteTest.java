@@ -50,7 +50,7 @@ class ShippingControllerUpdateAndCompleteTest {
                 new ShippingProductResponse(11L, "LOT-A", "S-01", "볼트", "/img"),
                 10, 10, "READY"));
         var detail = new ShippingNoteDetailResponse(4001L, "ACME", 1, 10, "IN_PROGRESS", null,
-                null, null, null, null, null, null, null, null, null,
+                null, 20002L, null, null, null, null, null, null, null, null,
                 lines);
         when(shippingService.updateLine(eq(4001L), eq(1L),
                 ArgumentMatchers.any(ShippingUpdateLineRequest.class))).thenReturn(detail);

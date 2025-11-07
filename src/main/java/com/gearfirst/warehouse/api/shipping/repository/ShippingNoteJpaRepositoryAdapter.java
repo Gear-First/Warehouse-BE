@@ -134,6 +134,7 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
                 .totalQty(e.getTotalQty())
                 .warehouseCode(e.getWarehouseCode())
                 .shippingNo(e.getShippingNo())
+                .orderId(e.getOrderId())
                 .requestedAt(DateTimes.toKstString(e.getRequestedAt()))
                 .expectedShipDate(DateTimes.toKstString(e.getExpectedShipDate()))
                 .shippedAt(DateTimes.toKstString(e.getShippedAt()))
@@ -177,7 +178,8 @@ public class ShippingNoteJpaRepositoryAdapter implements ShippingNoteRepository 
                 .assigneePhone(d.getAssigneePhone())
                 .remark(d.getRemark())
                 .status(d.getStatus())
-                .completedAt(parseOffsetDateTime(d.getCompletedAt()));
+                .completedAt(parseOffsetDateTime(d.getCompletedAt()))
+                .orderId(d.getOrderId());
         var entity = builder.build();
         if (d.getLines() != null) {
             for (var dl : d.getLines()) {

@@ -16,6 +16,7 @@ public class ShippingNote {
     private String warehouseCode; // nullable for MVP
     // Additive metadata (nullable)
     private String shippingNo;
+    private Long orderId; // external order identifier for integration
     private String requestedAt;      // ISO8601 or null
     private String expectedShipDate; // ISO8601 or null
     private String shippedAt;        // ISO8601 or null
