@@ -1,15 +1,20 @@
 package com.gearfirst.warehouse.api.parts;
 
 import com.gearfirst.warehouse.api.parts.dto.CarModelDtos.CarModelSummary;
+import com.gearfirst.warehouse.api.parts.dto.CarModelDtos.CarModelListItem;
 import com.gearfirst.warehouse.api.parts.dto.PartCarModelDtos.CreateMappingRequest;
 import com.gearfirst.warehouse.api.parts.dto.PartCarModelDtos.PartCarModelDetail;
 import com.gearfirst.warehouse.api.parts.dto.PartCarModelDtos.UpdateMappingRequest;
 import com.gearfirst.warehouse.api.parts.dto.PartDtos.PartSummaryResponse;
+import com.gearfirst.warehouse.api.parts.persistence.CarModelJpaRepository;
+import com.gearfirst.warehouse.api.parts.persistence.entity.CarModelEntity;
 import com.gearfirst.warehouse.api.parts.service.PartCarModelService;
 import com.gearfirst.warehouse.common.response.CommonApiResponse;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.Comparator;
@@ -17,6 +22,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -35,6 +44,77 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class PcmController {
 
     private final PartCarModelService pcmService;
+    private final CarModelJpaRepository carModelRepo;
+
+    // TODO: Move listing logic into CarModelQueryService
+    //  Controller → Service → Repository
+    //  Controller : only handle binding/sort parsing
+    @Operation(
+            summary = "차량 모델 목록",
+            description = "차량 모델(CarModel) 목록을 조회합니다.\n"
+                    + "- q: name 부분 일치\n"
+                    + "- enabled: true/false(미전달 시 전체)\n"
+                    + "- 정렬 화이트리스트: name, createdAt, updatedAt (무효 키는 name ASC, id DESC로 폴백)\n"
+                    + "\n예시:\n"
+                    + "GET /api/v1/car-models?q=avan&sort=name,asc&page=0&size=10\n"
+                    + "GET /api/v1/car-models?q=son&enabled=true&sort=createdAt,desc&sort=name,asc"
+    )
+    @Parameters({
+            @Parameter(name = "q", description = "모델명 부분 일치(대소문자 무시)", example = "avan"),
+            @Parameter(name = "enabled", description = "활성 모델만(true) 또는 비활성 포함(false)", example = "true"),
+            @Parameter(name = "page", description = "페이지(0..)", example = "0"),
+            @Parameter(name = "size", description = "페이지 크기(1..100)", example = "20"),
+            @Parameter(name = "sort", description = "정렬(화이트리스트: name,createdAt,updatedAt)", example = "name,asc")
+    })
+    @GetMapping("/car-models")
+    public ResponseEntity<CommonApiResponse<PageEnvelope<CarModelListItem>>> listCarModels(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) Boolean enabled,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) List<String> sort
+    ) {
+        int p = Math.max(0, page);
+        int s = Math.max(1, Math.min(size, 100));
+        String name = (q == null ? "" : q.trim());
+        Pageable pageable = PageRequest.of(p, s, parseCarModelSort(sort));
+        Page<CarModelEntity> pg;
+        if (enabled == null) {
+            pg = carModelRepo.findByNameContainingIgnoreCase(name, pageable);
+        } else {
+            pg = carModelRepo.findByEnabledAndNameContainingIgnoreCase(enabled, name, pageable);
+        }
+        List<CarModelListItem> items = pg.getContent().stream()
+                .map(e -> new CarModelListItem(e.getId(), e.getName(), e.isEnabled()))
+                .toList();
+        return CommonApiResponse.success(
+                SuccessStatus.SEND_PCM_CARMODEL_LIST_SUCCESS,
+                PageEnvelope.of(items, pg.getNumber(), pg.getSize(), pg.getTotalElements())
+        );
+    }
+
+    private Sort parseCarModelSort(List<String> sortParams) {
+        // whitelist: name, createdAt, updatedAt
+        Sort defaultSort = Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.desc("id"));
+        if (sortParams == null || sortParams.isEmpty()) return defaultSort;
+        try {
+            List<Sort.Order> orders = sortParams.stream().map(s -> {
+                String[] arr = s.split(",");
+                String prop = arr[0].trim();
+                String dir = arr.length > 1 ? arr[1].trim().toLowerCase() : "asc";
+                Sort.Order order = "desc".equals(dir) ? Sort.Order.desc(prop) : Sort.Order.asc(prop);
+                return order.ignoreCase();
+            }).toList();
+            // apply whitelist
+            List<String> allowed = java.util.List.of("name", "createdAt", "updatedAt");
+            List<Sort.Order> filtered = orders.stream()
+                    .filter(o -> allowed.contains(o.getProperty()))
+                    .toList();
+            return filtered.isEmpty() ? defaultSort : Sort.by(filtered);
+        } catch (Exception e) {
+            return defaultSort;
+        }
+    }
 
     @Operation(summary = "특정 부품을 사용하는 차량 모델 목록", description = "부품 ID로 차량 모델(CarModel) 목록을 조회합니다. 페이지/사이즈/정렬은 컨트롤러에서 래핑합니다.")
     @GetMapping("/parts/{partId}/car-models")

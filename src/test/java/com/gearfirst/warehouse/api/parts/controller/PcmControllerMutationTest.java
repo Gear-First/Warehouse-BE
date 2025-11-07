@@ -5,6 +5,7 @@ import com.gearfirst.warehouse.api.parts.PcmController;
 import com.gearfirst.warehouse.api.parts.dto.PartCarModelDtos.CreateMappingRequest;
 import com.gearfirst.warehouse.api.parts.dto.PartCarModelDtos.PartCarModelDetail;
 import com.gearfirst.warehouse.api.parts.dto.PartCarModelDtos.UpdateMappingRequest;
+import com.gearfirst.warehouse.api.parts.persistence.CarModelJpaRepository;
 import com.gearfirst.warehouse.api.parts.service.PartCarModelService;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
 import org.junit.jupiter.api.DisplayName;
@@ -34,6 +35,9 @@ class PcmControllerMutationTest {
 
     @MockBean
     private PartCarModelService pcmService;
+
+    @MockBean
+    private CarModelJpaRepository carModelRepo;
 
     @Test
     @DisplayName("POST /api/v1/parts/{partId}/car-models - 생성 성공 또는 재활성화")
