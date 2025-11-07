@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface InventoryService {
 
-    /** List API with extended filters used by controllers and services. */
+    /** Legacy list API kept for backward compatibility (/inventory/onhand). */
     PageEnvelope<OnHandSummary> listOnHand(
             String warehouseCode,
             String partKeyword,
@@ -17,6 +17,27 @@ public interface InventoryService {
             int size,
             List<String> sort
     );
+
+    /** Advanced list API for UC-INV-002 (/inventory/on-hand). */
+    default PageEnvelope<OnHandSummary> listOnHandAdvanced(
+            String q,
+            Long partId,
+            String partCode,
+            String partName,
+            String warehouseCode,
+            String supplierName,
+            Integer minQty,
+            Integer maxQty,
+            int page,
+            int size,
+            List<String> sort
+    ) {
+        // Default fallback maps to legacy API with a best-effort keyword
+        String keyword = (q != null && !q.isBlank()) ? q :
+                ((partCode != null && !partCode.isBlank()) ? partCode :
+                        ((partName != null && !partName.isBlank()) ? partName : null));
+        return listOnHand(warehouseCode, keyword, supplierName, minQty, maxQty, page, size, sort);
+    }
 
     /** Increase on-hand by qty for the given warehouse/part (warehouseId is optional for MVP). */
     void increase(String warehouseCode, Long partId, int qty);

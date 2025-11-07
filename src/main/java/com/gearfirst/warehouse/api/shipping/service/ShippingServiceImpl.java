@@ -575,6 +575,13 @@ public class ShippingServiceImpl implements ShippingService {
         }
 
         @Override
+        public PageEnvelope<OnHandSummary> listOnHandAdvanced(
+                String q, Long partId, String partCode, String partName, String warehouseCode,
+                String supplierName, Integer minQty, Integer maxQty, int page, int size, List<String> sort) {
+            return PageEnvelope.of(List.of(), page, size, 0);
+        }
+
+        @Override
         public void increase(String warehouseCode, Long partId, int qty) { /* no-op */ }
 
         @Override

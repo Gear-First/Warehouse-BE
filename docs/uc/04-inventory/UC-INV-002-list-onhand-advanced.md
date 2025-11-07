@@ -22,7 +22,7 @@
   - `page` (int, default 0)
   - `size` (int, default 20, max 200)
 - Sorting (whitelist; default: `updatedAt,desc`)
-  - `sort=warehouseCode|partCode|partName|onHandQty|supplierName|updatedAt[,asc|desc]`
+  - `sort=warehouseCode|partCode|partName|onHandQty|supplierName|updatedAt|price|priceTotal[,asc|desc]`
 - Unified Search
   - `q` (string, optional): case-insensitive contains over `part.code | part.name | supplierName | warehouseCode`
     - Normalization: trim, collapse spaces, lowercase matching
@@ -39,7 +39,7 @@
 - 200 OK → `ApiResponse.success(PageEnvelope<OnHandSummaryDto>)`
 - `OnHandSummaryDto`
   - `warehouseCode: string`, `partId: long`, `partCode: string`, `partName: string`, `onHandQty: int`, `supplierName?: string`,
-    `updatedAt: string(KST)`, `safetyStockQty?: int`, `belowSafety?: boolean`
+    `updatedAt: string(KST)`, `safetyStockQty?: int`, `lowStock?: boolean`, `price: int`, `priceTotal: int(price*onHandQty)`
 
 ## Examples
 ```
