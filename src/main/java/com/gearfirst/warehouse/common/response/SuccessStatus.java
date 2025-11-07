@@ -42,6 +42,9 @@ public enum SuccessStatus {
     SEND_PCM_DELETE_SUCCESS(HttpStatus.OK, "부품-차량 모델 매핑 삭제(비활성화) 성공"),
 
     SEND_INVENTORY_ONHAND_LIST_SUCCESS(HttpStatus.OK, "재고 현황 목록 조회 성공"),
+
+    // Summary
+    SEND_NOTE_COUNTS_SUCCESS(HttpStatus.OK, "요청일 기준 입/출고 전표 건수 조회 성공"),
     /** 201 CREATED */
 
     /** 202 ACCEPTED */

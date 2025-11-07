@@ -89,6 +89,22 @@ public class ReceivingQueryRepositoryImpl implements ReceivingQueryRepository {
 
     private int safeInt(Integer v) { return v == null ? 0 : v; }
 
+    @Override
+    public long countByRequestedAtDateKst(LocalDate day) {
+        if (day == null) return 0L;
+        var bounds = DateTimes.kstDayBounds(day);
+        if (bounds == null) return 0L;
+        Long totalL = queryFactory
+            .select(receivingNoteEntity.noteId.count())
+            .from(receivingNoteEntity)
+            .where(
+                receivingNoteEntity.requestedAt.goe(bounds.fromInclusive()),
+                receivingNoteEntity.requestedAt.loe(bounds.toInclusive())
+            )
+            .fetchOne();
+        return totalL == null ? 0L : totalL;
+    }
+
     private BooleanExpression[] buildWhere(ReceivingSearchCond cond) {
         List<BooleanExpression> list = new ArrayList<>();
         if (cond == null) return new BooleanExpression[0];

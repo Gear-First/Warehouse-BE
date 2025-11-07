@@ -16,6 +16,7 @@ public class ShippingNoteLine {
     private String productImgUrl;
 
     private int orderedQty;
+    private int onHandQty;
     private int pickedQty;
 
     private LineStatus status; // PENDING | READY | SHORTAGE

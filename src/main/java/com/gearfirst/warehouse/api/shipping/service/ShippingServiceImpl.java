@@ -275,6 +275,7 @@ public class ShippingServiceImpl implements ShippingService {
                         .productName(l.getProductName())
                         .productImgUrl(l.getProductImgUrl())
                         .orderedQty(l.getOrderedQty())
+                                .onHandQty(onHand)
                         .pickedQty(request.pickedQty())
                         .status(derivedStatus)
                         .build());
