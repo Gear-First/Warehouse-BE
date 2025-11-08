@@ -157,7 +157,7 @@ public class ShippingController {
         return CommonApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_LINE_UPDATE_SUCCESS, updated);
     }
 
-    @Operation(summary = "출고 완료 처리", description = "출고 내역서의 모든 항목이 처리되었음을 확인하고, 완료 상태(DELAYED/COMPLETED)로 전환합니다. 엔드포인트 전용 완료 처리입니다. 담당자 정보가 필요하며(요청 전 설정), READY 라인의 pickedQty 합계를 기준으로 재고가 감소합니다. SHORTAGE가 존재하면 전표는 DELAYED로 전환되며 재고 감소는 수행되지 않습니다.",
+    @Operation(summary = "출고 완료 처리(DEPRECATED)", description = "출고 내역서의 모든 항목이 처리되었음을 확인하고, 완료 상태(DELAYED/COMPLETED)로 전환합니다. 엔드포인트 전용 완료 처리입니다. 담당자 정보가 필요하며(요청 전 설정), READY 라인의 pickedQty 합계를 기준으로 재고가 감소합니다. SHORTAGE가 존재하면 전표는 DELAYED로 전환되며 재고 감소는 수행되지 않습니다.",
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true, description = "담당자 정보 입력이 필요합니다: { assigneeName, assigneeDept, assigneePhone }"))
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "출고 완료 처리 성공"),
@@ -171,6 +171,23 @@ public class ShippingController {
     ) {
         var resp = service.complete(noteId, req);
         return CommonApiResponse.success(SuccessStatus.SEND_SHIPPING_COMPLETE_SUCCESS, resp);
+    }
+
+    @Operation(summary = "출고 완료 처리(V2 상세 응답)", description = "전량 출고 정책에 따라 완료 처리 후, detail-v2와 동일한 전체 필드를 응답합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "출고 완료 처리 성공(V2 상세)"),
+            @ApiResponse(responseCode = "400", description = "검증 실패 (담당자 정보 누락 등)"),
+            @ApiResponse(responseCode = "404", description = "내역서 없음"),
+            @ApiResponse(responseCode = "409", description = "완료 불가 상태(READY 아님/이미 최종)")
+    })
+    @PostMapping("/{noteId}:completed")
+    public ResponseEntity<CommonApiResponse<ShippingNoteDetailV2Response>> completeAndReturnDetailV2(
+            @PathVariable Long noteId,
+            @RequestBody @Valid ShippingCompleteRequest req
+    ) {
+        service.complete(noteId, req);
+        var dto = service.getDetailV2(noteId);
+        return CommonApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_COMPLETED_DETAIL_V2_SUCCESS, dto);
     }
 
     @Operation(summary = "출고 요청서 생성", description = "출고 요청서를 생성합니다. requestedAt은 필수이며 expectedShipDate가 비어 있으면 requestedAt+2일로 설정됩니다. shippingNo가 비어 있으면 서버가 OUT-{warehouseCode}-{yyyyMMdd(UTC)}-{seq3} 형식으로 생성합니다. noteId/lineId는 DB에서 자동 생성됩니다.")

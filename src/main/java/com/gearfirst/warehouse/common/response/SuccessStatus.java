@@ -24,6 +24,7 @@ public enum SuccessStatus {
     SEND_SHIPPING_NOTE_DETAIL_V2_SUCCESS(HttpStatus.OK, "출고요청서 상세(V2) 조회 성공"),
     SEND_SHIPPING_NOTE_RECALC_SUCCESS(HttpStatus.OK, "출고요청서 재고 재평가 성공"),
     SEND_SHIPPING_NOTE_LINE_CONFIRM_SUCCESS(HttpStatus.OK, "출고요청서 항목 확정 성공"),
+    SEND_SHIPPING_NOTE_COMPLETED_DETAIL_V2_SUCCESS(HttpStatus.OK, "출고 완료 처리 성공(V2 상세)"),
 
     SEND_PART_CATEGORY_LIST_SUCCESS(HttpStatus.OK, "부품 카테고리 목록 조회 성공"),
     SEND_PART_CATEGORY_DETAIL_SUCCESS(HttpStatus.OK, "부품 카테고리 상세 조회 성공"),

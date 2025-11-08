@@ -613,9 +613,17 @@ public class ShippingServiceImpl implements ShippingService {
             int onHand = onHandProvider.getOnHandQty(note.getWarehouseCode(), l.getProductId());
             String suggested = (onHand >= l.getOrderedQty()) ? LineStatus.READY.name() : LineStatus.SHORTAGE.name();
             return new ShippingNoteDetailV2Response.Line(
-                    l.getLineId(), l.getProductId(), l.getProductCode(), l.getProductName(),
-                    l.getOrderedQty(), (l.getStatus() == null ? "PENDING" : l.getStatus().name()),
-                    onHand, suggested
+                    l.getLineId(),
+                    l.getProductId(),
+                    l.getProductCode(),
+                    l.getProductName(),
+                    l.getProductLot(),
+                    l.getProductImgUrl(),
+                    l.getOrderedQty(),
+                    l.getPickedQty(),
+                    (l.getStatus() == null ? "PENDING" : l.getStatus().name()),
+                    onHand,
+                    suggested
             );
         }).toList();
         return new ShippingNoteDetailV2Response(
@@ -624,6 +632,19 @@ public class ShippingServiceImpl implements ShippingService {
                 note.getCompletedAt(),
                 null, // delayedAt not persisted yet
                 snapshotAt,
+                note.getShippingNo(),
+                note.getOrderId(),
+                note.getBranchName(),
+                note.getWarehouseCode(),
+                note.getRequestedAt(),
+                note.getExpectedShipDate(),
+                note.getShippedAt(),
+                note.getItemKindsNumber(),
+                note.getTotalQty(),
+                note.getAssigneeName(),
+                note.getAssigneeDept(),
+                note.getAssigneePhone(),
+                note.getRemark(),
                 lines
         );
     }
