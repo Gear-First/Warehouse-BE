@@ -28,7 +28,7 @@ class ShippingServiceImplTest {
     @BeforeEach
     void setUp() {
         repo = new InMemoryShippingNoteRepository();
-        OnHandProvider provider = productId -> Integer.MAX_VALUE / 2; // default: sufficient stock
+        OnHandProvider provider = (wh, productId) -> Integer.MAX_VALUE / 2; // default: sufficient stock
         com.gearfirst.warehouse.api.inventory.service.InventoryService inv = new com.gearfirst.warehouse.api.inventory.service.InventoryService() {
             @Override
             public com.gearfirst.warehouse.common.response.PageEnvelope<com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.OnHandSummary> listOnHand(String warehouseCode, String partKeyword, String supplierName, Integer minQty, Integer maxQty, int page, int size, java.util.List<String> sort) {
@@ -110,8 +110,8 @@ class ShippingServiceImplTest {
     }
 
     @Test
-    @DisplayName("complete: SHORTAGE 포함이면 DELAYED와 completedAt 반환")
-    void complete_delayed() {
+    @DisplayName("complete: SHORTAGE 포함이면 409 CONFLICT_CANNOT_COMPLETE_WHEN_NOT_READY")
+    void complete_delayed_conflict() {
         // 비종단(IN_PROGRESS) 전표를 직접 시드: SHORTAGE 라인 존재
         var note = ShippingNote.builder()
                 .noteId(9602L)
@@ -140,8 +140,8 @@ class ShippingServiceImplTest {
                 .build();
         repo.save(note);
 
-        var resp = service.complete(9602L, ShippingCompleteRequest.builder().assigneeName("WAREHOUSE").assigneeDept("DEFAULT").assigneePhone("N/A").build());
-        assertNotNull(resp.completedAt());
+        assertThrows(com.gearfirst.warehouse.common.exception.ConflictException.class,
+                () -> service.complete(9602L, ShippingCompleteRequest.builder().assigneeName("WAREHOUSE").assigneeDept("DEFAULT").assigneePhone("N/A").build()));
     }
 
     @Test

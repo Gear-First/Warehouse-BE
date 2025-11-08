@@ -4,7 +4,10 @@ import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteRequest;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCreateNoteRequest;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteDetailResponse;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteDetailV2Response;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteSummaryResponse;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingRecalcResponse;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingLineConfirmResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingUpdateLineRequest;
 import java.util.List;
 
@@ -67,4 +70,11 @@ public interface ShippingService {
 
     // Create new shipping note (stub for now)
     ShippingNoteDetailResponse create(ShippingCreateNoteRequest request);
+
+    // ---------- V2 additions (non-breaking) ----------
+    ShippingNoteDetailV2Response getDetailV2(Long noteId);
+
+    ShippingRecalcResponse checkShippable(Long noteId, boolean apply, List<Long> lineIds);
+
+    ShippingLineConfirmResponse confirmLine(Long noteId, Long lineId);
 }

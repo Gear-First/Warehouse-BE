@@ -4,6 +4,9 @@ import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteRequest;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCreateNoteRequest;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteDetailResponse;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteDetailV2Response;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingRecalcResponse;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingLineConfirmResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteSummaryResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingUpdateLineRequest;
 import com.gearfirst.warehouse.api.shipping.service.ShippingService;
@@ -271,5 +274,45 @@ public class ShippingController {
         int toIdx = Math.min(fromIdx + s, (int) total);
         var envelope = PageEnvelope.of(list.subList(fromIdx, toIdx), p, s, total);
         return CommonApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_LIST_SUCCESS, envelope);
+    }
+    @Operation(summary = "출고 내역서 상세(V2) 조회", description = "onHand/suggestedStatus 포함 상세. 영속 변경 없음.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "출고요청서 상세(V2) 조회 성공"),
+            @ApiResponse(responseCode = "404", description = "내역서 없음")
+    })
+    @GetMapping("/{noteId}/detail-v2")
+    public ResponseEntity<CommonApiResponse<ShippingNoteDetailV2Response>> getDetailV2(@PathVariable("noteId") Long noteId) {
+        var dto = service.getDetailV2(noteId);
+        return CommonApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_DETAIL_V2_SUCCESS, dto);
+    }
+
+    @Operation(summary = "출고 가능 여부 재평가", description = "노트 단위 재평가. apply=false(dryRun), true(영속 반영). Body로 lineIds를 전달하면 해당 라인만 재평가")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "출고요청서 재고 재평가 성공"),
+            @ApiResponse(responseCode = "404", description = "내역서/항목 없음")
+    })
+    @PostMapping("/{noteId}/check-shippable")
+    public ResponseEntity<CommonApiResponse<ShippingRecalcResponse>> checkShippable(
+            @PathVariable Long noteId,
+            @RequestParam(defaultValue = "false") boolean apply,
+            @RequestBody(required = false) com.gearfirst.warehouse.api.shipping.dto.ShippingRecalcRequest body
+    ) {
+        var lineIds = body == null ? List.<Long>of() : body.lineIds();
+        var resp = service.checkShippable(noteId, apply, lineIds);
+        return CommonApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_RECALC_SUCCESS, resp);
+    }
+
+    @Operation(summary = "출고 항목 확정(라인 단위)", description = "현재 onHand로 READY/SHORTAGE를 계산하여 해당 라인의 상태를 확정하고, 필요 시 노트를 DELAYED로 전이")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "출고요청서 항목 확정 성공"),
+            @ApiResponse(responseCode = "404", description = "내역서/항목 없음")
+    })
+    @PatchMapping("/{noteId}/lines/{lineId}/confirm")
+    public ResponseEntity<CommonApiResponse<ShippingLineConfirmResponse>> confirmLine(
+            @PathVariable Long noteId,
+            @PathVariable Long lineId
+    ) {
+        var resp = service.confirmLine(noteId, lineId);
+        return CommonApiResponse.success(SuccessStatus.SEND_SHIPPING_NOTE_LINE_CONFIRM_SUCCESS, resp);
     }
 }

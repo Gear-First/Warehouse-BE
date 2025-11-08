@@ -133,9 +133,11 @@ class ShippingServiceWarehouseTest {
      */
     private record InventoryBackedOnHandProvider(InventoryService inventory)
             implements OnHandProvider {
-        @Override public int getOnHandQty(Long productId) {
-            // Sum across all warehouses for simplicity in status derivation (not used in these tests)
-            return inventory.listOnHand(null, null, null, null, null, 0, 100, java.util.List.of()).items().stream()
+        @Override public int getOnHandQty(String warehouseCode, Long productId) {
+            // Respect warehouse for shipping derivation; when null, default to 0 to avoid false READY in tests
+            if (productId == null) return 0;
+            if (warehouseCode == null || warehouseCode.isBlank()) return 0;
+            return inventory.listOnHand(warehouseCode, null, null, null, null, 0, 100, java.util.List.of()).items().stream()
                     .filter(i -> i.part().id().equals(productId))
                     .mapToInt(i -> i.onHandQty()).sum();
         }

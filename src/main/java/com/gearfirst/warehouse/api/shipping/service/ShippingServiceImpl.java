@@ -11,11 +11,14 @@ import com.gearfirst.warehouse.api.shipping.domain.ShippingNote;
 import com.gearfirst.warehouse.api.shipping.domain.ShippingNoteLine;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCreateNoteRequest;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingLineConfirmResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteDetailResponse;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteDetailV2Response;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteLineResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteSummary;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingNoteSummaryResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingProductResponse;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingRecalcResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingSearchCond;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingUpdateLineRequest;
 import com.gearfirst.warehouse.api.shipping.persistence.ShippingQueryRepository;
@@ -256,7 +259,7 @@ public class ShippingServiceImpl implements ShippingService {
                 // SHORTAGE if remainingNeeded > onHand
                 // READY if pickedQty == orderedQty (onHand >= 0 is implied)
                 // otherwise PENDING
-                int onHand = onHandProvider.getOnHandQty(l.getProductId());
+                int onHand = onHandProvider.getOnHandQty(note.getWarehouseCode(), l.getProductId());
                 int remainingNeeded = Math.max(0, l.getOrderedQty() - request.pickedQty());
                 LineStatus derivedStatus;
                 if (remainingNeeded > onHand) {
@@ -320,6 +323,7 @@ public class ShippingServiceImpl implements ShippingService {
 
 
     @Override
+    @Transactional
     public ShippingCompleteResponse complete(Long noteId, com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteRequest req) {
         var note = repository.findById(noteId)
                 .orElseThrow(() -> new NotFoundException("Shipping note not found: " + noteId));
@@ -343,30 +347,32 @@ public class ShippingServiceImpl implements ShippingService {
         if (assigneeName == null || assigneeName.isBlank()) {
             throw new BadRequestException(ErrorStatus.SHIPPING_HANDLER_INFO_REQUIRED);
         }
-        boolean hasShortage = note.getLines().stream().anyMatch(l -> l.getStatus() == LineStatus.SHORTAGE);
-        boolean allReady = note.getLines().stream().allMatch(l -> l.getStatus() == LineStatus.READY);
 
-        if (!hasShortage && !allReady) {
-            // READY만 아닌 상태가 섞여 있으면 완료 불가 (409)
+        // V2 policy: completion only when ALL lines are READY (no SHORTAGE/PENDING allowed)
+        boolean allReady = note.getLines().stream().allMatch(l -> l.getStatus() == LineStatus.READY);
+        if (!allReady) {
             throw new ConflictException(ErrorStatus.CONFLICT_CANNOT_COMPLETE_WHEN_NOT_READY);
         }
 
-        var finalStatus = hasShortage ? NoteStatus.DELAYED : NoteStatus.COMPLETED;
-        var completedAt = DateTimes.toKstString(OffsetDateTime.now(ZoneOffset.UTC));
-
-        // If completing, apply inventory decreases based on shippedQty (=pickedQty) per READY line
-        int totalShipped = 0;
-        if (finalStatus == NoteStatus.COMPLETED) {
-            for (var l : note.getLines()) {
-                if (l.getStatus() == LineStatus.READY) {
-                    int shipped = l.getPickedQty();
-                    totalShipped += shipped;
-                    inventoryService.decrease(note.getWarehouseCode() == null ? null : note.getWarehouseCode(),
-                            l.getProductId(), shipped);
-                }
+        // Re-validate inventory just-in-time to protect against races
+        for (var l : note.getLines()) {
+            int onHand = onHandProvider.getOnHandQty(note.getWarehouseCode(), l.getProductId());
+            if (onHand < l.getOrderedQty()) {
+                // Inventory changed between confirm and complete
+                throw new ConflictException(ErrorStatus.CONFLICT_INVENTORY_INSUFFICIENT);
             }
         }
 
+        // Apply inventory decreases: full-ship orderedQty for each READY line
+        int totalShipped = 0;
+        for (var l : note.getLines()) {
+            int shipped = l.getOrderedQty();
+            totalShipped += shipped;
+            inventoryService.decrease(note.getWarehouseCode() == null ? null : note.getWarehouseCode(),
+                    l.getProductId(), shipped);
+        }
+
+        var completedAt = DateTimes.toKstString(OffsetDateTime.now(ZoneOffset.UTC));
         var updated = ShippingNote.builder()
                 .noteId(note.getNoteId())
                 .branchName(note.getBranchName())
@@ -382,14 +388,13 @@ public class ShippingServiceImpl implements ShippingService {
                 .assigneeDept(assigneeDept)
                 .assigneePhone(assigneePhone)
                 .remark(note.getRemark())
-                .status(finalStatus)
+                .status(NoteStatus.COMPLETED)
                 .completedAt(completedAt)
                 .lines(note.getLines())
                 .build();
         repository.save(updated);
 
-        return new ShippingCompleteResponse(completedAt,
-                finalStatus == NoteStatus.COMPLETED ? totalShipped : note.getTotalQty());
+        return new ShippingCompleteResponse(completedAt, totalShipped);
     }
 
     @Override
@@ -598,5 +603,175 @@ public class ShippingServiceImpl implements ShippingService {
 
         @Override
         public void decrease(String warehouseCode, Long partId, int qty) { /* no-op */ }
+    }
+    @Override
+    public ShippingNoteDetailV2Response getDetailV2(Long noteId) {
+        var note = repository.findById(noteId)
+                .orElseThrow(() -> new NotFoundException("Shipping note not found: " + noteId));
+        String snapshotAt = OffsetDateTime.now(ZoneOffset.UTC).toString();
+        var lines = note.getLines().stream().map(l -> {
+            int onHand = onHandProvider.getOnHandQty(note.getWarehouseCode(), l.getProductId());
+            String suggested = (onHand >= l.getOrderedQty()) ? LineStatus.READY.name() : LineStatus.SHORTAGE.name();
+            return new ShippingNoteDetailV2Response.Line(
+                    l.getLineId(), l.getProductId(), l.getProductCode(), l.getProductName(),
+                    l.getOrderedQty(), (l.getStatus() == null ? "PENDING" : l.getStatus().name()),
+                    onHand, suggested
+            );
+        }).toList();
+        return new ShippingNoteDetailV2Response(
+                note.getNoteId(),
+                (note.getStatus() == null ? "PENDING" : note.getStatus().name()),
+                note.getCompletedAt(),
+                null, // delayedAt not persisted yet
+                snapshotAt,
+                lines
+        );
+    }
+
+    @Override
+    @Transactional
+    public ShippingRecalcResponse checkShippable(Long noteId, boolean apply, java.util.List<Long> lineIds) {
+        var note = repository.findById(noteId)
+                .orElseThrow(() -> new NotFoundException("Shipping note not found: " + noteId));
+        String snapshotAt = OffsetDateTime.now(ZoneOffset.UTC).toString();
+        var targetLines = (lineIds == null || lineIds.isEmpty()) ? note.getLines() : note.getLines().stream()
+                .filter(l -> lineIds.contains(l.getLineId())).toList();
+
+        int readyCount = 0;
+        int pendingCount = 0;
+        boolean hasShortage = false;
+        java.util.List<ShippingRecalcResponse.Line> outLines = new java.util.ArrayList<>();
+        java.util.List<ShippingNoteLine> newLines = new java.util.ArrayList<>();
+        for (var l : note.getLines()) {
+            boolean inScope = targetLines.stream().anyMatch(t -> t.getLineId().equals(l.getLineId()));
+            int onHand = onHandProvider.getOnHandQty(note.getWarehouseCode(), l.getProductId());
+            String suggested = (onHand >= l.getOrderedQty()) ? LineStatus.READY.name() : LineStatus.SHORTAGE.name();
+            if (inScope) {
+                if (LineStatus.READY.name().equals(suggested)) readyCount++; else hasShortage = true;
+                outLines.add(new ShippingRecalcResponse.Line(
+                        l.getLineId(), l.getOrderedQty(), (l.getStatus() == null ? "PENDING" : l.getStatus().name()), onHand, suggested
+                ));
+                if (apply) {
+                    var updatedLine = ShippingNoteLine.builder()
+                            .lineId(l.getLineId())
+                            .productId(l.getProductId())
+                            .productLot(l.getProductLot())
+                            .productCode(l.getProductCode())
+                            .productName(l.getProductName())
+                            .productImgUrl(l.getProductImgUrl())
+                            .orderedQty(l.getOrderedQty())
+                            .onHandQty(onHand)
+                            .pickedQty(l.getPickedQty())
+                            .status(LineStatus.valueOf(suggested))
+                            .build();
+                    newLines.add(updatedLine);
+                } else {
+                    newLines.add(l);
+                }
+            } else {
+                // not in scope
+                pendingCount += (l.getStatus() == LineStatus.PENDING) ? 1 : 0;
+                newLines.add(l);
+            }
+        }
+        String suggestedNote = hasShortage ? NoteStatus.DELAYED.name() : NoteStatus.IN_PROGRESS.name();
+        var resp = new ShippingRecalcResponse(
+                note.getNoteId(),
+                (note.getStatus() == null ? "PENDING" : note.getStatus().name()),
+                suggestedNote,
+                hasShortage,
+                readyCount,
+                pendingCount,
+                snapshotAt,
+                apply,
+                outLines
+        );
+        if (apply) {
+            var newStatus = hasShortage ? NoteStatus.DELAYED : (note.getStatus() == NoteStatus.PENDING ? NoteStatus.IN_PROGRESS : note.getStatus());
+            var updated = ShippingNote.builder()
+                    .noteId(note.getNoteId())
+                    .branchName(note.getBranchName())
+                    .itemKindsNumber(note.getItemKindsNumber())
+                    .totalQty(note.getTotalQty())
+                    .warehouseCode(note.getWarehouseCode())
+                    .shippingNo(note.getShippingNo())
+                    .orderId(note.getOrderId())
+                    .requestedAt(note.getRequestedAt())
+                    .expectedShipDate(note.getExpectedShipDate())
+                    .shippedAt(note.getShippedAt())
+                    .assigneeName(note.getAssigneeName())
+                    .assigneeDept(note.getAssigneeDept())
+                    .assigneePhone(note.getAssigneePhone())
+                    .remark(note.getRemark())
+                    .status(newStatus)
+                    .completedAt(note.getCompletedAt())
+                    .lines(newLines)
+                    .build();
+            repository.save(updated);
+        }
+        return resp;
+    }
+
+    @Override
+    @Transactional
+    public ShippingLineConfirmResponse confirmLine(Long noteId, Long lineId) {
+        var note = repository.findById(noteId)
+                .orElseThrow(() -> new NotFoundException("Shipping note not found: " + noteId));
+        var line = note.getLines().stream().filter(l -> l.getLineId().equals(lineId))
+                .findFirst().orElseThrow(() -> new NotFoundException("Shipping line not found: " + lineId));
+        int onHand = onHandProvider.getOnHandQty(note.getWarehouseCode(), line.getProductId());
+        String suggested = (onHand >= line.getOrderedQty()) ? LineStatus.READY.name() : LineStatus.SHORTAGE.name();
+        LineStatus newLineStatus = LineStatus.valueOf(suggested);
+        String prev = (line.getStatus() == null ? "PENDING" : line.getStatus().name());
+
+        java.util.List<ShippingNoteLine> newLines = new java.util.ArrayList<>();
+        for (var l : note.getLines()) {
+            if (l.getLineId().equals(lineId)) {
+                newLines.add(ShippingNoteLine.builder()
+                        .lineId(l.getLineId())
+                        .productId(l.getProductId())
+                        .productLot(l.getProductLot())
+                        .productCode(l.getProductCode())
+                        .productName(l.getProductName())
+                        .productImgUrl(l.getProductImgUrl())
+                        .orderedQty(l.getOrderedQty())
+                        .onHandQty(onHand)
+                        .pickedQty(l.getPickedQty())
+                        .status(newLineStatus)
+                        .build());
+            } else {
+                newLines.add(l);
+            }
+        }
+        NoteStatus newNoteStatus = note.getStatus();
+        if (newLineStatus == LineStatus.SHORTAGE) {
+            newNoteStatus = NoteStatus.DELAYED;
+        } else if (newNoteStatus == NoteStatus.PENDING) {
+            newNoteStatus = NoteStatus.IN_PROGRESS;
+        }
+        var updated = ShippingNote.builder()
+                .noteId(note.getNoteId())
+                .branchName(note.getBranchName())
+                .itemKindsNumber(note.getItemKindsNumber())
+                .totalQty(note.getTotalQty())
+                .warehouseCode(note.getWarehouseCode())
+                .shippingNo(note.getShippingNo())
+                .orderId(note.getOrderId())
+                .requestedAt(note.getRequestedAt())
+                .expectedShipDate(note.getExpectedShipDate())
+                .shippedAt(note.getShippedAt())
+                .assigneeName(note.getAssigneeName())
+                .assigneeDept(note.getAssigneeDept())
+                .assigneePhone(note.getAssigneePhone())
+                .remark(note.getRemark())
+                .status(newNoteStatus)
+                .completedAt(note.getCompletedAt())
+                .lines(newLines)
+                .build();
+        repository.save(updated);
+        String snapshotAt = OffsetDateTime.now(ZoneOffset.UTC).toString();
+        return new ShippingLineConfirmResponse(
+                note.getNoteId(), lineId, line.getOrderedQty(), onHand, prev, suggested, newLineStatus.name(), newNoteStatus.name(), snapshotAt
+        );
     }
 }

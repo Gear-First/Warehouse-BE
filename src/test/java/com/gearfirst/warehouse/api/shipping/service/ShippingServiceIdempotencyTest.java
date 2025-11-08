@@ -32,7 +32,7 @@ class ShippingServiceIdempotencyTest {
     void setUp() {
         repo = new InMemoryShippingNoteRepository();
         inventory = Mockito.mock(InventoryService.class);
-        OnHandProvider provider = productId -> Integer.MAX_VALUE / 2; // plenty in stock; not used in completion
+        OnHandProvider provider = (wh, productId) -> Integer.MAX_VALUE / 2; // plenty in stock; not used in completion
         service = new ShippingServiceImpl(repo, provider, inventory, null, null);
     }
 

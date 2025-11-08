@@ -7,6 +7,7 @@ import com.gearfirst.warehouse.api.shipping.domain.NoteStatus;
 import com.gearfirst.warehouse.api.shipping.domain.ShippingNote;
 import com.gearfirst.warehouse.api.shipping.domain.ShippingNoteLine;
 import com.gearfirst.warehouse.api.shipping.repository.InMemoryShippingNoteRepository;
+import com.gearfirst.warehouse.common.exception.ConflictException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,7 @@ class ShippingServiceNoDecreaseOnDelayedTest {
     void setUp() {
         repo = new InMemoryShippingNoteRepository();
         inventory = Mockito.mock(InventoryService.class);
-        OnHandProvider provider = productId -> 0; // force shortages if needed, but we pre-seed status anyway
+        OnHandProvider provider = (wh, productId) -> 0; // force shortages if needed, but we pre-seed status anyway
         service = new ShippingServiceImpl(repo, provider, inventory, null, null);
     }
 
@@ -66,14 +67,13 @@ class ShippingServiceNoDecreaseOnDelayedTest {
                 .build();
         repo.save(note);
 
-        // when
-        var resp = service.complete(9901L, ShippingCompleteRequest.builder().assigneeName("WAREHOUSE").assigneeDept("DEFAULT").assigneePhone("N/A").build());
+        // when/then: V2 policy rejects completion when not all lines are READY
+        assertThrows(ConflictException.class, () -> service.complete(9901L, ShippingCompleteRequest.builder().assigneeName("WAREHOUSE").assigneeDept("DEFAULT").assigneePhone("N/A").build()));
 
-        // then: no inventory decrease should be called
+        // and: no inventory decrease should be called
         verify(inventory, never()).decrease(any(), any(), anyInt());
-        assertNotNull(resp.completedAt());
-        // ensure the note became DELAYED
+        // ensure the note status remains unchanged (IN_PROGRESS)
         var updated = repo.findById(9901L).orElseThrow();
-        assertEquals(NoteStatus.DELAYED, updated.getStatus());
+        assertEquals(NoteStatus.IN_PROGRESS, updated.getStatus());
     }
 }

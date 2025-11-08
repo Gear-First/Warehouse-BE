@@ -4,6 +4,7 @@ import com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.OnHandSummary;
 import com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.PartRef;
 import com.gearfirst.warehouse.api.inventory.persistence.InventoryOnHandJpaRepository;
 import com.gearfirst.warehouse.api.inventory.persistence.entity.InventoryOnHandEntity;
+import com.gearfirst.warehouse.api.parts.persistence.PartJpaRepository;
 import com.gearfirst.warehouse.api.parts.persistence.entity.PartEntity;
 import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.common.exception.ConflictException;
@@ -24,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class InventoryServiceImpl implements InventoryService {
 
     private final InventoryOnHandJpaRepository repo;
-    private final com.gearfirst.warehouse.api.parts.persistence.PartJpaRepository parts;
+    private final PartJpaRepository parts;
 
     @Override
     @Transactional(readOnly = true)
