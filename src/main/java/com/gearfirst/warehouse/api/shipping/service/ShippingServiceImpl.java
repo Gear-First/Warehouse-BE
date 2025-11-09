@@ -655,18 +655,23 @@ public class ShippingServiceImpl implements ShippingService {
 
     @Override
     @Transactional
-    public ShippingRecalcResponse checkShippable(Long noteId, boolean apply, java.util.List<Long> lineIds) {
+    public ShippingRecalcResponse checkShippable(Long noteId, boolean apply, List<Long> lineIds) {
+
         var note = repository.findById(noteId)
                 .orElseThrow(() -> new NotFoundException("Shipping note not found: " + noteId));
         String snapshotAt = OffsetDateTime.now(ZoneOffset.UTC).toString();
+        // Guard: COMPLETED notes cannot be mutated; allow dry-run only
+        if (note.getStatus() == NoteStatus.COMPLETED && apply) {
+            throw new ConflictException(CONFLICT_NOTE_STATUS_WHILE_COMPLETE);
+        }
         var targetLines = (lineIds == null || lineIds.isEmpty()) ? note.getLines() : note.getLines().stream()
                 .filter(l -> lineIds.contains(l.getLineId())).toList();
 
         int readyCount = 0;
         int pendingCount = 0;
         boolean hasShortage = false;
-        java.util.List<ShippingRecalcResponse.Line> outLines = new java.util.ArrayList<>();
-        java.util.List<ShippingNoteLine> newLines = new java.util.ArrayList<>();
+        List<ShippingRecalcResponse.Line> outLines = new java.util.ArrayList<>();
+        List<ShippingNoteLine> newLines = new java.util.ArrayList<>();
         for (var l : note.getLines()) {
             boolean inScope = targetLines.stream().anyMatch(t -> t.getLineId().equals(l.getLineId()));
             int onHand = onHandProvider.getOnHandQty(note.getWarehouseCode(), l.getProductId());
@@ -699,7 +704,21 @@ public class ShippingServiceImpl implements ShippingService {
                 newLines.add(l);
             }
         }
-        String suggestedNote = hasShortage ? NoteStatus.DELAYED.name() : NoteStatus.IN_PROGRESS.name();
+        // Suggested note status reflects what would happen after apply:
+        String suggestedNote;
+        if (note.getStatus() == NoteStatus.COMPLETED) {
+            suggestedNote = NoteStatus.COMPLETED.name();
+        } else if (hasShortage) {
+            suggestedNote = NoteStatus.DELAYED.name();
+        } else {
+            // recovery path: DELAYED or PENDING -> IN_PROGRESS
+            NoteStatus current = note.getStatus();
+            if (current == null || current == NoteStatus.PENDING || current == NoteStatus.DELAYED) {
+                suggestedNote = NoteStatus.IN_PROGRESS.name();
+            } else {
+                suggestedNote = current.name();
+            }
+        }
         var resp = new ShippingRecalcResponse(
                 note.getNoteId(),
                 (note.getStatus() == null ? "PENDING" : note.getStatus().name()),
@@ -712,7 +731,16 @@ public class ShippingServiceImpl implements ShippingService {
                 outLines
         );
         if (apply) {
-            var newStatus = hasShortage ? NoteStatus.DELAYED : (note.getStatus() == NoteStatus.PENDING ? NoteStatus.IN_PROGRESS : note.getStatus());
+            NoteStatus current = note.getStatus();
+            NoteStatus newStatus;
+            if (hasShortage) {
+                newStatus = NoteStatus.DELAYED;
+            } else if (current == null || current == NoteStatus.PENDING || current == NoteStatus.DELAYED) {
+                // recovery to IN_PROGRESS when shortages resolved
+                newStatus = NoteStatus.IN_PROGRESS;
+            } else {
+                newStatus = current;
+            }
             var updated = ShippingNote.builder()
                     .noteId(note.getNoteId())
                     .branchName(note.getBranchName())
@@ -749,7 +777,7 @@ public class ShippingServiceImpl implements ShippingService {
         LineStatus newLineStatus = LineStatus.valueOf(suggested);
         String prev = (line.getStatus() == null ? "PENDING" : line.getStatus().name());
 
-        java.util.List<ShippingNoteLine> newLines = new java.util.ArrayList<>();
+        List<ShippingNoteLine> newLines = new java.util.ArrayList<>();
         for (var l : note.getLines()) {
             if (l.getLineId().equals(lineId)) {
                 newLines.add(ShippingNoteLine.builder()
