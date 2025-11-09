@@ -48,7 +48,7 @@ public enum ErrorStatus {
      * 409 CONFLICT
      */
     CONFLICT_RESOURCE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 자원입니다."),
-    CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED(HttpStatus.CONFLICT, "출고 전표가 더 이상 수정될 수 없는 상태입니다."),
+    CONFLICT_NOTE_STATUS_WHILE_COMPLETE(HttpStatus.CONFLICT, "이미 완료처리된 노트입니다."),
     CONFLICT_CANNOT_COMPLETE_WHEN_NOT_READY(HttpStatus.CONFLICT, "출고 완료 불가: READY가 아닌 라인이 포함되어 있습니다."),
     CONFLICT_RECEIVING_LINE_ALREADY_DONE(HttpStatus.CONFLICT, "입고 라인이 이미 완료되어 수정할 수 없습니다."),
     CONFLICT_RECEIVING_NOTE_ALREADY_COMPLETED(HttpStatus.CONFLICT, "입고 전표가 이미 완료 상태입니다."),

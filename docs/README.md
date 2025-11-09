@@ -29,5 +29,3 @@ Date: 2025-10-27
   - [Contributing Docs](standards/contributing-docs.md)
 - ADR (Architecture Decision Records)
   - docs/adr/* (ADR-01..05)
-- TODO
-  - [Docs TODO](TODO.md)

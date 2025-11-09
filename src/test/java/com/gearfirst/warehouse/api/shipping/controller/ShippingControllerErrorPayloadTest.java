@@ -38,7 +38,7 @@ class ShippingControllerErrorPayloadTest {
     @DisplayName("PATCH /api/v1/shipping/{noteId}/lines/{lineId} - 409 시 CommonApiResponse 에러 페이로드 형태")
     void updateLine_conflict_errorPayload() throws Exception {
         when(shippingService.updateLine(eq(7001L), eq(1L), any(ShippingUpdateLineRequest.class)))
-                .thenThrow(new ConflictException(ErrorStatus.CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED));
+                .thenThrow(new ConflictException(ErrorStatus.CONFLICT_NOTE_STATUS_WHILE_COMPLETE));
 
         var body = new ShippingUpdateLineRequest(10);
         mockMvc.perform(patch("/api/v1/shipping/{noteId}/lines/{lineId}", 7001L, 1L)
@@ -47,6 +47,6 @@ class ShippingControllerErrorPayloadTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.status", is(409)))
-                .andExpect(jsonPath("$.message", is(ErrorStatus.CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED.getMessage())));
+                .andExpect(jsonPath("$.message", is(ErrorStatus.CONFLICT_NOTE_STATUS_WHILE_COMPLETE.getMessage())));
     }
 }

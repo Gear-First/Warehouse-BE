@@ -1,6 +1,6 @@
 package com.gearfirst.warehouse.api.shipping.service;
 
-import static com.gearfirst.warehouse.common.response.ErrorStatus.CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED;
+import static com.gearfirst.warehouse.common.response.ErrorStatus.CONFLICT_NOTE_STATUS_WHILE_COMPLETE;
 
 import com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.OnHandSummary;
 import com.gearfirst.warehouse.api.inventory.service.InventoryService;
@@ -9,6 +9,7 @@ import com.gearfirst.warehouse.api.shipping.domain.LineStatus;
 import com.gearfirst.warehouse.api.shipping.domain.NoteStatus;
 import com.gearfirst.warehouse.api.shipping.domain.ShippingNote;
 import com.gearfirst.warehouse.api.shipping.domain.ShippingNoteLine;
+import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteRequest;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteResponse;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingCreateNoteRequest;
 import com.gearfirst.warehouse.api.shipping.dto.ShippingLineConfirmResponse;
@@ -237,7 +238,7 @@ public class ShippingServiceImpl implements ShippingService {
 
         // DELAYED/COMPLETED 상태에서는 수정 차단 (409)
         if (note.getStatus() == NoteStatus.DELAYED || note.getStatus() == NoteStatus.COMPLETED) {
-            throw new ConflictException(CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED);
+            throw new ConflictException(CONFLICT_NOTE_STATUS_WHILE_COMPLETE);
         }
 
         // 대상 라인 조회
@@ -324,13 +325,16 @@ public class ShippingServiceImpl implements ShippingService {
 
     @Override
     @Transactional
-    public ShippingCompleteResponse complete(Long noteId, com.gearfirst.warehouse.api.shipping.dto.ShippingCompleteRequest req) {
+    public ShippingCompleteResponse complete(Long noteId, ShippingCompleteRequest req) {
         var note = repository.findById(noteId)
                 .orElseThrow(() -> new NotFoundException("Shipping note not found: " + noteId));
 
         // Idempotency: block if already in a terminal state
-        if (note.getStatus() == NoteStatus.COMPLETED || note.getStatus() == NoteStatus.DELAYED) {
-            throw new ConflictException(CONFLICT_NOTE_STATUS_WHILE_COMPLETE_OR_DELAYED);
+        // 기존 : COMPLETED || DELAYED 차단
+//        if (note.getStatus() == NoteStatus.COMPLETED || note.getStatus() == NoteStatus.DELAYED) {
+        // 현재 : COMPLETED 재시도만 방지, 그외 이후에 ready 및 재고 관련 검증 추가됨
+        if (note.getStatus() == NoteStatus.COMPLETED) {
+            throw new ConflictException(CONFLICT_NOTE_STATUS_WHILE_COMPLETE);
         }
 
         // Resolve handler info from request if provided
