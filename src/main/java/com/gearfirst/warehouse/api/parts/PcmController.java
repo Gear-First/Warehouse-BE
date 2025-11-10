@@ -12,6 +12,7 @@ import com.gearfirst.warehouse.api.parts.persistence.PartCarModelJpaRepository;
 import com.gearfirst.warehouse.api.parts.persistence.entity.CarModelEntity;
 import com.gearfirst.warehouse.api.parts.service.PartCarModelService;
 import com.gearfirst.warehouse.common.exception.ConflictException;
+import com.gearfirst.warehouse.common.exception.NotFoundException;
 import com.gearfirst.warehouse.common.response.CommonApiResponse;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
@@ -133,7 +134,7 @@ public class PcmController {
                 return order.ignoreCase();
             }).toList();
             // apply whitelist
-            List<String> allowed = java.util.List.of("name", "createdAt", "updatedAt");
+            List<String> allowed = List.of("name", "createdAt", "updatedAt");
             List<Sort.Order> filtered = orders.stream()
                     .filter(o -> allowed.contains(o.getProperty()))
                     .toList();
@@ -221,25 +222,28 @@ public class PcmController {
             @PathVariable Long carModelId
     ) {
         pcmService.deleteMapping(partId, carModelId);
-        return CommonApiResponse.success(SuccessStatus.SEND_PCM_DELETE_SUCCESS, java.util.Map.of("deleted", true));
+        return CommonApiResponse.success(SuccessStatus.SEND_PCM_DELETE_SUCCESS, Map.of("deleted", true));
     }
 
-    @Operation(summary = "차량 모델 삭제(soft)", description = "차량 모델이 활성 매핑에 참조 중이면 409를 반환합니다. 성공 시 enabled=false로 비활성화 처리합니다.")
-    @DeleteMapping("/car-models/{id}")
-    public ResponseEntity<CommonApiResponse<Map<String, Boolean>>> deleteCarModel(
+    @Operation(summary = "차량 모델 활성 상태 토글", description = "차량 모델이 활성중에는 매핑에 참조 중이면 409를 반환, 성공 시 enabled=false로 비활성화 처리합니다. 비활성화 상태에서는 활성화 시킵니다.")
+    @PatchMapping("/car-models/{id}/enable")
+    public ResponseEntity<CommonApiResponse<Map<String, Boolean>>> toggleCarModelEnable(
             @PathVariable Long id
     ) {
         var cm = carModelRepo.findById(id)
-                .orElseThrow(() -> new com.gearfirst.warehouse.common.exception.NotFoundException("CarModel not found: " + id));
+                .orElseThrow(() -> new NotFoundException("CarModel not found: " + id));
         long refCount = pcmRepo.countByCarModelIdAndEnabledTrue(id);
         if (refCount > 0) {
-            throw new com.gearfirst.warehouse.common.exception.ConflictException(com.gearfirst.warehouse.common.response.ErrorStatus.CARMODEL_HAS_MAPPINGS);
+            throw new ConflictException(ErrorStatus.CARMODEL_HAS_MAPPINGS);
         }
         if (cm.isEnabled()) {
             cm.setEnabled(false);
             carModelRepo.save(cm);
+        } else {
+            cm.setEnabled(true);
+            carModelRepo.save(cm);
         }
-        return CommonApiResponse.success(com.gearfirst.warehouse.common.response.SuccessStatus.SEND_CARMODEL_DELETE_SUCCESS,
-                java.util.Map.of("deleted", true));
+        return CommonApiResponse.success(SuccessStatus.SEND_CARMODEL_ENABLE_TOGGLED_SUCCESS,
+                Map.of("toggled", true));
     }
 }
