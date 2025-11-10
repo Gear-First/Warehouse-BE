@@ -2,6 +2,7 @@ package com.gearfirst.warehouse.api.shipping.service;
 
 import static com.gearfirst.warehouse.common.response.ErrorStatus.CONFLICT_NOTE_STATUS_WHILE_COMPLETE;
 
+import com.gearfirst.warehouse.api.dto.NotificationDto;
 import com.gearfirst.warehouse.api.inventory.dto.OnHandDtos.OnHandSummary;
 import com.gearfirst.warehouse.api.inventory.service.InventoryService;
 import com.gearfirst.warehouse.api.parts.persistence.PartJpaRepository;
@@ -33,13 +34,11 @@ import com.gearfirst.warehouse.common.sequence.NoteNumberGenerator;
 import com.gearfirst.warehouse.common.util.DateTimes;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,6 +52,7 @@ public class ShippingServiceImpl implements ShippingService {
     private final NoteNumberGenerator noteNumberGenerator;
     // Optional helper for product snapshot (nullable for tests)
     private final PartJpaRepository partRepository;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     // Optional Querydsl repository for unified list queries (nullable for tests)
     @Autowired(required = false)
@@ -398,6 +398,17 @@ public class ShippingServiceImpl implements ShippingService {
                 .build();
         repository.save(updated);
 
+        String topic = "notification";
+        NotificationDto n = NotificationDto.builder()
+                .id(1L)
+                .eventId(UUID.randomUUID().toString())
+                .type("부품 출고 완료")
+                .message("부품 출고 요청이 완료되었습니다.")
+                .receiver("본사")
+                .build();
+
+        kafkaTemplate.send(topic, n);
+
         return new ShippingCompleteResponse(completedAt, totalShipped);
     }
 
@@ -519,6 +530,18 @@ public class ShippingServiceImpl implements ShippingService {
                 .lines(lines)
                 .build();
         var saved = repository.save(note);
+
+        String topic = "notification";
+        NotificationDto n = NotificationDto.builder()
+                .id(1L)
+                .eventId(UUID.randomUUID().toString())
+                .type("출고 요청 등록")
+                .message("출고 요청이 등록되었습니다.")
+                .receiver("본사")
+                .build();
+
+        kafkaTemplate.send(topic, n);
+
         return toDetail(saved);
     }
 

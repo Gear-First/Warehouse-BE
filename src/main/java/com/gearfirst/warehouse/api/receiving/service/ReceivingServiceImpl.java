@@ -1,5 +1,6 @@
 package com.gearfirst.warehouse.api.receiving.service;
 
+import com.gearfirst.warehouse.api.dto.NotificationDto;
 import com.gearfirst.warehouse.api.inventory.service.InventoryService;
 import com.gearfirst.warehouse.api.parts.persistence.PartJpaRepository;
 import com.gearfirst.warehouse.api.receiving.domain.ReceivingLineStatus;
@@ -23,13 +24,10 @@ import com.gearfirst.warehouse.common.sequence.NoteNumberGenerator;
 import com.gearfirst.warehouse.common.util.DateTimes;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+
 import lombok.RequiredArgsConstructor;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -43,6 +41,7 @@ public class ReceivingServiceImpl implements ReceivingService {
     private final NoteNumberGenerator noteNumberGenerator;
     private final InventoryService inventoryService;
     private final PartJpaRepository partRepository;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Override
     public List<ReceivingNoteSummaryResponse> getNotDone(String date) {
@@ -209,6 +208,17 @@ public class ReceivingServiceImpl implements ReceivingService {
         note.setCompletedAt(completedAt);
         repository.save(note);
 
+        String topic = "notification";
+        NotificationDto n = NotificationDto.builder()
+                .id(1L)
+                .eventId(UUID.randomUUID().toString())
+                .type("입고 요청 완료")
+                .message("입고 요청이 완료되었습니다.")
+                .receiver("본사")
+                .build();
+
+        kafkaTemplate.send(topic, n);
+
         return new ReceivingCompleteResponse(
                 DateTimes.toKstString(completedAt),
                 appliedSum
@@ -326,6 +336,18 @@ public class ReceivingServiceImpl implements ReceivingService {
             entity.addLine(le);
         }
         var saved = repository.save(entity);
+
+        String topic = "notification";
+        NotificationDto n = NotificationDto.builder()
+                .id(1L)
+                .eventId(UUID.randomUUID().toString())
+                .type("입고 요청 등록")
+                .message("입고 요청이 등록되었습니다.")
+                .receiver("본사")
+                .build();
+
+        kafkaTemplate.send(topic, n);
+
         return toDetail(saved);
     }
 

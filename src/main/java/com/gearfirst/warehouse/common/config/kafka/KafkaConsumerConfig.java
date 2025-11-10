@@ -1,7 +1,6 @@
 package com.gearfirst.warehouse.common.config.kafka;
 
-import com.gearfirst.warehouse.api.dto.TestDto;
-import java.util.Map;
+import com.gearfirst.warehouse.api.dto.NotificationDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
@@ -11,20 +10,22 @@ import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 
+import java.util.Map;
+
 @Configuration
 @RequiredArgsConstructor
 public class KafkaConsumerConfig {
     private final KafkaProperties properties;
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, TestDto> testKafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, TestDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
+    public ConcurrentKafkaListenerContainerFactory<String, NotificationDto> testKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, NotificationDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
 
         factory.setConsumerFactory(testConsumerFactory());
         return factory;
     }
 
-    private ConsumerFactory<String, TestDto> testConsumerFactory() {
+    private ConsumerFactory<String, NotificationDto> testConsumerFactory() {
         // 8. application.yml에서 가져온 기본 consumer 설정을 복사합니다.
         //    (bootstrap-servers 주소 등이 여기에 포함됩니다.)
         Map<String, Object> props = properties.buildConsumerProperties(null);
@@ -37,7 +38,7 @@ public class KafkaConsumerConfig {
 
                 // Value(메시지 내용)는 OrderDto.class로만 변환하고,
                 // 타입 헤더(__TypeId__)는 무시(false)합니다.
-                new JsonDeserializer<>(TestDto.class, false)
+                new JsonDeserializer<>(NotificationDto.class, false)
         );
     }
 }
