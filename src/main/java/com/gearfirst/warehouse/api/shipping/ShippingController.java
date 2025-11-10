@@ -14,6 +14,7 @@ import com.gearfirst.warehouse.common.response.CommonApiResponse;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
 import com.gearfirst.warehouse.common.util.DateFilter;
+import com.gearfirst.warehouse.common.context.UserContextUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -72,12 +73,13 @@ public class ShippingController {
         // Normalize dates via DateFilter (range wins; swap when from>to)
         DateFilter.Normalized nf = DateFilter.normalize(date, dateFrom, dateTo);
         boolean explicitRange = (dateFrom != null && !dateFrom.isBlank()) || (dateTo != null && !dateTo.isBlank());
+        String effectiveWh = UserContextUtils.effectiveWarehouseCode(warehouseCode);
         List<ShippingNoteSummaryResponse> all;
-        if (!explicitRange && (warehouseCode == null || warehouseCode.isBlank())) {
+        if (!explicitRange && (effectiveWh == null || effectiveWh.isBlank())) {
             all = service.getNotDone(date);
         } else {
             String dateArg = explicitRange ? null : date;
-            all = service.getNotDone(dateArg, nf.from(), nf.to(), warehouseCode);
+            all = service.getNotDone(dateArg, nf.from(), nf.to(), effectiveWh);
         }
         long total = all.size();
         int from = Math.min(p * s, (int) total);
@@ -116,12 +118,13 @@ public class ShippingController {
         // Normalize dates via DateFilter (range wins; swap when from>to)
         DateFilter.Normalized nf = DateFilter.normalize(date, dateFrom, dateTo);
         boolean explicitRange = (dateFrom != null && !dateFrom.isBlank()) || (dateTo != null && !dateTo.isBlank());
+        String effectiveWh = UserContextUtils.effectiveWarehouseCode(warehouseCode);
         List<ShippingNoteSummaryResponse> all;
-        if (!explicitRange && (warehouseCode == null || warehouseCode.isBlank())) {
+        if (!explicitRange && (effectiveWh == null || effectiveWh.isBlank())) {
             all = service.getDone(date);
         } else {
             String dateArg = explicitRange ? null : date;
-            all = service.getDone(dateArg, nf.from(), nf.to(), warehouseCode);
+            all = service.getDone(dateArg, nf.from(), nf.to(), effectiveWh);
         }
         long total = all.size();
         int from = Math.min(p * s, (int) total);
@@ -240,9 +243,10 @@ public class ShippingController {
 
         // Normalize dates via DateFilter
         DateFilter.Normalized nf = DateFilter.normalize(date, dateFrom, dateTo);
+        String effectiveWh = UserContextUtils.effectiveWarehouseCode(warehouseCode);
         boolean hasFilters = nf.hasRange() ||
                         (q != null && !q.isBlank()) ||
-                        (warehouseCode != null && !warehouseCode.isBlank()) ||
+                        (effectiveWh != null && !effectiveWh.isBlank()) ||
                         (shippingNo != null && !shippingNo.isBlank()) ||
                         (branchName != null && !branchName.isBlank());
         String df = nf.from();
@@ -254,35 +258,35 @@ public class ShippingController {
         String statusNormalized = (status == null ? "all" : status.toLowerCase(java.util.Locale.ROOT));
         if (!hasFilters) {
             switch (statusNormalized) {
-                case "done" -> list = (warehouseCode == null || warehouseCode.isBlank())
+                case "done" -> list = (effectiveWh == null || effectiveWh.isBlank())
                         ? service.getDone(dateArg)
-                        : service.getDone(dateArg, warehouseCode);
+                        : service.getDone(dateArg, effectiveWh);
                 case "all" -> {
-                    var nd = (warehouseCode == null || warehouseCode.isBlank())
+                    var nd = (effectiveWh == null || effectiveWh.isBlank())
                             ? service.getNotDone(dateArg)
-                            : service.getNotDone(dateArg, warehouseCode);
-                    var dn = (warehouseCode == null || warehouseCode.isBlank())
+                            : service.getNotDone(dateArg, effectiveWh);
+                    var dn = (effectiveWh == null || effectiveWh.isBlank())
                             ? service.getDone(dateArg)
-                            : service.getDone(dateArg, warehouseCode);
+                            : service.getDone(dateArg, effectiveWh);
                     list = new java.util.ArrayList<>(nd.size() + dn.size());
                     list.addAll(nd);
                     list.addAll(dn);
                 }
-                default -> list = (warehouseCode == null || warehouseCode.isBlank())
+                default -> list = (effectiveWh == null || effectiveWh.isBlank())
                         ? service.getNotDone(dateArg)
-                        : service.getNotDone(dateArg, warehouseCode);
+                        : service.getNotDone(dateArg, effectiveWh);
             }
         } else {
             switch (statusNormalized) {
-                case "done" -> list = service.getDone(dateArg, df, dt, warehouseCode, shippingNo, branchName, q);
+                case "done" -> list = service.getDone(dateArg, df, dt, effectiveWh, shippingNo, branchName, q);
                 case "all" -> {
-                    var nd = service.getNotDone(dateArg, df, dt, warehouseCode, shippingNo, branchName, q);
-                    var dn = service.getDone(dateArg, df, dt, warehouseCode, shippingNo, branchName, q);
+                    var nd = service.getNotDone(dateArg, df, dt, effectiveWh, shippingNo, branchName, q);
+                    var dn = service.getDone(dateArg, df, dt, effectiveWh, shippingNo, branchName, q);
                     list = new java.util.ArrayList<>(nd.size() + dn.size());
                     list.addAll(nd);
                     list.addAll(dn);
                 }
-                default -> list = service.getNotDone(dateArg, df, dt, warehouseCode, shippingNo, branchName, q);
+                default -> list = service.getNotDone(dateArg, df, dt, effectiveWh, shippingNo, branchName, q);
             }
         }
 

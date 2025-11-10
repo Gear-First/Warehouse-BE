@@ -9,15 +9,16 @@
 - 메서드: 자유 또는 shouldXxx_WhenYyy(); GWT 주석 권장(given-when-then)
 
 스타일(GWT)
-```text
+
+```java
+
 @Test
 void shouldThrowNotFoundExceptionWhenUserDoesNotExist() {
-// given
-Long nonExistentUserId = 999L;
-// when & then
-assertThatThrownBy(() -> userService.getUserById(nonExistentUserId))
-.isInstanceOf(NotFoundException.class)
-.hasMessage("해당 사용자를 찾을 수 없습니다.");
+    // given
+    Long nonExistentUserId = 999L;
+    // when, then
+    assertThatThrownBy(() -> userService.getUserById(nonExistentUserId)).isInstanceOf(NotFoundException.class)
+            .hasMessage("해당 사용자를 찾을 수 없습니다.");
 }
 ```
 
