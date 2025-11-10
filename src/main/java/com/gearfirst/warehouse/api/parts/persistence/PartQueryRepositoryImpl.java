@@ -2,6 +2,7 @@ package com.gearfirst.warehouse.api.parts.persistence;
 
 import static com.gearfirst.warehouse.api.parts.persistence.entity.QPartEntity.partEntity;
 
+import com.gearfirst.warehouse.api.parts.dto.CarModelDtos.CarModelSummary;
 import com.gearfirst.warehouse.api.parts.dto.PartIntegratedItem;
 import com.gearfirst.warehouse.api.parts.dto.PartSearchCond;
 import com.gearfirst.warehouse.api.parts.persistence.entity.QCarModelEntity;
@@ -73,8 +74,8 @@ public class PartQueryRepositoryImpl implements PartQueryRepository {
         List<Tuple> tuples = contentQuery.fetch();
         List<Long> partIds = tuples.stream().map(t -> t.get(partEntity.id)).filter(Objects::nonNull).toList();
 
-        // Secondary query to aggregate car model names for the current page
-        Map<Long, List<String>> carModelNamesByPartId = partIds.isEmpty() ? Collections.emptyMap() : loadCarModelNames(partIds);
+        // Secondary query to aggregate car models (id+name) for the current page
+        Map<Long, List<CarModelSummary>> carModelsByPartId = partIds.isEmpty() ? Collections.emptyMap() : loadCarModels(partIds);
 
         List<PartIntegratedItem> content = tuples.stream().map(t -> {
             Long id = t.get(partEntity.id);
@@ -88,7 +89,7 @@ public class PartQueryRepositoryImpl implements PartQueryRepository {
                     .enabled(Boolean.TRUE.equals(t.get(partEntity.enabled)))
                     .categoryId(t.get(partEntity.categoryId))
                     .categoryName(t.get(c.name))
-                    .carModelNames(carModelNamesByPartId.getOrDefault(id, List.of()))
+                    .carModels(carModelsByPartId.getOrDefault(id, List.of()))
                     .build();
         }).toList();
 
@@ -107,12 +108,15 @@ public class PartQueryRepositoryImpl implements PartQueryRepository {
         List<BooleanExpression> predicates = new ArrayList<>();
         if (cond == null) return new BooleanExpression[0];
 
+        // Always exclude parts whose category is disabled
+        predicates.add(c.enabled.isTrue());
+
         if (cond.getQ() != null && !cond.getQ().isBlank()) {
             String q = cond.getQ().trim();
             // q over part.code | part.name | category.name | carModel.name
             BooleanExpression qExpr = partEntity.code.containsIgnoreCase(q)
                     .or(partEntity.name.containsIgnoreCase(q))
-                    .or(c.name.containsIgnoreCase(q));
+                    .or(c.enabled.isTrue().and(c.name.containsIgnoreCase(q)));
             QPartCarModelEntity pcmQ = QPartCarModelEntity.partCarModelEntity;
             QCarModelEntity mQ = QCarModelEntity.carModelEntity;
             qExpr = qExpr.or(
@@ -120,6 +124,8 @@ public class PartQueryRepositoryImpl implements PartQueryRepository {
                             .from(pcmQ)
                             .join(mQ).on(mQ.id.eq(pcmQ.carModelId))
                             .where(pcmQ.partId.eq(partEntity.id)
+                                    .and(pcmQ.enabled.isTrue())
+                                    .and(mQ.enabled.isTrue())
                                     .and(mQ.name.containsIgnoreCase(q)))
                             .exists()
             );
@@ -136,10 +142,14 @@ public class PartQueryRepositoryImpl implements PartQueryRepository {
         }
         if (cond.getCarModelId() != null) {
             QPartCarModelEntity pcm = QPartCarModelEntity.partCarModelEntity;
+            QCarModelEntity m = QCarModelEntity.carModelEntity;
             predicates.add(JPAExpressions.selectOne()
                     .from(pcm)
+                    .join(m).on(m.id.eq(pcm.carModelId))
                     .where(pcm.partId.eq(partEntity.id)
-                            .and(pcm.carModelId.eq(cond.getCarModelId())))
+                            .and(pcm.carModelId.eq(cond.getCarModelId()))
+                            .and(pcm.enabled.isTrue())
+                            .and(m.enabled.isTrue()))
                     .exists());
         }
         if (cond.getCarModelName() != null && !cond.getCarModelName().isBlank()) {
@@ -150,6 +160,8 @@ public class PartQueryRepositoryImpl implements PartQueryRepository {
                     .from(pcm)
                     .join(m).on(m.id.eq(pcm.carModelId))
                     .where(pcm.partId.eq(partEntity.id)
+                            .and(pcm.enabled.isTrue())
+                            .and(m.enabled.isTrue())
                             .and(m.name.containsIgnoreCase(term)))
                     .exists());
         }
@@ -163,9 +175,16 @@ public class PartQueryRepositoryImpl implements PartQueryRepository {
         List<BooleanExpression> predicates = new ArrayList<>();
         if (cond == null) return new BooleanExpression[0];
 
+        // Always exclude parts whose category is disabled
+        QPartCategoryEntity c2 = QPartCategoryEntity.partCategoryEntity;
+        predicates.add(JPAExpressions.selectOne()
+                .from(c2)
+                .where(c2.id.eq(partEntity.categoryId)
+                        .and(c2.enabled.isTrue()))
+                .exists());
+
         if (cond.getQ() != null && !cond.getQ().isBlank()) {
             String q = cond.getQ().trim();
-            QPartCategoryEntity c2 = QPartCategoryEntity.partCategoryEntity;
             QPartCarModelEntity pcm2 = QPartCarModelEntity.partCarModelEntity;
             QCarModelEntity m2 = QCarModelEntity.carModelEntity;
             BooleanExpression qExpr = partEntity.code.containsIgnoreCase(q)
@@ -173,12 +192,15 @@ public class PartQueryRepositoryImpl implements PartQueryRepository {
                     .or(JPAExpressions.selectOne()
                         .from(c2)
                         .where(c2.id.eq(partEntity.categoryId)
+                                .and(c2.enabled.isTrue())
                                 .and(c2.name.containsIgnoreCase(q)))
                         .exists())
                     .or(JPAExpressions.selectOne()
                         .from(pcm2)
                         .join(m2).on(m2.id.eq(pcm2.carModelId))
                         .where(pcm2.partId.eq(partEntity.id)
+                                .and(pcm2.enabled.isTrue())
+                                .and(m2.enabled.isTrue())
                                 .and(m2.name.containsIgnoreCase(q)))
                         .exists());
             predicates.add(qExpr);
@@ -190,20 +212,24 @@ public class PartQueryRepositoryImpl implements PartQueryRepository {
             predicates.add(partEntity.categoryId.eq(cond.getCategoryId()));
         }
         if (cond.getCategoryName() != null && !cond.getCategoryName().isBlank()) {
-            QPartCategoryEntity c2 = QPartCategoryEntity.partCategoryEntity;
             String term = cond.getCategoryName().trim();
             predicates.add(JPAExpressions.selectOne()
                     .from(c2)
                     .where(c2.id.eq(partEntity.categoryId)
+                            .and(c2.enabled.isTrue())
                             .and(c2.name.containsIgnoreCase(term)))
                     .exists());
         }
         if (cond.getCarModelId() != null) {
             QPartCarModelEntity pcm = QPartCarModelEntity.partCarModelEntity;
+            QCarModelEntity m = QCarModelEntity.carModelEntity;
             predicates.add(JPAExpressions.selectOne()
                     .from(pcm)
+                    .join(m).on(m.id.eq(pcm.carModelId))
                     .where(pcm.partId.eq(partEntity.id)
-                            .and(pcm.carModelId.eq(cond.getCarModelId())))
+                            .and(pcm.carModelId.eq(cond.getCarModelId()))
+                            .and(pcm.enabled.isTrue())
+                            .and(m.enabled.isTrue()))
                     .exists());
         }
         if (cond.getCarModelName() != null && !cond.getCarModelName().isBlank()) {
@@ -214,6 +240,8 @@ public class PartQueryRepositoryImpl implements PartQueryRepository {
                     .from(pcm)
                     .join(m).on(m.id.eq(pcm.carModelId))
                     .where(pcm.partId.eq(partEntity.id)
+                            .and(pcm.enabled.isTrue())
+                            .and(m.enabled.isTrue())
                             .and(m.name.containsIgnoreCase(term)))
                     .exists());
         }
@@ -247,27 +275,33 @@ public class PartQueryRepositoryImpl implements PartQueryRepository {
         return o.isAscending() ? Order.ASC : Order.DESC;
     }
 
-    private Map<Long, List<String>> loadCarModelNames(List<Long> partIds) {
+    private Map<Long, List<CarModelSummary>> loadCarModels(List<Long> partIds) {
         QPartCarModelEntity pcm = QPartCarModelEntity.partCarModelEntity;
         QCarModelEntity m = QCarModelEntity.carModelEntity;
 
         List<Tuple> rows = queryFactory
-                .select(pcm.partId, m.name)
+                .select(pcm.partId, m.id, m.name)
                 .from(pcm)
                 .join(m).on(m.id.eq(pcm.carModelId))
-                .where(pcm.partId.in(partIds))
+                .where(pcm.partId.in(partIds)
+                        .and(pcm.enabled.isTrue())
+                        .and(m.enabled.isTrue()))
                 .fetch();
 
-        Map<Long, List<String>> map = new HashMap<>();
+        Map<Long, List<CarModelSummary>> map = new HashMap<>();
         for (Tuple row : rows) {
             Long partId = row.get(pcm.partId);
+            Long modelId = row.get(m.id);
             String modelName = row.get(m.name);
-            if (partId == null || modelName == null) continue;
-            map.computeIfAbsent(partId, k -> new ArrayList<>()).add(modelName);
+            if (partId == null || modelId == null || modelName == null) continue;
+            map.computeIfAbsent(partId, k -> new ArrayList<>()).add(new CarModelSummary(modelId, modelName));
         }
-        // Optionally sort/unique the names
-        for (Map.Entry<Long, List<String>> e : map.entrySet()) {
-            List<String> uniq = e.getValue().stream().filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        // unique by id
+        for (Map.Entry<Long, List<CarModelSummary>> e : map.entrySet()) {
+            List<CarModelSummary> uniq = e.getValue().stream()
+                    .collect(Collectors.collectingAndThen(
+                            Collectors.toMap(CarModelSummary::id, Function.identity(), (a, b) -> a),
+                            m2 -> new ArrayList<>(m2.values())));
             e.setValue(uniq);
         }
         return map;

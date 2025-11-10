@@ -24,7 +24,7 @@ public class PartIntegratedItem {
     private Long categoryId;
     private String categoryName;
 
-    // Car models (names or id-name pairs; start with names for simplicity)
+    // Car models: id + name pairs
     @Builder.Default
-    private List<String> carModelNames = List.of();
+    private List<CarModelDtos.CarModelSummary> carModels = List.of();
 }

@@ -22,6 +22,8 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.kafka.core.KafkaTemplate;
 
 /**
  * Verifies multi-warehouse behavior for Inventory decreases during Shipping completion.
@@ -38,7 +40,8 @@ class ShippingServiceWarehouseTest {
         repo = new InMemoryShippingNoteRepository();
         inventory = new FakeInventoryService();
         provider = new InventoryBackedOnHandProvider(inventory);
-        service = new ShippingServiceImpl(repo, provider, inventory, null, null);
+        KafkaTemplate<String, Object> kafka = Mockito.mock(KafkaTemplate.class);
+        service = new ShippingServiceImpl(repo, provider, inventory, null, null, kafka);
     }
 
     @Test

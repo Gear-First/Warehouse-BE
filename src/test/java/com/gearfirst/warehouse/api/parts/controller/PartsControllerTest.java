@@ -139,7 +139,10 @@ class PartsControllerTest {
                 .id(1L).code("P-1001").name("Engine Oil Filter").price(12000)
                 .imageUrl("/img/p-1001.png").safetyStockQty(0).enabled(true)
                 .categoryId(10L).categoryName("Filter")
-                .carModelNames(java.util.List.of("Avante", "Sonata"))
+                .carModels(java.util.List.of(
+                        new com.gearfirst.warehouse.api.parts.dto.CarModelDtos.CarModelSummary(1L, "Avante"),
+                        new com.gearfirst.warehouse.api.parts.dto.CarModelDtos.CarModelSummary(2L, "Sonata")
+                ))
                 .build();
         var envelope = com.gearfirst.warehouse.common.response.PageEnvelope.of(java.util.List.of(item), 0, 20, 1);
         when(partQueryService.searchIntegrated(
@@ -162,7 +165,7 @@ class PartsControllerTest {
                 .andExpect(jsonPath("$.status", is(SuccessStatus.SEND_PART_LIST_SUCCESS.getStatusCode())))
                 .andExpect(jsonPath("$.data.items[0].code", is("P-1001")))
                 .andExpect(jsonPath("$.data.items[0].categoryName", is("Filter")))
-                .andExpect(jsonPath("$.data.items[0].carModelNames", hasSize(2)));
+                .andExpect(jsonPath("$.data.items[0].carModels", hasSize(2)));
     }
 
     @Test

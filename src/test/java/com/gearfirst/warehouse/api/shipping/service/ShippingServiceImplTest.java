@@ -13,6 +13,8 @@ import com.gearfirst.warehouse.common.exception.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.kafka.core.KafkaTemplate;
 
 import java.util.List;
 
@@ -37,7 +39,8 @@ class ShippingServiceImplTest {
             @Override public void increase(String warehouseCode, Long partId, int qty) { }
             @Override public void decrease(String warehouseCode, Long partId, int qty) { }
         };
-        service = new ShippingServiceImpl(repo, provider, inv, null, null);
+        KafkaTemplate<String, Object> kafka = Mockito.mock(KafkaTemplate.class);
+        service = new ShippingServiceImpl(repo, provider, inv, null, null, kafka);
     }
 
     @Test

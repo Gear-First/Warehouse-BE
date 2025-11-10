@@ -100,7 +100,8 @@ class PartQueryRepositoryTest {
         var item = page.getContent().get(0);
         assertThat(item.getCode()).isEqualTo("P-1001");
         assertThat(item.getCategoryName()).isEqualTo("Filter");
-        assertThat(item.getCarModelNames()).containsExactlyInAnyOrder("Avante", "Sonata");
+        assertThat(item.getCarModels().stream().map(com.gearfirst.warehouse.api.parts.dto.CarModelDtos.CarModelSummary::name))
+                .containsExactlyInAnyOrder("Avante", "Sonata");
     }
 
     @Test

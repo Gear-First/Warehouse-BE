@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.kafka.core.KafkaTemplate;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
@@ -33,7 +34,8 @@ class ShippingServiceIdempotencyTest {
         repo = new InMemoryShippingNoteRepository();
         inventory = Mockito.mock(InventoryService.class);
         OnHandProvider provider = (wh, productId) -> Integer.MAX_VALUE / 2; // plenty in stock; not used in completion
-        service = new ShippingServiceImpl(repo, provider, inventory, null, null);
+        KafkaTemplate<String, Object> kafka = Mockito.mock(KafkaTemplate.class);
+        service = new ShippingServiceImpl(repo, provider, inventory, null, null, kafka);
     }
 
     @Test

@@ -38,6 +38,9 @@ public enum SuccessStatus {
     SEND_PART_UPDATE_SUCCESS(HttpStatus.OK, "부품 수정 성공"),
     SEND_PART_DELETE_SUCCESS(HttpStatus.OK, "부품 삭제 성공"),
 
+    // CarModel
+    SEND_CARMODEL_CREATE_SUCCESS(HttpStatus.OK, "차량 모델 생성 성공"),
+
     // PCM (Part–CarModel mapping)
     SEND_PCM_CARMODEL_LIST_SUCCESS(HttpStatus.OK, "부품 적용 차량 모델 목록 조회 성공"),
     SEND_PCM_PART_LIST_SUCCESS(HttpStatus.OK, "차량 모델 적용 부품 목록 조회 성공"),

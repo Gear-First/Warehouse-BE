@@ -33,7 +33,7 @@ class ShippingServiceNoDecreaseOnDelayedTest {
         repo = new InMemoryShippingNoteRepository();
         inventory = Mockito.mock(InventoryService.class);
         OnHandProvider provider = (wh, productId) -> 0; // force shortages if needed, but we pre-seed status anyway
-        service = new ShippingServiceImpl(repo, provider, inventory, null, null);
+        service = new ShippingServiceImpl(repo, provider, inventory, null, null, null);
     }
 
     @Test

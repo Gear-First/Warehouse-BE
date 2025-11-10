@@ -2,6 +2,7 @@ package com.gearfirst.warehouse.api.parts;
 
 import com.gearfirst.warehouse.api.parts.dto.CarModelDtos.CarModelSummary;
 import com.gearfirst.warehouse.api.parts.dto.CarModelDtos.CarModelListItem;
+import com.gearfirst.warehouse.api.parts.dto.CarModelDtos.CreateCarModelRequest;
 import com.gearfirst.warehouse.api.parts.dto.PartCarModelDtos.CreateMappingRequest;
 import com.gearfirst.warehouse.api.parts.dto.PartCarModelDtos.PartCarModelDetail;
 import com.gearfirst.warehouse.api.parts.dto.PartCarModelDtos.UpdateMappingRequest;
@@ -9,9 +10,11 @@ import com.gearfirst.warehouse.api.parts.dto.PartDtos.PartSummaryResponse;
 import com.gearfirst.warehouse.api.parts.persistence.CarModelJpaRepository;
 import com.gearfirst.warehouse.api.parts.persistence.entity.CarModelEntity;
 import com.gearfirst.warehouse.api.parts.service.PartCarModelService;
+import com.gearfirst.warehouse.common.exception.ConflictException;
 import com.gearfirst.warehouse.common.response.CommonApiResponse;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
+import com.gearfirst.warehouse.common.response.ErrorStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -91,6 +94,28 @@ public class PcmController {
                 SuccessStatus.SEND_PCM_CARMODEL_LIST_SUCCESS,
                 PageEnvelope.of(items, pg.getNumber(), pg.getSize(), pg.getTotalElements())
         );
+    }
+
+    @Operation(summary = "차량 모델 생성", description = "이름 중복 시 409를 반환합니다. enabled 미전달 시 기본값 true")
+    @PostMapping("/car-models")
+    public ResponseEntity<CommonApiResponse<CarModelListItem>> createCarModel(
+            @RequestBody @Valid CreateCarModelRequest req
+    ) {
+        String name = req.name() == null ? "" : req.name().trim();
+        if (name.isEmpty()) {
+            // Bean Validation에서 차단되지만, 방어적 처리
+            throw new IllegalArgumentException("name must not be blank");
+        }
+        if (carModelRepo.existsByNameIgnoreCase(name)) {
+            throw new ConflictException(ErrorStatus.CONFLICT_RESOURCE_ALREADY_EXISTS);
+        }
+        boolean enabled = (req.enabled() == null) ? true : req.enabled();
+        CarModelEntity saved = carModelRepo.save(CarModelEntity.builder()
+                .name(name)
+                .enabled(enabled)
+                .build());
+        CarModelListItem dto = new CarModelListItem(saved.getId(), saved.getName(), saved.isEnabled());
+        return CommonApiResponse.success(SuccessStatus.SEND_CARMODEL_CREATE_SUCCESS, dto);
     }
 
     private Sort parseCarModelSort(List<String> sortParams) {
