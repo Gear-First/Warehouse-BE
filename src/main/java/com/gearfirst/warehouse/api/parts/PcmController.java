@@ -8,6 +8,7 @@ import com.gearfirst.warehouse.api.parts.dto.PartCarModelDtos.PartCarModelDetail
 import com.gearfirst.warehouse.api.parts.dto.PartCarModelDtos.UpdateMappingRequest;
 import com.gearfirst.warehouse.api.parts.dto.PartDtos.PartSummaryResponse;
 import com.gearfirst.warehouse.api.parts.persistence.CarModelJpaRepository;
+import com.gearfirst.warehouse.api.parts.persistence.PartCarModelJpaRepository;
 import com.gearfirst.warehouse.api.parts.persistence.entity.CarModelEntity;
 import com.gearfirst.warehouse.api.parts.service.PartCarModelService;
 import com.gearfirst.warehouse.common.exception.ConflictException;
@@ -48,6 +49,7 @@ public class PcmController {
 
     private final PartCarModelService pcmService;
     private final CarModelJpaRepository carModelRepo;
+    private final PartCarModelJpaRepository pcmRepo;
 
     // TODO: Move listing logic into CarModelQueryService
     //  Controller → Service → Repository
@@ -220,5 +222,24 @@ public class PcmController {
     ) {
         pcmService.deleteMapping(partId, carModelId);
         return CommonApiResponse.success(SuccessStatus.SEND_PCM_DELETE_SUCCESS, java.util.Map.of("deleted", true));
+    }
+
+    @Operation(summary = "차량 모델 삭제(soft)", description = "차량 모델이 활성 매핑에 참조 중이면 409를 반환합니다. 성공 시 enabled=false로 비활성화 처리합니다.")
+    @DeleteMapping("/car-models/{id}")
+    public ResponseEntity<CommonApiResponse<Map<String, Boolean>>> deleteCarModel(
+            @PathVariable Long id
+    ) {
+        var cm = carModelRepo.findById(id)
+                .orElseThrow(() -> new com.gearfirst.warehouse.common.exception.NotFoundException("CarModel not found: " + id));
+        long refCount = pcmRepo.countByCarModelIdAndEnabledTrue(id);
+        if (refCount > 0) {
+            throw new com.gearfirst.warehouse.common.exception.ConflictException(com.gearfirst.warehouse.common.response.ErrorStatus.CARMODEL_HAS_MAPPINGS);
+        }
+        if (cm.isEnabled()) {
+            cm.setEnabled(false);
+            carModelRepo.save(cm);
+        }
+        return CommonApiResponse.success(com.gearfirst.warehouse.common.response.SuccessStatus.SEND_CARMODEL_DELETE_SUCCESS,
+                java.util.Map.of("deleted", true));
     }
 }

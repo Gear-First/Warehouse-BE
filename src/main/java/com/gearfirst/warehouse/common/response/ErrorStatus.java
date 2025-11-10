@@ -58,6 +58,7 @@ public enum ErrorStatus {
     PART_CODE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 부품 코드입니다."),
     PART_CATEGORY_HAS_PARTS(HttpStatus.CONFLICT, "카테고리에 속한 부품이 있어 삭제할 수 없습니다."),
     PART_HAS_MAPPINGS(HttpStatus.CONFLICT, "해당 부품은 차량 모델 매핑이 있어 삭제할 수 없습니다."),
+    CARMODEL_HAS_MAPPINGS(HttpStatus.CONFLICT, "해당 차량 모델은 부품 매핑이 있어 삭제할 수 없습니다."),
     PCM_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 부품-차량 모델 매핑입니다."),
 
     /**

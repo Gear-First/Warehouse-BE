@@ -75,7 +75,7 @@ public class PartsController {
         return CommonApiResponse.success(SuccessStatus.SEND_PART_CATEGORY_UPDATE_SUCCESS, categoryService.update(id, req));
     }
 
-    @Operation(summary = "부품 카테고리 삭제", description = "참조 부품이 있으면 409로 차단합니다.")
+    @Operation(summary = "부품 카테고리 삭제(soft)", description = "참조 부품이 있으면 409로 차단합니다.")
     @DeleteMapping("/categories/{id}")
     public ResponseEntity<CommonApiResponse<Map<String, Boolean>>> deleteCategory(@PathVariable Long id) {
         categoryService.delete(id);

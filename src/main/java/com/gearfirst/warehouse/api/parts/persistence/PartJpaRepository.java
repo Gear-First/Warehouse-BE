@@ -11,6 +11,8 @@ public interface PartJpaRepository extends JpaRepository<PartEntity, Long> {
 
     long countByCategoryId(Long categoryId);
 
+    long countByCategoryIdAndEnabledTrue(Long categoryId);
+
     List<PartEntity> findByCategoryId(Long categoryId);
 
     // Server-side pagination & filtering for list API

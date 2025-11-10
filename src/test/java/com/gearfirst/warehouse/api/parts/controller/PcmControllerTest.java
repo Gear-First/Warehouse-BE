@@ -6,6 +6,7 @@ import com.gearfirst.warehouse.api.parts.dto.CarModelDtos.CarModelSummary;
 import com.gearfirst.warehouse.api.parts.dto.PartDtos.CategoryRef;
 import com.gearfirst.warehouse.api.parts.dto.PartDtos.PartSummaryResponse;
 import com.gearfirst.warehouse.api.parts.persistence.CarModelJpaRepository;
+import com.gearfirst.warehouse.api.parts.persistence.PartCarModelJpaRepository;
 import com.gearfirst.warehouse.api.parts.service.PartCarModelService;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
 import org.junit.jupiter.api.DisplayName;
@@ -38,6 +39,10 @@ class PcmControllerTest {
 
     @MockBean
     private CarModelJpaRepository carModelRepo;
+
+    @MockBean
+    private PartCarModelJpaRepository pcmRepo;
+
 
     @Test
     @DisplayName("GET /api/v1/parts/{partId}/car-models - 목록 성공(PageEnvelope)")

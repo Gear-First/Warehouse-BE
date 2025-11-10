@@ -79,10 +79,13 @@ public class PartCategoryServiceImpl implements PartCategoryService {
     @Override
     public void delete(Long id) {
         var c = categoryRepo.findById(id).orElseThrow(() -> new NotFoundException("Category not found: " + id));
-        long refCount = partRepo.countByCategoryId(c.getId());
+        long refCount = partRepo.countByCategoryIdAndEnabledTrue(c.getId());
         if (refCount > 0) {
             throw new ConflictException(ErrorStatus.PART_CATEGORY_HAS_PARTS);
         }
-        categoryRepo.delete(c);
+        if (c.isEnabled()) {
+            c.setEnabled(false);
+            categoryRepo.save(c);
+        }
     }
 }
