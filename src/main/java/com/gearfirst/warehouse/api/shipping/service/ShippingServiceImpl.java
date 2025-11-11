@@ -32,7 +32,6 @@ import com.gearfirst.warehouse.common.response.ErrorStatus;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
 import com.gearfirst.warehouse.common.sequence.NoteNumberGenerator;
 import com.gearfirst.warehouse.common.util.DateTimes;
-import com.gearfirst.warehouse.common.context.UserContextUtils;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -423,7 +422,7 @@ public class ShippingServiceImpl implements ShippingService {
         if (request != null && request.lines() != null) {
             int i = 0;
             // Pre-validate: all productIds must exist
-            HashSet<Long> idsToValidate = new HashSet<>();
+            HashSet<Long> idsToValidate = new java.util.HashSet<>();
             for (var rl : request.lines()) {
                 if (rl.productId() != null) idsToValidate.add(rl.productId());
             }
@@ -497,19 +496,17 @@ public class ShippingServiceImpl implements ShippingService {
         if (expectedShipDate == null || expectedShipDate.isBlank()) {
             expectedShipDate = OffsetDateTime.parse(requestedAt).plusDays(2).toString();
         }
-        // Determine effective warehouse code (highest priority: when workType == "창고", use region)
-        String incomingWh = (request == null ? null : request.warehouseCode());
-        String effectiveWh = UserContextUtils.effectiveWarehouseCode(incomingWh);
         // Always generate shippingNo on server side
         String shippingNo;
         if (this.noteNumberGenerator != null) {
             var reqAtOd = OffsetDateTime.parse(requestedAt);
-            shippingNo = noteNumberGenerator.generateShippingNo(effectiveWh, reqAtOd);
+            shippingNo = noteNumberGenerator.generateShippingNo(
+                    request == null ? null : request.warehouseCode(), reqAtOd);
         } else {
             // Fallback simple generator for test environments without NoteNumberGenerator
             var reqAtOd = OffsetDateTime.parse(requestedAt);
             String ymd = reqAtOd.toLocalDate().format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
-            String wh = (effectiveWh == null || effectiveWh.isBlank()) ? "DEFAULT" : effectiveWh;
+            String wh = (request == null || request.warehouseCode() == null || request.warehouseCode().isBlank()) ? "DEFAULT" : request.warehouseCode();
             shippingNo = "OUT-" + wh + "-" + ymd + "-001";
         }
 
@@ -518,7 +515,7 @@ public class ShippingServiceImpl implements ShippingService {
                 .branchName(request == null ? null : request.branchName())
                 .itemKindsNumber(itemKinds)
                 .totalQty(totalQty)
-                .warehouseCode(effectiveWh)
+                .warehouseCode(request == null ? null : request.warehouseCode())
                 .shippingNo(shippingNo)
                 .orderId(request == null ? null : request.orderId())
                 .requestedAt(requestedAt)

@@ -22,7 +22,6 @@ import com.gearfirst.warehouse.common.exception.NotFoundException;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
 import com.gearfirst.warehouse.common.sequence.NoteNumberGenerator;
 import com.gearfirst.warehouse.common.util.DateTimes;
-import com.gearfirst.warehouse.common.context.UserContextUtils;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -228,12 +227,10 @@ public class ReceivingServiceImpl implements ReceivingService {
 
     @Override
     public ReceivingNoteDetailResponse create(ReceivingCreateNoteRequest request) {
-        String incomingWh = (request == null ? null : request.warehouseCode());
-        String effectiveWh = UserContextUtils.effectiveWarehouseCode(incomingWh);
         var builder = ReceivingNoteEntity.builder()
                 .noteId(null) // let DB generate
                 .supplierName(request == null ? null : request.supplierName())
-                .warehouseCode(effectiveWh)
+                .warehouseCode(request == null ? null : request.warehouseCode())
                 .remark(request == null ? null : request.remark())
                 .status(ReceivingNoteStatus.PENDING)
                 .completedAt(null);

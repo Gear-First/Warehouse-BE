@@ -7,7 +7,6 @@ import com.gearfirst.warehouse.common.response.CommonApiResponse;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
-import com.gearfirst.warehouse.common.context.UserContextUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -78,9 +77,8 @@ public class InventoryController {
             }
         }
 
-        String effectiveWh = UserContextUtils.effectiveWarehouseCode(warehouseCode);
         PageEnvelope<OnHandSummary> envelope = service.listOnHand(
-                effectiveWh, partKeyword, supplierName, minQty, maxQty, p, s, sort);
+                warehouseCode, partKeyword, supplierName, minQty, maxQty, p, s, sort);
         return CommonApiResponse.success(SuccessStatus.SEND_INVENTORY_ONHAND_LIST_SUCCESS, envelope);
     }
 

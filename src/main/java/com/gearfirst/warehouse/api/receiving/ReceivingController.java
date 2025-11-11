@@ -13,7 +13,6 @@ import com.gearfirst.warehouse.common.response.CommonApiResponse;
 import com.gearfirst.warehouse.common.response.PageEnvelope;
 import com.gearfirst.warehouse.common.response.SuccessStatus;
 import com.gearfirst.warehouse.common.util.DateFilter;
-import com.gearfirst.warehouse.common.context.UserContextUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -76,12 +75,11 @@ public class ReceivingController {
         // Normalize dates via DateFilter (range wins; swap when from>to)
         DateFilter.Normalized nf = DateFilter.normalize(date, dateFrom, dateTo);
         List<ReceivingNoteSummaryResponse> list;
-        String effectiveWh = UserContextUtils.effectiveWarehouseCode(warehouseCode);
-        if (!nf.hasRange() && (effectiveWh == null || effectiveWh.isBlank())) {
+        if (!nf.hasRange() && (warehouseCode == null || warehouseCode.isBlank())) {
             list = service.getNotDone(date);
         } else {
             String dateArg = nf.hasRange() ? null : date;
-            list = service.getNotDone(dateArg, nf.from(), nf.to(), effectiveWh);
+            list = service.getNotDone(dateArg, nf.from(), nf.to(), warehouseCode);
         }
         long total = list.size();
         int from = Math.min(p * s, (int) total);
@@ -121,13 +119,12 @@ public class ReceivingController {
         DateFilter.Normalized nf = DateFilter.normalize(date, dateFrom, dateTo);
 
         List<ReceivingNoteSummaryResponse> list;
-        String effectiveWh = UserContextUtils.effectiveWarehouseCode(warehouseCode);
-        boolean noFilters = !nf.hasRange() && (effectiveWh == null || effectiveWh.isBlank());
+        boolean noFilters = !nf.hasRange() && (warehouseCode == null || warehouseCode.isBlank());
         if (noFilters) {
             list = service.getDone(date);
         } else {
             String dateArg = nf.hasRange() ? null : date;
-            list = service.getDone(dateArg, nf.from(), nf.to(), effectiveWh);
+            list = service.getDone(dateArg, nf.from(), nf.to(), warehouseCode);
         }
 
         long total = list.size();
@@ -233,14 +230,13 @@ public class ReceivingController {
         String statusNormalized = (status == null ? "all" : status.toLowerCase(Locale.ROOT));
 
         // Build condition (range wins: when range exists, ignore single date)
-        String effectiveWh = UserContextUtils.effectiveWarehouseCode(warehouseCode);
         ReceivingSearchCond cond = ReceivingSearchCond.builder()
                 .status(statusNormalized)
                 .q(q)
                 .date(nf.hasRange() ? null : date)
                 .dateFrom(nf.from())
                 .dateTo(nf.to())
-                .warehouseCode(effectiveWh)
+                .warehouseCode(warehouseCode)
                 .receivingNo(receivingNo)
                 .supplierName(supplierName)
                 .build();
@@ -250,7 +246,7 @@ public class ReceivingController {
         return CommonApiResponse.success(SuccessStatus.SEND_RECEIVING_NOTE_LIST_SUCCESS, envelope);
     }
 
-    private Sort parseSort(List<String> sortParams) {
+    private Sort parseSort(java.util.List<String> sortParams) {
         if (sortParams == null || sortParams.isEmpty()) {
             return Sort.unsorted();
         }
