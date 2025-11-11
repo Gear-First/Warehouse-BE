@@ -10,12 +10,12 @@ import org.springframework.context.annotation.Configuration;
 @RequiredArgsConstructor
 public class FilterConfig {
 
-    private final JwtHeaderFilter jwtHeaderFilter; //  스프링 Bean 주입받음
+    private final JwtHeaderFilter jwtHeaderFilter;
 
     @Bean
     public FilterRegistrationBean<JwtHeaderFilter> jwtHeaderFilterRegistration() {
         FilterRegistrationBean<JwtHeaderFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(jwtHeaderFilter); //  Bean 사용
+        registration.setFilter(jwtHeaderFilter);
         registration.addUrlPatterns("/*");
         registration.setOrder(1);
         return registration;

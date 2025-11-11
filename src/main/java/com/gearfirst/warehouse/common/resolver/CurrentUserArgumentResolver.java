@@ -21,13 +21,11 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
     }
 
     @Override
-    public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+    public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
         UserContext user = UserContextHolder.get();
-        if(user == null) {
-            throw new UnAuthorizedException(ErrorStatus.USER_UNAUTHORIZED.getMessage());
+        if (user == null) {
+            throw new UnAuthorizedException(ErrorStatus.USER_UNAUTHORIZED);
         }
         return user;
     }
-
-
 }

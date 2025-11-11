@@ -27,7 +27,7 @@ public enum ErrorStatus {
     SHIPPING_REQUESTED_AT_INVALID(HttpStatus.BAD_REQUEST, "출고 요청일자가 유효하지 않습니다."),
     RECEIVING_HANDLER_INFO_REQUIRED(HttpStatus.BAD_REQUEST, "입고 담당자 정보가 필요합니다."),
     SHIPPING_HANDLER_INFO_REQUIRED(HttpStatus.BAD_REQUEST, "출고 담당자 정보가 필요합니다."),
-    INVALID_USER_EXCEPTION(HttpStatus.BAD_REQUEST, "유효하지 않은 사용자 정보입니다."),
+
     /**
      * 401 UNAUTHORIZED
      */
@@ -66,7 +66,8 @@ public enum ErrorStatus {
      */
     FAILED_TO_SAVE_ENTITY(HttpStatus.INTERNAL_SERVER_ERROR, "엔티티 저장에 실패했습니다."),
     FAILED_TO_UPDATE_ENTITY(HttpStatus.INTERNAL_SERVER_ERROR, "엔티티 수정에 실패했습니다."),
-    FAILED_TO_DELETE_ENTITY(HttpStatus.INTERNAL_SERVER_ERROR, "엔티티 삭제에 실패했습니다.");
+    FAILED_TO_DELETE_ENTITY(HttpStatus.INTERNAL_SERVER_ERROR, "엔티티 삭제에 실패했습니다."),
+    ;
 
     private final HttpStatus httpStatus;
     private final String message;
