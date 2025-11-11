@@ -149,12 +149,8 @@ public class PartCarModelServiceImpl implements PartCarModelService {
     }
 
     private PartCarModelDetail toDetail(PartCarModelEntity e) {
-        String createdAt = com.gearfirst.warehouse.common.util.DateTimes.toKstString(
-                e.getCreatedAt() == null ? null : e.getCreatedAt().atOffset(java.time.ZoneOffset.UTC)
-        );
-        String updatedAt = com.gearfirst.warehouse.common.util.DateTimes.toKstString(
-                e.getUpdatedAt() == null ? null : e.getUpdatedAt().atOffset(java.time.ZoneOffset.UTC)
-        );
+        String createdAt = e.getCreatedAt() != null ? e.getCreatedAt().toString() : null;
+        String updatedAt = e.getUpdatedAt() != null ? e.getUpdatedAt().toString() : null;
         return new PartCarModelDetail(e.getPartId(), e.getCarModelId(), e.getNote(), e.isEnabled(), createdAt,
                 updatedAt);
     }

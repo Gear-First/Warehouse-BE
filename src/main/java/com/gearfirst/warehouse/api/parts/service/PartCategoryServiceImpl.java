@@ -11,8 +11,6 @@ import com.gearfirst.warehouse.common.exception.BadRequestException;
 import com.gearfirst.warehouse.common.exception.ConflictException;
 import com.gearfirst.warehouse.common.exception.NotFoundException;
 import com.gearfirst.warehouse.common.response.ErrorStatus;
-import com.gearfirst.warehouse.common.util.DateTimes;
-import java.time.ZoneOffset;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -43,12 +41,8 @@ public class PartCategoryServiceImpl implements PartCategoryService {
     public CategoryDetailResponse get(Long id) {
         var c = categoryRepo.findById(id).orElseThrow(() -> new NotFoundException("Category not found: " + id));
         return new CategoryDetailResponse(c.getId(), c.getName(), c.getDescription(),
-                DateTimes.toKstString(
-                        c.getCreatedAt() == null ? null : c.getCreatedAt().atOffset(ZoneOffset.UTC)
-                ),
-                DateTimes.toKstString(
-                        c.getUpdatedAt() == null ? null : c.getUpdatedAt().atOffset(ZoneOffset.UTC)
-                ));
+                c.getCreatedAt() != null ? c.getCreatedAt().toString() : null,
+                c.getUpdatedAt() != null ? c.getUpdatedAt().toString() : null);
     }
 
     @Override

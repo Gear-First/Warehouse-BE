@@ -92,12 +92,12 @@ class PcmControllerMutationTest {
     }
 
     @Test
-    @DisplayName("PATCH /api/v1/car-models/{id} - 활성 매핑이 있으면 409")
+    @DisplayName("DELETE /api/v1/car-models/{id} - 활성 매핑이 있으면 409")
     void deleteCarModel_conflict_whenReferenced() throws Exception {
         when(carModelRepo.findById(501L)).thenReturn(Optional.of(CarModelEntity.builder().id(501L).name("Avante").enabled(true).build()));
         when(pcmRepo.countByCarModelIdAndEnabledTrue(501L)).thenReturn(2L);
 
-        mockMvc.perform(patch("/api/v1/car-models/{id}/enable", 501L))
+        mockMvc.perform(delete("/api/v1/car-models/{id}", 501L))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.success", is(false)))
                 .andExpect(jsonPath("$.status", is(ErrorStatus.CARMODEL_HAS_MAPPINGS.getStatusCode())))
@@ -105,15 +105,15 @@ class PcmControllerMutationTest {
     }
 
     @Test
-    @DisplayName("PATCH /api/v1/car-models/{id} - 성공 시 enabled=false")
+    @DisplayName("DELETE /api/v1/car-models/{id} - 성공 시 enabled=false")
     void deleteCarModel_success_soft() throws Exception {
         when(carModelRepo.findById(502L)).thenReturn(Optional.of(CarModelEntity.builder().id(502L).name("Sonata").enabled(true).build()));
         when(pcmRepo.countByCarModelIdAndEnabledTrue(502L)).thenReturn(0L);
 
-        mockMvc.perform(patch("/api/v1/car-models/{id}/enable", 502L))
+        mockMvc.perform(delete("/api/v1/car-models/{id}", 502L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
-                .andExpect(jsonPath("$.status", is(SuccessStatus.SEND_CARMODEL_ENABLE_TOGGLED_SUCCESS.getStatusCode())))
-                .andExpect(jsonPath("$.data.toggled", is(true)));
+                .andExpect(jsonPath("$.status", is(SuccessStatus.SEND_CARMODEL_DELETE_SUCCESS.getStatusCode())))
+                .andExpect(jsonPath("$.data.deleted", is(true)));
     }
 }

@@ -222,12 +222,8 @@ public class PartServiceImpl implements PartService {
                 p.getId(), p.getCode(), p.getName(), p.getPrice(),
                 new CategoryRef(p.getCategoryId(), resolveCategoryName(p.getCategoryId())),
                 p.getImageUrl(), p.isEnabled(),
-                com.gearfirst.warehouse.common.util.DateTimes.toKstString(
-                        p.getCreatedAt() == null ? null : p.getCreatedAt().atOffset(java.time.ZoneOffset.UTC)
-                ),
-                com.gearfirst.warehouse.common.util.DateTimes.toKstString(
-                        p.getUpdatedAt() == null ? null : p.getUpdatedAt().atOffset(java.time.ZoneOffset.UTC)
-                ),
+                p.getCreatedAt() != null ? p.getCreatedAt().toString() : null,
+                p.getUpdatedAt() != null ? p.getUpdatedAt().toString() : null,
                 p.getSafetyStockQty()
         );
     }
